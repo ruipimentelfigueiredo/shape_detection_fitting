@@ -121,8 +121,7 @@ include_directories(
 #   src/${PROJECT_NAME}/active_semantic_mapping.cpp
 # )
 
-
-find_package(PCL 1.8 REQUIRED)
+find_package(PCL 1.7 REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -130,6 +129,9 @@ add_definitions(${PCL_DEFINITIONS})
 
 add_executable (cylinder_segmentation src/cylinder_segmentation.cpp)
 target_link_libraries (cylinder_segmentation ${PCL_LIBRARIES})
+
+add_executable (pcd_visualizer src/pcd_visualizer.cpp)
+target_link_libraries (pcd_visualizer ${PCL_LIBRARIES})
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

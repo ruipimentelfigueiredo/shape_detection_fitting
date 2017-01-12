@@ -10,6 +10,68 @@
 
 typedef pcl::PointXYZ PointT;
 
+class CylinderSegmentation
+{
+    pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
+
+
+    pcl::PointCloud<PointT>::Ptr cloud_filtered;// (new pcl::PointCloud<PointT>);
+    pcl::PointCloud<pcl::Normal>::Ptr cloud_normals;// (new pcl::PointCloud<pcl::Normal>);
+    pcl::PassThrough<PointT> pass;
+    pcl::NormalEstimation<PointT, pcl::Normal> ne;
+    pcl::search::KdTree<PointT>::Ptr tree; 
+    pcl::PointIndices::Ptr inliers_cylinder;// (new pcl::PointIndices);
+public:
+    CylinderSegmentation() : 
+	//coefficients_cylinder(new pcl::ModelCoefficients),
+	cloud_filtered(new pcl::PointCloud<PointT>),
+	cloud_normals(new pcl::PointCloud<pcl::Normal>),
+	tree(new pcl::search::KdTree<PointT> ()),
+	inliers_cylinder(new pcl::PointIndices)
+    {};
+
+    pcl::ModelCoefficients::Ptr segment(pcl::PointCloud<PointT>::Ptr & point_cloud_in_)
+    {
+    	pcl::ModelCoefficients::Ptr coefficients_cylinder(new pcl::ModelCoefficients);
+        // Build a passthrough filter to remove spurious NaNs
+        pass.setInputCloud (point_cloud_in_);
+        pass.setFilterFieldName ("z");
+        pass.setFilterLimits (0, 1.5);
+        pass.filter (*cloud_filtered);
+        std::cerr << "PointCloud after filtering has: " << cloud_filtered->points.size () << " data points." << std::endl;
+
+        // Estimate point normals
+        ne.setSearchMethod (tree);
+        ne.setInputCloud (cloud_filtered);
+        ne.setKSearch (50);
+        ne.compute (*cloud_normals);
+
+	// Create the segmentation object for cylinder segmentation and set all the parameters
+	seg.setOptimizeCoefficients (true);
+	seg.setModelType (pcl::SACMODEL_CYLINDER);
+	seg.setMethodType (pcl::SAC_RANSAC);
+	seg.setNormalDistanceWeight (0.1);
+	seg.setMaxIterations (10000);
+	seg.setDistanceThreshold (0.05);
+	seg.setRadiusLimits (0, 0.1);
+	seg.setInputCloud (cloud_filtered);
+	seg.setInputNormals (cloud_normals);
+
+  	// Obtain the cylinder inliers and coefficients
+  	seg.segment (*inliers_cylinder, *coefficients_cylinder);
+  	std::cerr << "Cylinder coefficients: " << *coefficients_cylinder << std::endl;
+
+
+  	// Write the cylinder inliers to disk
+	//extract.setInputCloud (cloud_filtered2);
+	//extract.setIndices (inliers_cylinder);
+	//extract.setNegative (false);
+	//pcl::PointCloud<PointT>::Ptr cloud_cylinder (new pcl::PointCloud<PointT> ());
+
+	return coefficients_cylinder;
+    }
+};
+
 int
 main (int argc, char** argv)
 {
@@ -17,7 +79,7 @@ main (int argc, char** argv)
   pcl::PCDReader reader;
   pcl::PassThrough<PointT> pass;
   pcl::NormalEstimation<PointT, pcl::Normal> ne;
-  pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg; 
+  pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
   pcl::PCDWriter writer;
   pcl::ExtractIndices<PointT> extract;
   pcl::ExtractIndices<pcl::Normal> extract_normals;
@@ -71,7 +133,7 @@ main (int argc, char** argv)
   pcl::PointCloud<PointT>::Ptr cloud_plane (new pcl::PointCloud<PointT> ());
   extract.filter (*cloud_plane);
   std::cerr << "PointCloud representing the planar component: " << cloud_plane->points.size () << " data points." << std::endl;
-  //writer.write ("table_scene_mug_stereo_textured_plane.pcd", *cloud_plane, false);
+  writer.write ("table_scene_mug_stereo_textured_plane.pcd", *cloud_plane, false);
 
   // Remove the planar inliers, extract the rest
   extract.setNegative (true);
@@ -81,19 +143,11 @@ main (int argc, char** argv)
   extract_normals.setIndices (inliers_plane);
   extract_normals.filter (*cloud_normals2);
 
-  // Create the segmentation object for cylinder segmentation and set all the parameters
-  seg.setOptimizeCoefficients (true);
-  seg.setModelType (pcl::SACMODEL_CYLINDER);
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setNormalDistanceWeight (0.1);
-  seg.setMaxIterations (10000);
-  seg.setDistanceThreshold (0.05);
-  seg.setRadiusLimits (0, 0.1);
-  seg.setInputCloud (cloud_filtered2);
-  seg.setInputNormals (cloud_normals2);
+  CylinderSegmentation cylinder_segmentation;
 
-  // Obtain the cylinder inliers and coefficients
-  seg.segment (*inliers_cylinder, *coefficients_cylinder);
+  coefficients_cylinder=cylinder_segmentation.segment(cloud_filtered2);
+
+  // Create the segmentation object for cylinder segmentation and set all the parameters
   std::cerr << "Cylinder coefficients: " << *coefficients_cylinder << std::endl;
 
   // Write the cylinder inliers to disk
@@ -102,12 +156,13 @@ main (int argc, char** argv)
   extract.setNegative (false);
   pcl::PointCloud<PointT>::Ptr cloud_cylinder (new pcl::PointCloud<PointT> ());
   extract.filter (*cloud_cylinder);
-  if (cloud_cylinder->points.empty ()) 
+
+  if (cloud_cylinder->points.empty ())
     std::cerr << "Can't find the cylindrical component." << std::endl;
   else
   {
-	  std::cerr << "PointCloud representing the cylindrical component: " << cloud_cylinder->points.size () << " data points." << std::endl;
-	  writer.write ("table_scene_mug_stereo_textured_cylinder.pcd", *cloud_cylinder, false);
+      std::cerr << "PointCloud representing the cylindrical component: " << cloud_cylinder->points.size () << " data points." << std::endl;
+      writer.write ("table_scene_mug_stereo_textured_cylinder.pcd", *cloud_cylinder, false);
   }
   return (0);
 }
