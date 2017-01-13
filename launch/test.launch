@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  	<arg name="cloud_in" default="/camera/r_camera/image_rect_color"/>
+	<node pkg="active_semantic_mapping" type="cylinder_segmentation" name="cylinder_segmentation" respawn="true" output="screen">
+	        <remap from="cloud_in" to="$(arg cloud_in)"/>
+	</node>
+</launch>

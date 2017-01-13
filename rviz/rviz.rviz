@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /TF1/Frames1
-        - /OrkTable1
       Splitter Ratio: 0.411058009
     Tree Height: 559
   - Class: rviz/Selection
@@ -178,6 +177,14 @@ Visualization Manager:
       Topic: /table_array
       Unreliable: false
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /cylinder_marker
+      Name: Cyllinders
+      Namespaces:
+        model: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -198,7 +205,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.57525778
+      Distance: 32.2338791
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -212,10 +219,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.219797805
+      Pitch: 0.749797761
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 3.62419415
+      Yaw: 3.57919359
     Saved: ~
 Window Geometry:
   Displays:
