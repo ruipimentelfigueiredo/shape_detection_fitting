@@ -47,7 +47,7 @@
   <arg name="depth_topic"             default="/camera/depth_registered/image_raw" />
   <arg name="camera_info_topic"       default="/camera/rgb/camera_info" />
   <arg name="camera_cloud_topic"       default="/camera/depth_registered/points" /> 
-
+  <arg name="tabletop_clusters_topic"       default="/tabletop/clusters" /> 
   <!-- stereo related topics -->
   <arg name="stereo_namespace"        default="/stereo_camera"/>
   <arg name="left_image_topic"        default="$(arg stereo_namespace)/left/image_rect_color" />
@@ -203,9 +203,10 @@
   <node pkg="object_recognition_core" type="detection" name="object_detector" args="-c $(find object_recognition_tabletop)/conf/detection.object.ros.ork" respawn="true"/>
 
   <!-- cylinder segmentation -->
-  <arg name="cloud_in" default="/camera/r_camera/image_rect_color"/>
+
   <node pkg="active_semantic_mapping" type="cylinder_segmentation" name="cylinder_segmentation" respawn="true" output="screen">
     <remap from="cloud_in" to="$(arg camera_cloud_topic)"/>
+    <remap from="clusters_in" to="$(arg tabletop_clusters_topic)"/>
   </node>
 
 </launch>

@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /TF1/Frames1
+        - /Cylinders1
       Splitter Ratio: 0.411058009
     Tree Height: 559
   - Class: rviz/Selection
@@ -24,7 +25,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: Image
 Visualization Manager:
   Class: ""
   Displays:
@@ -58,7 +59,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 2.34176998e-38
@@ -75,7 +76,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
@@ -141,7 +142,7 @@ Visualization Manager:
       Color Transformer: RGB8
       Download graph: false
       Download map: false
-      Enabled: true
+      Enabled: false
       Filter ceiling (m): 0
       Filter floor (m): 0
       Invert Rainbow: false
@@ -160,7 +161,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rtabmap_ros/Info
       Enabled: true
       Name: Info
@@ -177,10 +178,18 @@ Visualization Manager:
       Topic: /table_array
       Unreliable: false
       Value: true
-    - Class: rviz/Marker
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /tabletop/clusters
+      Name: TabletopMarkers
+      Namespaces:
+        tabletop_node: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /cylinder_marker
-      Name: Cyllinders
+      Name: Cylinders
       Namespaces:
         model: true
       Queue Size: 100
@@ -205,7 +214,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 32.2338791
+      Distance: 5.11437607
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -219,10 +228,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.749797761
+      Pitch: 0.154797569
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 3.57919359
+      Yaw: 2.50417972
     Saved: ~
 Window Geometry:
   Displays:
