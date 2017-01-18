@@ -34,15 +34,22 @@ include_directories(
 
 find_package(PCL 1.7 REQUIRED)
 
-include_directories(${PCL_INCLUDE_DIRS})
+include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (cylinder_segmentation src/cylinder_segmentation.cpp)
-target_link_libraries (cylinder_segmentation ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+add_library (cylinder_segmentation_hough src/cylinder_segmentation_hough.cpp)
+target_link_libraries (cylinder_segmentation_hough ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable (pcd_visualizer src/pcd_visualizer.cpp)
-target_link_libraries (pcd_visualizer ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
+target_link_libraries (cylinder_segmentation_test cylinder_segmentation_hough)
+
+add_executable (cylinder_segmentation_ros src/cylinder_segmentation_ros.cpp)
+target_link_libraries (cylinder_segmentation_ros cylinder_segmentation_hough)
+
+
+#add_executable (pcd_visualizer src/pcd_visualizer.cpp)
+#target_link_libraries (pcd_visualizer ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
