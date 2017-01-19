@@ -22,6 +22,11 @@
 #include <Eigen/Geometry>
 #include <tf/tf.h>
 
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+
 // DEFINE THE TYPES USED
 typedef pcl::PointXYZ PointT;
 typedef pcl::Normal NormalT;

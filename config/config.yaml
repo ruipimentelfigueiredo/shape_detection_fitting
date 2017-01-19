@@ -1,5 +1,5 @@
 angle_bins: 100
 radius_bins: 60
 position_bins: 100
-min_radius: 0.01
-max_radius: 0.1
+min_radius: 10
+max_radius: 100

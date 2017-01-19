@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-  	<arg name="file_name" default="table_scene_mug_stereo_textured.pcd"/>
-  	<!--<arg name="file_name" default="cylinder.pcd"/>-->
+  	<!--<arg name="file_name" default="table_scene_mug_stereo_textured.pcd"/>-->
+  	<arg name="file_name" default="cylinder.pcd"/>
   	<arg name="cloud_out" default="cylinders_pcl"/>
   	<arg name="rviz_file" default="cylinders.rviz"/>
       	<node pkg="active_semantic_mapping" type="cylinder_segmentation_test" name="cloud_publisher" args="$(find active_semantic_mapping)/data/$(arg file_name)" output="screen">
