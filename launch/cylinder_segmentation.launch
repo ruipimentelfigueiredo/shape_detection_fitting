@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+  	<arg name="cloud_in" default="/camera/r_camera/image_rect_color"/>
+	<node pkg="active_semantic_mapping" type="cylinder_segmentation_ros" name="cylinder_segmentation" respawn="false" output="screen">
+	        <remap from="cloud_in" to="$(arg cloud_in)"/>
+    		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
+	</node>
+</launch>

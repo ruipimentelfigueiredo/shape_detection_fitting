@@ -51,12 +51,12 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::Con
   // -----Open 3D viewer and add point cloud-----
   // --------------------------------------------
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-  viewer->setBackgroundColor (150, 150, 0);
+  viewer->setBackgroundColor (0, 0, 0);
   //pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(cloud);
 
   viewer->addPointCloud<PointT> (cloud,  "sample cloud");
   viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "sample cloud");
-  viewer->addPointCloudNormals<PointT, NormalT> (cloud, normals, 10, 0.01, "normals");
+  //viewer->addPointCloudNormals<PointT, NormalT> (cloud, normals, 10, 0.01, "normals");
   viewer->addCylinder (*coefficients_cylinder);
   viewer->addCoordinateSystem (1.0);
   viewer->initCameraParameters ();
@@ -70,6 +70,7 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::Con
 	unsigned int angle_bins;
 	unsigned int radius_bins;
 	unsigned int position_bins;
+	float min_radius;
 	float max_radius;
 	float angle_step;
 	float r_step;
@@ -87,7 +88,7 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::Con
 
 
 	public:
-		CylinderSegmentationHough(unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,float max_radius_=0.1);
+		CylinderSegmentationHough(unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,float min_radius_=0.01,float max_radius_=0.1);
 		pcl::ModelCoefficients::Ptr segment(const PointCloudT::ConstPtr & point_cloud_in_);
 };
 

@@ -1,18 +1,18 @@
 #include "cylinder_segmentation_hough.h"
 
-CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float max_radius_) : 
+CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float min_radius_, float max_radius_) : 
 	angle_bins(angle_bins_),
 	angle_step(2*M_PI/angle_bins),
 	position_bins(position_bins_),
 	radius_bins(radius_bins_),
+	min_radius(min_radius_),
 	max_radius(max_radius_),
-	r_step(max_radius/radius_bins),
+	r_step((max_radius-min_radius)/radius_bins),
 	//coefficients_cylinder(new pcl::ModelCoefficients),
 	cloud_filtered(new pcl::PointCloud<PointT>),
 	cloud_normals(new pcl::PointCloud<pcl::Normal>),
 	tree(new pcl::search::KdTree<PointT> ()),
 	inliers_cylinder(new pcl::PointIndices)
-
 {
 	cyl_direction_accum.resize(angle_bins);
 	for(int i=0;i<angle_bins;++i)
@@ -45,7 +45,6 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	ne.setInputCloud (point_cloud_in_);
 	ne.setKSearch (50);
 	ne.compute (*cloud_normals);
-
 
 	//3. for each point normal
 	ROS_INFO_STREAM(" 3. Step 1");
@@ -111,44 +110,55 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
     
 
 	ROS_INFO_STREAM(" 4. Step 2");
+
 	//Get rotation matrix
-   	Eigen::Vector3f up =Eigen::Vector3f::UnitZ();
+	Eigen::Matrix4f R2;
 
-       	Eigen::Vector3f xaxis = up.cross(cylinder_direction);
-        xaxis.normalize();
-
-        Eigen::Vector3f yaxis = cylinder_direction.cross(xaxis);
-        yaxis.normalize();
-    	Eigen::Matrix4f R2;
-	if(isnan(xaxis[0])||isnan(xaxis[1])||isnan(xaxis[2])||isnan(yaxis[0])||isnan(yaxis[1])||isnan(yaxis[2]))
+   	Eigen::Vector3f up = Eigen::Vector3f::UnitZ();
+       	//Eigen::Vector3f xaxis = cylinder_direction.cross(up);
+       	Eigen::Vector3f rot_axis = up.cross(cylinder_direction);
+	rot_axis.normalize();
+	if( isnan(rot_axis[0])||isnan(rot_axis[1])||isnan(rot_axis[2]))
 	{
 
-
-		R2<<    	     1, 		     0,			0, 0,
-		        	     0,  	     1, 			0, 0,
-		        cylinder_direction[0],  cylinder_direction[1],     cylinder_direction[2], 0,
-						 0, 0, 0, 1;
+		R2=Eigen::Matrix4f::Identity();
+	}
+	else
+	{
+	    	
+		Eigen::Matrix3f aux;
+		aux=Eigen::AngleAxisf(acos(up.dot(cylinder_direction)),rot_axis);
+		R2.block(0,0,3,3)=aux;
+	}
+	/*if(isnan(xaxis[0])||isnan(xaxis[1])||isnan(xaxis[2])||isnan(yaxis[0])||isnan(yaxis[1])||isnan(yaxis[2]))
+	{
+		R2<<    	     1, 		     0,				0,  0,
+		        	     0,  	     	     1, 			0,  0,
+		  cylinder_direction[0],  cylinder_direction[1],     cylinder_direction[2], 0,
+				     0, 	 	     0, 	                0,  1;
 
 	}
 	else
-
-
-
-	R2<<    	     xaxis[0], 		     yaxis[1],			xaxis[2], 0,
-                	     xaxis[0],  	     yaxis[1], 			yaxis[2], 0,
-                cylinder_direction[0],  cylinder_direction[1],     cylinder_direction[2], 0,
-					 0, 0, 0, 1;
-
+	{
+		R2<<    	     xaxis[0], 		     xaxis[1],			xaxis[2], 0,
+		        	     yaxis[0],  	     yaxis[1], 			yaxis[2], 0,
+		        cylinder_direction[0],  cylinder_direction[1],     cylinder_direction[2], 0,
+					   0, 			   0, 			      0,  1;
+	}*/
     	std::cout << R2 << std::endl;
   	// HERE FILTER POINTS THAT HAVE NORMAL NOT PERPENDICULAR TO CILINDER DIRECTION (CHECK CROSS PRODUCT)
 
 	// Extract the cylinder inliers from the input cloud
-	float thresh_=angle_step;
+	float thresh_=cos(angle_step);
 	pcl::PointIndices::Ptr  inliers_cylinder (new pcl::PointIndices);
 	for (unsigned i=0; i < cloud_normals->points.size(); ++i) 
 	{
-		if(cloud_normals->points[i].getNormalVector3fMap ().dot(cylinder_direction)>thresh_)
+		float dot_product=cloud_normals->points[i].getNormalVector3fMap ().dot(cylinder_direction);
+
+		if(fabs(dot_product)>thresh_)
+		{
 			inliers_cylinder->indices.push_back(i);
+		}
 	}
 
 	PointCloudT::Ptr transformed_cloud (new pcl::PointCloud<PointT> ());
@@ -157,8 +167,6 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	extract.setIndices (inliers_cylinder);
 	extract.setNegative (true);
 	extract.filter (*transformed_cloud);
-
-
 
 	// Executing the transformation
 
@@ -181,9 +189,10 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	
 
 	ROS_INFO_STREAM("  4.2. Vote");
-	for(unsigned int r=1; r<radius_bins;++r)
+	for(unsigned int r=0; r<radius_bins;++r)
 	{	
-		float current_radius=r_step*r;
+		float current_radius=r_step*r+min_radius;
+
 		for(unsigned int w=0; w<angle_bins;++w)
 		{
 			float current_angle=w*angle_step;
@@ -195,9 +204,13 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 				// Get discretized coordinates
 				unsigned int u_hough=floor( (current_radius*cos(current_angle)+u)/u_position_step);
 				unsigned int v_hough=floor( (current_radius*sin(current_angle)+v)/v_position_step);
-
-				if(u_hough<0||v_hough<0||u_hough>=position_bins||v_hough>=position_bins)
-					continue;
+				//std::cout << cos(current_angle) <<" " <<u << " u_houg:" << u_hough << " v_hough:" << v_hough<< std::endl;
+				//if(u_hough<0||v_hough<0||u_hough>=position_bins||v_hough>=position_bins)
+				if(u_hough>=position_bins)
+					continue;//u_hough=position_bins-1;
+				if(v_hough>=position_bins)
+					continue;//v_hough=position_bins-1;
+				//	continue;
 
 				//std::cout << "nunca cheguei aqui" << std::endl;
 				++cyl_circ_accum[u_hough][v_hough][r];
@@ -217,7 +230,6 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 					best_v_bin=v_index;
 					best_r_bin=r_index;
 					most_votes=cyl_circ_accum[u_index][v_index][r_index];
-
 				}
 			}
 		}
@@ -226,8 +238,8 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	// Recover
 	float best_u=best_u_bin*u_position_step+min_pt[0];
 	float best_v=best_v_bin*v_position_step+min_pt[1];
-	float best_r=best_r_bin*r_step;
-	ROS_INFO_STREAM("    best votes="<< most_votes<<" best_u="<< best_u <<" best_v="<<best_v<<" best_r="<<best_r);
+	float best_r=best_r_bin*r_step+min_radius;
+	ROS_INFO_STREAM("    best votes="<< most_votes<<" best_u="<< best_u_bin <<" best_v="<<best_v_bin<<" best_r="<<best_r);
 	// Get u v in original frame
 	Eigen::Vector4f cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[1],1.0);
 
@@ -251,11 +263,12 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	proj.setInputCloud (transformed_cloud);
 	proj.setModelCoefficients (coefficients_cylinder);
 	proj.filter (*cloud_projected);
+
 	// Get MinMax
 	pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
-	float height=max_pt[2]-min_pt[1];
+	float height=max_pt[2]-min_pt[2];
 	coefficients_cylinder->values[7]=height;
-	ROS_INFO_STREAM("CYLINDER HEIGHT:"<<height);
+
 
 	// Redefine cylinder position (base);
 	Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[2],1.0);
@@ -265,7 +278,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	
 	// VISUALIZE
 
-    	viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
+    	viewer =simpleVis(transformed_cloud,cloud_normals,coefficients_cylinder);
 
    
 	while (!viewer->wasStopped ())
@@ -273,20 +286,6 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 		viewer->spinOnce (100);
 		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 	}
-
-
-	/*// Extract inliers
-	  // Create the segmentation object
-	  pcl::SACSegmentation<PointCloudT> seg;
-	  // Optional
-	  seg.setOptimizeCoefficients (true);
-	  // Mandatory
-	  seg.setModelType (pcl::SACMODEL_CYLINDER);
-	  seg.setMethodType (pcl::SAC_RANSAC);
-	  seg.setMaxIterations (1000);
-	  seg.setDistanceThreshold (0.01);
-	Cylinder*/
-
 
 	return coefficients_cylinder;
 

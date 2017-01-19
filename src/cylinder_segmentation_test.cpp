@@ -1,24 +1,45 @@
 ﻿#include "cylinder_segmentation_hough.h"
 #include <ctime>
+#include <tf/transform_broadcaster.h>
 
 
 
 int main (int argc, char** argv)
 {
+	ros::init(argc, argv, "cylinder_publisher");
 
+	/**
+	* NodeHandle is the main access point to communications with the ROS system.
+	* The first NodeHandle constructed will fully initialize this node, and the last
+	* NodeHandle destructed will close down the node.
+	*/
+
+	ros::NodeHandle n;
+	ros::Rate loop_rate(30);
 	unsigned int angle_bins=50;
 	unsigned int radius_bins=100;
  	unsigned int position_bins=50;
+
+ 	float mix_radius=10.0;
  	float max_radius=1000.0;
 
+	ros::Publisher cloud_pub;
+	cloud_pub=n.advertise<pcl::PointCloud<PointT> >( "cylinders_pcl", 0 );
 	pcl::PassThrough<PointT> pass;
 	pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
 	// Read in the cloud data
         pcl::PCDReader reader;
 	reader.read (argv[1], *cloud);
+	cloud->header.frame_id="world";
 	std::cerr << "PointCloud has: " << cloud->points.size () << " data points." << std::endl;
 
-
+  	/*static tf::TransformBroadcaster br;
+  tf::Transform transform;
+  transform.setOrigin( tf::Vector3(0, 0, 0.0) );
+  tf::Quaternion q;
+  q.setRPY(0, 0, 0);
+  transform.setRotation(q);
+  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", turtle_name));*/
 	// Build a passthrough filter to remove spurious NaNs
 	ROS_INFO_STREAM(" 1. Filter");
 	pass.setInputCloud (cloud);
@@ -29,6 +50,13 @@ int main (int argc, char** argv)
 
 	std::vector<int> indices;
 	pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
+
+	while (ros::ok())
+	{
+		ros::spinOnce();
+		loop_rate.sleep();
+		cloud_pub.publish(cloud);
+	}
 
 	///// REMOVE PLANE
 	// Estimate point normals
@@ -77,11 +105,11 @@ int main (int argc, char** argv)
 
 
 	// Segment cylinder
-	CylinderSegmentationHough segmentation_obj(angle_bins, radius_bins, position_bins, max_radius);
-const clock_t begin_time = clock();
+	CylinderSegmentationHough segmentation_obj(angle_bins, radius_bins, position_bins, mix_radius, max_radius);
+	const clock_t begin_time = clock();
 
-        pcl::ModelCoefficients::Ptr cyl_parameters=segmentation_obj.segment(cloud);
-std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC<< "seconds"<<std::endl;
+        //pcl::ModelCoefficients::Ptr cyl_parameters=segmentation_obj.segment(cloud);
+	std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC<< "seconds"<<std::endl;
 
 	std::cout << "done" << std::endl;
 
