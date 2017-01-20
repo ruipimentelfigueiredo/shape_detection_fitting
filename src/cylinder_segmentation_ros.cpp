@@ -65,11 +65,11 @@ void CylinderSegmentationROS::cloud_cb (const PointCloudT::ConstPtr& input)
 
 
   // Extract the planar inliers from the input cloud
-  /*pcl::ExtractIndices<PointT> extract;
+  pcl::ExtractIndices<PointT> extract;
   extract.setInputCloud (cloud_filtered);
   extract.setIndices (inliers_plane);
   extract.setNegative (true);
-  extract.filter (*cloud_filtered);*/
+  extract.filter (*cloud_filtered);
 
 
 
@@ -141,7 +141,7 @@ visualization_msgs::Marker CylinderSegmentationROS::createMarker(const pcl::Mode
 	q.normalize();
 	geometry_msgs::Quaternion cylinder_orientation;
 	tf::quaternionTFToMsg(q, cylinder_orientation);
-
+	float height=model_params->values[7];
 	ROS_INFO_STREAM(frame);
 	visualization_msgs::Marker marker;
 	marker.header.frame_id =frame;
@@ -150,9 +150,9 @@ visualization_msgs::Marker CylinderSegmentationROS::createMarker(const pcl::Mode
 	marker.id = id;
 	marker.type = model_type;
 	marker.action = visualization_msgs::Marker::ADD;
-	marker.pose.position.x = model_params->values[0];
-	marker.pose.position.y = model_params->values[1];
-	marker.pose.position.z = model_params->values[2]+model_params->values[7]*0.5;
+	marker.pose.position.x = model_params->values[0]+0.5*height*axis_vector[0];
+	marker.pose.position.y = model_params->values[1]+0.5*height*axis_vector[1];
+	marker.pose.position.z = model_params->values[2]+0.5*height*axis_vector[2];
 	marker.pose.orientation = cylinder_orientation;
 /*		marker.pose.orientation.x = Q.x();
 	marker.pose.orientation.y = Q.y();
@@ -160,7 +160,7 @@ visualization_msgs::Marker CylinderSegmentationROS::createMarker(const pcl::Mode
 	marker.pose.orientation.w = Q.w();*/
 	marker.scale.x = 2*model_params->values[6];
 	marker.scale.y = 2*model_params->values[6];
-	marker.scale.z = model_params->values[7];
+	marker.scale.z = height;
 	marker.color.a = 1.0; // Don't forget to set the alpha!
 	marker.color.r = 0.0;
 	marker.color.g = 1.0;

@@ -18,34 +18,30 @@ CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,un
 	// Create randomized structure
 	// By sampling a unitary sphere
 
-    	cv::Mat mean_mat(3, 1, CV_32F, cv::Scalar(0));
-    	cv::Mat std_dev_mat(3, 1, CV_32F, cv::Scalar(1.0));
-	int gaussian_sphere_points_num=10000;
-	int p=0;
-	std::vector<Eigen::Vector3f> gaussian_sphere_points;
+	int gaussian_sphere_points_num=1000;
+	
         for(int i=0;i<gaussian_sphere_points_num;++i)
         {
-            Eigen::Vector3f random_point;
-            cv::Mat aux(1, 1, CV_64F);
+		Eigen::Vector3f random_point;
+		cv::Mat aux(1, 1, CV_32F);
 
-            // Generate random patch on the sphere surface
-            cv::randn(aux, mean_mat.at<float>(0,0), std_dev_mat.at<float>(0,0));
-            random_point(0,0)=aux.at<float>(0,0);
+		// Generate random patch on the sphere surface
+		cv::randn(aux, 0.0, 1.0);
+		random_point(0,0)=aux.at<float>(0,0);
 
-            cv::randn(aux, mean_mat.at<float>(1,0), std_dev_mat.at<float>(1,0));
-            random_point(1,0)=aux.at<float>(0,0);
+		cv::randn(aux, 0.0, 1.0);
+		random_point(1,0)=aux.at<float>(0,0);
 
-            cv::randn(aux, mean_mat.at<float>(2,0), std_dev_mat.at<float>(2,0));
-            random_point(2,0)=aux.at<float>(0,0);
+		cv::randn(aux, 0.0, 1.0);
+		random_point(2,0)=aux.at<float>(0,0);
 
-	    gaussian_sphere_points.push_back(random_point);
+		random_point.normalize();
+		//std::cout << random_point.transpose() << std::endl;
+		//std::cout << random_point.norm() << std::endl;
+		gaussian_sphere_points.push_back(random_point);
 	}
 
-	cyl_direction_accum.resize(angle_bins);
-	for(int i=0;i<angle_bins;++i)
-	{
-		cyl_direction_accum[i].resize(angle_bins);
-	}
+	cyl_direction_accum.resize(gaussian_sphere_points_num);
 
 	cyl_circ_accum.resize(position_bins);
 	for(int i=0;i<position_bins;++i)
@@ -77,66 +73,43 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	ROS_INFO_STREAM(" 3. Step 1");
 			
 	ROS_INFO_STREAM("  3.1. Reset accumulator");
-	for (unsigned int theta_index=0; theta_index < cyl_direction_accum.size(); ++theta_index) {
-		std::fill(cyl_direction_accum[theta_index].begin(),cyl_direction_accum[theta_index].end(), 0);
-	}
+
+	std::fill(cyl_direction_accum.begin(),cyl_direction_accum.end(), 0);
+
 
 	ROS_INFO_STREAM("  3.2. Vote");
-	for(NormalCloudT::iterator it = cloud_normals->begin(); it != cloud_normals->end(); ++it)
+	for(NormalCloudT::iterator n_it = cloud_normals->begin(); n_it != cloud_normals->end(); ++n_it)
 	{
-		// 3.2.1 compute b
-		Eigen::Vector3f b=(-Eigen::Vector3f::UnitZ()+it->getNormalVector3fMap ());
-		b.normalize();
-
-		// 3.2.2 derive matrix R
-		Eigen::Matrix3f R=Eigen::Matrix3f::Identity() - 2.0*b*b.transpose();
-
-		//std::cout << R << std::endl;
-		for(unsigned int s=0; s<angle_bins;++s)
+		for(int i=0; i<gaussian_sphere_points.size(); ++i)
 		{
-			// rotate xy points to hough gaussian sphere space (IN THE FUTURE CHANGE TO BLOCK [SPARSE])
-			Eigen::Vector3f rotated_direction_hypothesis=R*xy_circle_points[s];
-
-			// Convert to spherical coordinates
-			float theta_=atan2(rotated_direction_hypothesis[1],rotated_direction_hypothesis[0])+M_PI;
-			float phi_=   acos(rotated_direction_hypothesis[2]);
-
-			// Discretize and vote
-			unsigned int theta_bin=floor(theta_/angle_step);
-			unsigned int phi_bin=floor(phi_/angle_step);
-			
-			// std::cout << "theta_bin:"<< theta_bin << " phi_bin:" << phi_bin <<  " theta_:" << theta_<< " phi_:" << phi_ << std::endl;
-			if (theta_bin>=angle_bins) theta_bin=angle_bins-1;
-			
-			// 3.2 Get corresponding parameters and vote (+1)
-			++cyl_direction_accum[theta_bin][phi_bin];
-		}	
-	}
-
-	ROS_INFO_STREAM("  3.3. Get max peak");
-	unsigned int best_theta_bin;
-	unsigned int best_phi_bin;
-	unsigned int most_votes=0;
-	for (unsigned theta_index=0; theta_index < cyl_direction_accum.size(); ++theta_index) {
-		for (unsigned phi_index=0; phi_index < cyl_direction_accum[theta_index].size(); ++phi_index) {
-			if(cyl_direction_accum[theta_index][phi_index]>most_votes)
-			{
-				best_theta_bin=theta_index;
-				best_phi_bin=phi_index;
-				most_votes=cyl_direction_accum[theta_index][phi_index];
-			}
+			//1 - fabs(dot.product)
+			cyl_direction_accum[i]+=1.0-fabs(n_it->getNormalVector3fMap().dot(gaussian_sphere_points[i]));	
 		}
 	}
 
+	ROS_INFO_STREAM("  3.3. Get max peak");
+
+
+	float most_votes=0.0;
+	unsigned int best_direction_index=0;
+	for (unsigned int i=0; i<gaussian_sphere_points.size(); ++i)
+	{
+		if(cyl_direction_accum[i]>most_votes)
+		{
+			best_direction_index=i;
+			most_votes=cyl_direction_accum[i];
+		}
+	}
+	
+
 	ROS_INFO_STREAM("  3.4. Convert back to continuous");
-	float best_theta=best_theta_bin*angle_step-M_PI;
-	float best_phi=best_phi_bin*angle_step;
 
 
-	ROS_INFO_STREAM("    best votes="<< most_votes<<" theta="<<best_theta<<" phi="<<best_phi);
+
+	ROS_INFO_STREAM("    best votes="<< most_votes<<" best_direction_index="<<best_direction_index);
 
 	ROS_INFO_STREAM("  3.5. Convert to direction vector");
-	Eigen::Vector3f cylinder_direction(cos(best_theta)*sin(best_phi),sin(best_theta)*sin(best_phi),cos(best_phi));
+	Eigen::Vector3f cylinder_direction=gaussian_sphere_points[best_direction_index];
     
 
 	std::cout << "dir_vector:" << cylinder_direction << std::endl;
@@ -152,42 +125,26 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	rot_axis.normalize();
 	if( isnan(rot_axis[0])||isnan(rot_axis[1])||isnan(rot_axis[2]))
 	{
-
 		R2=Eigen::Matrix4f::Identity();
 	}
 	else
 	{
-	    	
 		Eigen::Matrix3f aux;
-		aux=Eigen::AngleAxisf(acos(up.dot(cylinder_direction)),rot_axis);
+		aux=Eigen::AngleAxisf(-acos(up.dot(cylinder_direction)),rot_axis);
 		R2.block(0,0,3,3)=aux;
 	}
-	/*if(isnan(xaxis[0])||isnan(xaxis[1])||isnan(xaxis[2])||isnan(yaxis[0])||isnan(yaxis[1])||isnan(yaxis[2]))
-	{
-		R2<<    	     1, 		     0,				0,  0,
-		        	     0,  	     	     1, 			0,  0,
-		  cylinder_direction[0],  cylinder_direction[1],     cylinder_direction[2], 0,
-				     0, 	 	     0, 	                0,  1;
 
-	}
-	else
-	{
-		R2<<    	     xaxis[0], 		     xaxis[1],			xaxis[2], 0,
-		        	     yaxis[0],  	     yaxis[1], 			yaxis[2], 0,
-		        cylinder_direction[0],  cylinder_direction[1],     cylinder_direction[2], 0,
-					   0, 			   0, 			      0,  1;
-	}*/
     	std::cout << R2 << std::endl;
   	// HERE FILTER POINTS THAT HAVE NORMAL NOT PERPENDICULAR TO CILINDER DIRECTION (CHECK CROSS PRODUCT)
 
 	// Extract the cylinder inliers from the input cloud
-	float thresh_=cos(angle_step);
+	float thresh_=fabs(cos(angle_step));
 	pcl::PointIndices::Ptr  inliers_cylinder (new pcl::PointIndices);
 	for (unsigned i=0; i < cloud_normals->points.size(); ++i) 
 	{
 		float dot_product=cloud_normals->points[i].getNormalVector3fMap ().dot(cylinder_direction);
 
-		if(fabs(dot_product)>thresh_)
+		if(fabs(dot_product)<thresh_)
 		{
 			inliers_cylinder->indices.push_back(i);
 		}
@@ -197,7 +154,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	pcl::ExtractIndices<PointT> extract;
 	extract.setInputCloud (point_cloud_in_);
 	extract.setIndices (inliers_cylinder);
-	extract.setNegative (true);
+	extract.setNegative (false);
 	extract.filter (*transformed_cloud);
 
 	// Executing the transformation
@@ -273,7 +230,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	float best_r=best_r_bin*r_step+min_radius;
 	ROS_INFO_STREAM("    best votes="<< most_votes<<" best_u="<< best_u_bin <<" best_v="<<best_v_bin<<" best_r="<<best_r);
 	// Get u v in original frame
-	Eigen::Vector4f cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[1],1.0);
+	Eigen::Vector4f cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,0.0,1.0);
 
 
 
@@ -286,7 +243,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
     	coefficients_cylinder->values[4]=cylinder_direction[1];
     	coefficients_cylinder->values[5]=cylinder_direction[2];
     	coefficients_cylinder->values[6]=best_r;
-
+	std::cout << "pos:" << cylinder_position << std::endl;
 	// EXTRACT HEIGHT AND MID POINT FOR INLIERS ONLY!!!
 	// Create the filtering object
 	PointCloudT::Ptr cloud_projected(new PointCloudT);
@@ -303,11 +260,11 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 
 
 	// Redefine cylinder position (base);
-	Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[2],1.0);
+	/*Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,0.0,1.0);
     	coefficients_cylinder->values[0]=refined_cylinder_position[0];
     	coefficients_cylinder->values[1]=refined_cylinder_position[1];
     	coefficients_cylinder->values[2]=refined_cylinder_position[2];
-	
+		std::cout << "rfpos:" << refined_cylinder_position << std::endl;*/
 	// VISUALIZE
 
     	viewer =simpleVis(transformed_cloud,cloud_normals,coefficients_cylinder);

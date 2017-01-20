@@ -33,14 +33,15 @@ int main (int argc, char** argv)
 	cloud->header.frame_id="world";
 	std::cerr << "PointCloud has: " << cloud->points.size () << " data points." << std::endl;
 
-	Eigen::Vector3f rot_dir(0.5,0.5,0.5);
+	Eigen::Vector3f rot_dir(1.0,0.0,0.0);
 	rot_dir.normalize();
 	Eigen::Matrix3f rot;
-	rot=Eigen::AngleAxisf(M_PI*0.25,rot_dir);
+	rot=Eigen::AngleAxisf(M_PI*0.5,rot_dir);
 	
 	Eigen::Matrix4f transf;
 	transf.block(0,0,3,3)=rot;
-	pcl::transformPointCloud (*cloud, *cloud, transf);
+	transf.block(0,3,3,1)=Eigen::Vector3f(100,100,100);
+	//pcl::transformPointCloud (*cloud, *cloud, transf);
   	/*static tf::TransformBroadcaster br;
 	tf::Transform transform;
 	transform.setOrigin( tf::Vector3(0, 0, 0.0) );
@@ -49,7 +50,7 @@ int main (int argc, char** argv)
 	transform.setRotation(q);
 	br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", turtle_name));*/
 	// Build a passthrough filter to remove spurious NaNs
-	ROS_INFO_STREAM(" 1. Filter");
+	/*ROS_INFO_STREAM(" 1. Filter");
 	pass.setInputCloud (cloud);
 	pass.setFilterFieldName ("z");
 	pass.setFilterLimits (0, 100000000);
@@ -57,7 +58,7 @@ int main (int argc, char** argv)
 	std::cerr << "PointCloud after filtering has: " << cloud->points.size () << " data points." << std::endl;
 
 	std::vector<int> indices;
-	pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
+	pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);*/
 
 	while (ros::ok())
 	{

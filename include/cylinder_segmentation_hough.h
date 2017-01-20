@@ -79,7 +79,8 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::Con
 	float max_radius;
 	float angle_step;
 	float r_step;
-	std::vector<std::vector<unsigned int> > cyl_direction_accum;
+	std::vector<float> cyl_direction_accum;
+	std::vector<Eigen::Vector3f> gaussian_sphere_points;
 	std::vector<std::vector<std::vector<unsigned int> > > cyl_circ_accum;
 	std::vector<Eigen::Vector3f> xy_circle_points;
 	pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
