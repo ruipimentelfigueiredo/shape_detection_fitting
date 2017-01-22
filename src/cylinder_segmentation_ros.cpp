@@ -5,6 +5,7 @@ CylinderSegmentationROS::CylinderSegmentationROS(ros::NodeHandle & n_) : n(n_), 
 	int angle_bins;
 	int radius_bins;
  	int position_bins;
+	int gaussian_sphere_points_num;
  	double min_radius;
  	double max_radius;
     	n_priv.param("angle_bins",angle_bins,50);
@@ -12,77 +13,83 @@ CylinderSegmentationROS::CylinderSegmentationROS(ros::NodeHandle & n_) : n(n_), 
     	n_priv.param("position_bins",position_bins,50);
     	n_priv.param("min_radius", min_radius, 0.1);
     	n_priv.param("max_radius", max_radius, 0.1);
-
+    	n_priv.param("gaussian_sphere_points_num", gaussian_sphere_points_num, 1000);
 	ROS_INFO_STREAM("angle_bins: "<< angle_bins);
 	ROS_INFO_STREAM("radius_bins: "<< radius_bins);
 	ROS_INFO_STREAM("position_bins: "<< position_bins);
 	ROS_INFO_STREAM("min_radius: "<< min_radius);
 	ROS_INFO_STREAM("max_radius: "<< max_radius);
-	cylinder_segmentation=boost::shared_ptr<CylinderSegmentationHough>(new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius));
+	ROS_INFO_STREAM("gaussian_sphere_points_num: "<< gaussian_sphere_points_num);
+	cylinder_segmentation=boost::shared_ptr<CylinderSegmentationHough>(new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num));
 	//cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
 	point_cloud_sub=n.subscribe<pcl::PointCloud<PointT> > ("cloud_in", 1, &CylinderSegmentationROS::cloud_cb, this);
 	vis_pub = n.advertise<visualization_msgs::MarkerArray>( "cylinders_markers", 0 );
+	cloud_pub=n.advertise<pcl::PointCloud<PointT> >("input_cloud", 0 );
 }
 
 
 void CylinderSegmentationROS::cloud_cb (const PointCloudT::ConstPtr& input)
 {
-  pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
-  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
-  pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices);
-  pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients);
-  // Build a passthrough filter to remove spurious NaNs
-  pcl::PassThrough<PointT> pass;
-  pass.setInputCloud (input);
-  pass.setFilterFieldName ("z");
-  pass.setFilterLimits (0, 1.5);
-  pass.filter (*cloud_filtered);
-  std::cerr << "PointCloud after filtering has: " << cloud_filtered->points.size () << " data points." << std::endl;
+	pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
+	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+	pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices);
+	pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients);
+	// Build a passthrough filter to remove spurious NaNs
+	pcl::PassThrough<PointT> pass;
+	pass.setInputCloud (input);
+	pass.setFilterFieldName ("x");
+	pass.setFilterLimits (-1.5, 1.5);
+	pass.setFilterFieldName ("y");
+	pass.setFilterLimits (-1.5, 1.5);
+	pass.setFilterFieldName ("z");
+	pass.setFilterLimits (-1.5, 1.5);
+	pass.filter (*cloud_filtered);
+	std::cerr << "PointCloud after filtering has: " << cloud_filtered->points.size () << " data points." << std::endl;
 
-  // Estimate point normals
-  pcl::NormalEstimation<PointT, pcl::Normal> ne;
-  pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT> ());
+	// Estimate point normals
+	pcl::NormalEstimation<PointT, pcl::Normal> ne;
+	pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT> ());
 
-  ne.setSearchMethod (tree);
-  ne.setInputCloud (cloud_filtered);
-  ne.setKSearch (50);
-  ne.compute (*cloud_normals);
+	ne.setSearchMethod (tree);
+	ne.setInputCloud (cloud_filtered);
+	ne.setKSearch (50);
+	ne.compute (*cloud_normals);
 
-  // Create the segmentation object for the planar model and set all the parameters
-  pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg; 
+	// Create the segmentation object for the planar model and set all the parameters
+	pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg; 
 
-  seg.setOptimizeCoefficients (true);
-  seg.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-  seg.setNormalDistanceWeight (0.1);
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setMaxIterations (100);
-  seg.setDistanceThreshold (0.03);
-  seg.setInputCloud (cloud_filtered);
-  seg.setInputNormals (cloud_normals);
-  // Obtain the plane inliers and coefficients
-  seg.segment (*inliers_plane, *coefficients_plane);
-  std::cerr << "Plane coefficients: " << *coefficients_plane << std::endl;
+	seg.setOptimizeCoefficients (true);
+	seg.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+	seg.setNormalDistanceWeight (0.1);
+	seg.setMethodType (pcl::SAC_RANSAC);
+	seg.setMaxIterations (100);
+	seg.setDistanceThreshold (0.03);
+	seg.setInputCloud (cloud_filtered);
+	seg.setInputNormals (cloud_normals);
+	// Obtain the plane inliers and coefficients
+	seg.segment (*inliers_plane, *coefficients_plane);
+	std::cerr << "Plane coefficients: " << *coefficients_plane << std::endl;
 
-
-  // Extract the planar inliers from the input cloud
-  pcl::ExtractIndices<PointT> extract;
-  extract.setInputCloud (cloud_filtered);
-  extract.setIndices (inliers_plane);
-  extract.setNegative (true);
-  extract.filter (*cloud_filtered);
-
-
+	// Extract the planar inliers from the input cloud
+	pcl::ExtractIndices<PointT> extract;
+	extract.setInputCloud (cloud_filtered);
+	extract.setIndices (inliers_plane);
+	extract.setNegative (true);
+	extract.filter (*cloud_filtered);
 
 	visualization_msgs::MarkerArray markers_;
-	// Create a container for the data.
-
+	// Create a container for the data.	
 	// Do data processing here...
-	pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation->segment(input);
+	const clock_t begin_time = clock();
+	pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation->segment(cloud_filtered);
+	std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds"<<std::endl;
 
 	// Publish the data.
 	visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,input->header.frame_id, 0);
 	markers_.markers.push_back(marker);
 	vis_pub.publish( markers_ );
+
+	cloud_pub.publish(input);
 }
 
 void CylinderSegmentationROS::clusters_cb (const visualization_msgs::MarkerArray::ConstPtr& input)
@@ -134,7 +141,7 @@ visualization_msgs::Marker CylinderSegmentationROS::createMarker(const pcl::Mode
 	{
 		tf::Vector3 right_vector = axis_vector.cross(up_vector);
 		right_vector.normalized();
-		std::cout << axis_vector[0] << " " <<axis_vector[1]<<" "<<axis_vector[2]  << " " << up_vector << std::endl;
+
 		q=tf::Quaternion(right_vector, -1.0*acos(axis_vector.dot(up_vector)));
 	}
 

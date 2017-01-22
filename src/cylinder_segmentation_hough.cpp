@@ -1,6 +1,7 @@
 #include "cylinder_segmentation_hough.h"
 
-CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float min_radius_, float max_radius_) : 
+CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float min_radius_, float max_radius_,unsigned int gaussian_sphere_points_num_) : 
+	gaussian_sphere_points_num(gaussian_sphere_points_num_),
 	angle_bins(angle_bins_),
 	angle_step(2*M_PI/angle_bins),
 	position_bins(position_bins_),
@@ -18,7 +19,6 @@ CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,un
 	// Create randomized structure
 	// By sampling a unitary sphere
 
-	int gaussian_sphere_points_num=1000;
 	
         for(int i=0;i<gaussian_sphere_points_num;++i)
         {
@@ -52,12 +52,7 @@ CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,un
 			cyl_circ_accum[i][j].resize(radius_bins);
 		}
 	}
-
-	for(unsigned int s=0; s<angle_bins;++s)
-	{
-		float angle=(float)s*angle_step;
-		xy_circle_points.push_back(Eigen::Vector3f(cos(angle),sin(angle),0.0));
-	}	
+	
 };
 
 pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT::ConstPtr & point_cloud_in_)
@@ -106,13 +101,13 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 
 
 
-	ROS_INFO_STREAM("    best votes="<< most_votes<<" best_direction_index="<<best_direction_index);
+	//ROS_INFO_STREAM("    best votes="<< most_votes<<" best_direction_index="<<best_direction_index);
 
 	ROS_INFO_STREAM("  3.5. Convert to direction vector");
 	Eigen::Vector3f cylinder_direction=gaussian_sphere_points[best_direction_index];
     
 
-	std::cout << "dir_vector:" << cylinder_direction << std::endl;
+	//std::cout << "dir_vector:" << cylinder_direction << std::endl;
 	ROS_INFO_STREAM(" 4. Step 2");
 
 	//Get rotation matrix
@@ -120,8 +115,14 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	R2=Eigen::Matrix4f::Identity();
 
    	Eigen::Vector3f up = Eigen::Vector3f::UnitZ();
-       	//Eigen::Vector3f xaxis = cylinder_direction.cross(up);
-       	Eigen::Vector3f rot_axis = up.cross(cylinder_direction);
+
+	if(up.dot(cylinder_direction)<0)
+	{
+		cylinder_direction=-cylinder_direction;
+	}
+       	//Eigen::Vector3f rot_axis = up.cross(cylinder_direction);
+	Eigen::Vector3f rot_axis = cylinder_direction.cross(up);
+
 	rot_axis.normalize();
 	if( isnan(rot_axis[0])||isnan(rot_axis[1])||isnan(rot_axis[2]))
 	{
@@ -130,11 +131,12 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	else
 	{
 		Eigen::Matrix3f aux;
-		aux=Eigen::AngleAxisf(-acos(up.dot(cylinder_direction)),rot_axis);
+		aux=Eigen::AngleAxisf(acos(cylinder_direction.dot(up)),rot_axis);
 		R2.block(0,0,3,3)=aux;
 	}
 
-    	std::cout << R2 << std::endl;
+    	//std::cout << R2 << std::endl;
+	//std::cout << "result rot:" << std::endl << R2.block(0,0,3,3)*cylinder_direction << std::endl;
   	// HERE FILTER POINTS THAT HAVE NORMAL NOT PERPENDICULAR TO CILINDER DIRECTION (CHECK CROSS PRODUCT)
 
 	// Extract the cylinder inliers from the input cloud
@@ -165,7 +167,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	// Get position voting boundaries
 	Eigen::Vector4f min_pt,max_pt;
 	pcl::getMinMax3D(*transformed_cloud,min_pt,max_pt);
-		ROS_INFO_STREAM(" min="<< min_pt <<" max="<<max_pt);
+	//ROS_INFO_STREAM(" min="<< min_pt <<" max="<<max_pt);
 	float u_position_step=(max_pt-min_pt)[0]/position_bins;
 	float v_position_step=(max_pt-min_pt)[1]/position_bins;
 
@@ -228,9 +230,9 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	float best_u=best_u_bin*u_position_step+min_pt[0];
 	float best_v=best_v_bin*v_position_step+min_pt[1];
 	float best_r=best_r_bin*r_step+min_radius;
-	ROS_INFO_STREAM("    best votes="<< most_votes<<" best_u="<< best_u_bin <<" best_v="<<best_v_bin<<" best_r="<<best_r);
+	//ROS_INFO_STREAM("    best votes="<< most_votes<<" best_u="<< best_u_bin <<" best_v="<<best_v_bin<<" best_r="<<best_r);
 	// Get u v in original frame
-	Eigen::Vector4f cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,0.0,1.0);
+	Eigen::Vector4f cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[2],0.0);
 
 
 
@@ -243,7 +245,10 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
     	coefficients_cylinder->values[4]=cylinder_direction[1];
     	coefficients_cylinder->values[5]=cylinder_direction[2];
     	coefficients_cylinder->values[6]=best_r;
-	std::cout << "pos:" << cylinder_position << std::endl;
+
+	float height=max_pt[2]-min_pt[2];
+	coefficients_cylinder->values[7]=height;
+
 	// EXTRACT HEIGHT AND MID POINT FOR INLIERS ONLY!!!
 	// Create the filtering object
 	PointCloudT::Ptr cloud_projected(new PointCloudT);
@@ -255,26 +260,27 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 
 	// Get MinMax
 	pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
-	float height=max_pt[2]-min_pt[2];
-	coefficients_cylinder->values[7]=height;
+	//float height=max_pt[2]-min_pt[2];
+	//coefficients_cylinder->values[7]=height;
 
 
 	// Redefine cylinder position (base);
-	/*Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,0.0,1.0);
-    	coefficients_cylinder->values[0]=refined_cylinder_position[0];
-    	coefficients_cylinder->values[1]=refined_cylinder_position[1];
-    	coefficients_cylinder->values[2]=refined_cylinder_position[2];
-		std::cout << "rfpos:" << refined_cylinder_position << std::endl;*/
+	//Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[2],0.0);
+    	//coefficients_cylinder->values[0]=refined_cylinder_position[0];
+    	//coefficients_cylinder->values[1]=refined_cylinder_position[1];
+    	//coefficients_cylinder->values[2]=refined_cylinder_position[2];
+
+	//std::cout << "height:" << height << std::endl;
 	// VISUALIZE
 
-    	viewer =simpleVis(transformed_cloud,cloud_normals,coefficients_cylinder);
+    	/*viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
 
    
 	while (!viewer->wasStopped ())
 	{
 		viewer->spinOnce (100);
 		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-	}
+	}//*/
 
 	return coefficients_cylinder;
 

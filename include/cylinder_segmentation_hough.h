@@ -72,6 +72,7 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::Con
 
 
 	// private attributes
+	unsigned int gaussian_sphere_points_num;
 	unsigned int angle_bins;
 	unsigned int radius_bins;
 	unsigned int position_bins;
@@ -82,7 +83,6 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::Con
 	std::vector<float> cyl_direction_accum;
 	std::vector<Eigen::Vector3f> gaussian_sphere_points;
 	std::vector<std::vector<std::vector<unsigned int> > > cyl_circ_accum;
-	std::vector<Eigen::Vector3f> xy_circle_points;
 	pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
 	pcl::PointCloud<PointT>::Ptr cloud_filtered;// (new pcl::PointCloud<PointT>);
 	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals;// (new pcl::PointCloud<pcl::Normal>);
@@ -93,8 +93,10 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::Con
 
 
 
+
+
 	public:
-		CylinderSegmentationHough(unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,float min_radius_=0.01,float max_radius_=0.1);
+		CylinderSegmentationHough(unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,float min_radius_=0.01,float max_radius_=0.1, unsigned int gaussian_sphere_points_num_=900);
 		pcl::ModelCoefficients::Ptr segment(const PointCloudT::ConstPtr & point_cloud_in_);
 };
 

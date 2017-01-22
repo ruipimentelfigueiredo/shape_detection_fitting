@@ -33,15 +33,6 @@ int main (int argc, char** argv)
 	cloud->header.frame_id="world";
 	std::cerr << "PointCloud has: " << cloud->points.size () << " data points." << std::endl;
 
-	Eigen::Vector3f rot_dir(1.0,0.0,0.0);
-	rot_dir.normalize();
-	Eigen::Matrix3f rot;
-	rot=Eigen::AngleAxisf(M_PI*0.5,rot_dir);
-	
-	Eigen::Matrix4f transf;
-	transf.block(0,0,3,3)=rot;
-	transf.block(0,3,3,1)=Eigen::Vector3f(100,100,100);
-	//pcl::transformPointCloud (*cloud, *cloud, transf);
   	/*static tf::TransformBroadcaster br;
 	tf::Transform transform;
 	transform.setOrigin( tf::Vector3(0, 0, 0.0) );
@@ -60,67 +51,52 @@ int main (int argc, char** argv)
 	std::vector<int> indices;
 	pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);*/
 
+	Eigen::Vector4f min_pt,max_pt;
+	pcl::getMinMax3D(*cloud,min_pt,max_pt);
+
 	while (ros::ok())
 	{
+		Eigen::Vector3f rot_dir;
+		cv::Mat aux(1, 1, CV_32F);
+
+		// Generate random orientation
+		cv::randn(aux, 0.0, 1.0);
+		rot_dir(0,0)=aux.at<float>(0,0);
+
+		cv::randn(aux, 0.0, 1.0);
+		rot_dir(1,0)=aux.at<float>(0,0);
+
+		cv::randn(aux, 0.0, 1.0);
+		rot_dir(2,0)=aux.at<float>(0,0);
+
+		rot_dir.normalize();
+
+		cv::Mat angle(1, 1, CV_32F);
+		cv::randn(angle, 0.0, 1.0);
+		//Eigen::Vector3f rot_dir(1.0,0.0,0.0);
+		rot_dir.normalize();
+		Eigen::Matrix3f rot;
+		rot=Eigen::AngleAxisf(M_PI*angle.at<float>(0,0),rot_dir);
+
+		Eigen::Matrix4f transf;
+		transf.block(0,0,3,3)=rot;
+		transf.block(0,3,3,1)=Eigen::Vector3f(0,0,0);
+		pcl::PointCloud<PointT>::Ptr cloud_transf (new pcl::PointCloud<PointT>);
+		pcl::transformPointCloud (*cloud, *cloud_transf, transf);
+	
+		// Corrupt with noise
+
 		ros::spinOnce();
 		loop_rate.sleep();
-		cloud_pub.publish(cloud);
+		cloud_pub.publish(cloud_transf);
 	}
-
-	///// REMOVE PLANE
-	// Estimate point normals
-	pcl::NormalEstimation<PointT, pcl::Normal> ne;
-	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
-	pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT> ());
-
-	ne.setSearchMethod (tree);
-	ne.setInputCloud (cloud);
-	ne.setKSearch (50);
-	ne.compute (*cloud_normals);
-	// Create the segmentation object for the planar model and set all the parameters
-
-	pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients), coefficients_cylinder (new pcl::ModelCoefficients);
-	pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices), inliers_cylinder (new pcl::PointIndices);
-	pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg; 
-	pcl::ExtractIndices<PointT> extract;
-
-	seg.setOptimizeCoefficients (true);
-	seg.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-	seg.setNormalDistanceWeight (0.1);
-	seg.setMethodType (pcl::SAC_RANSAC);
-	seg.setMaxIterations (100);
-	seg.setDistanceThreshold (0.03);
-	seg.setInputCloud (cloud);
-	seg.setInputNormals (cloud_normals);
-	// Obtain the plane inliers and coefficients
-	seg.segment (*inliers_plane, *coefficients_plane);
-	std::cerr << "Plane coefficients: " << *coefficients_plane << std::endl;
-
-	// Extract the planar inliers from the input cloud
-	extract.setInputCloud (cloud);
-	extract.setIndices (inliers_plane);
-	extract.setNegative (false);
-
-
-	// Remove the planar inliers, extract the rest
-	extract.setNegative (true);
-	extract.filter (*cloud);
-
-	// Recompute normals
-	ne.setSearchMethod (tree);
-	ne.setInputCloud (cloud);
-	ne.setKSearch (50);
-	ne.compute (*cloud_normals);
 
 
 	// Segment cylinder
-	CylinderSegmentationHough segmentation_obj(angle_bins, radius_bins, position_bins, mix_radius, max_radius);
-	const clock_t begin_time = clock();
 
-        //pcl::ModelCoefficients::Ptr cyl_parameters=segmentation_obj.segment(cloud);
-	std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC<< "seconds"<<std::endl;
 
-	std::cout << "done" << std::endl;
+
+
 
 	return (0);
 }
