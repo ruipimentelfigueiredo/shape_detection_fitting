@@ -81,7 +81,7 @@ void CylinderSegmentationROS::cloud_cb (const PointCloudT::ConstPtr& input)
 	// Create a container for the data.	
 	// Do data processing here...
 	const clock_t begin_time = clock();
-	pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation->segment(cloud_filtered);
+	pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation->segment(input);
 	std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds"<<std::endl;
 
 	// Publish the data.

@@ -49,26 +49,6 @@ class CylinderSegmentationHough
 {
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 
-boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::ConstPtr cloud,  pcl::PointCloud<pcl::Normal>::ConstPtr normals, pcl::ModelCoefficients::Ptr coefficients_cylinder)
-{
-	
-  // --------------------------------------------
-  // -----Open 3D viewer and add point cloud-----
-  // --------------------------------------------
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-  viewer->setBackgroundColor (0, 0, 0);
-  //pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(cloud);
-
-  viewer->addPointCloud<PointT> (cloud,  "sample cloud");
-  viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "sample cloud");
-  //viewer->addPointCloudNormals<PointT, NormalT> (cloud, normals, 10, 0.01, "normals");
-  viewer->addCylinder (*coefficients_cylinder);
-  viewer->addCoordinateSystem (1.0);
-  viewer->initCameraParameters ();
-
-
-  return (viewer);
-}
 
 
 	// private attributes
@@ -91,10 +71,10 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::Con
 	pcl::search::KdTree<PointT>::Ptr tree; 
 	pcl::PointIndices::Ptr inliers_cylinder;// (new pcl::PointIndices);
 
-
-
-
-
+	// private methods
+	Eigen::Vector3f findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals);
+	Eigen::Matrix<float,5,1> findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_);
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::ConstPtr cloud,  pcl::PointCloud<pcl::Normal>::ConstPtr normals, pcl::ModelCoefficients::Ptr coefficients_cylinder);
 	public:
 		CylinderSegmentationHough(unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,float min_radius_=0.01,float max_radius_=0.1, unsigned int gaussian_sphere_points_num_=900);
 		pcl::ModelCoefficients::Ptr segment(const PointCloudT::ConstPtr & point_cloud_in_);
