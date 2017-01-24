@@ -33,6 +33,10 @@ include_directories(
 # )
 
 find_package(PCL 1.7 REQUIRED)
+find_package(OpenCV REQUIRED
+NO_MODULE # should be optional, tells CMake to use config mode
+PATHS /usr/local # look here
+NO_DEFAULT_PATH) # and don't look anywhere else
 
 include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -47,6 +51,8 @@ target_link_libraries (cylinder_segmentation_test cylinder_segmentation_hough)
 add_executable (cylinder_segmentation_ros src/cylinder_segmentation_ros.cpp)
 target_link_libraries (cylinder_segmentation_ros cylinder_segmentation_hough)
 
+add_executable (hough_lines_cuda src/hough_lines_cuda.cpp)
+target_link_libraries (hough_lines_cuda -lopencv_cudaimgproc ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 #add_executable (pcd_visualizer src/pcd_visualizer.cpp)
 #target_link_libraries (pcd_visualizer ${PCL_LIBRARIES} ${catkin_LIBRARIES})

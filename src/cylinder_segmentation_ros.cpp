@@ -35,7 +35,7 @@ void CylinderSegmentationROS::cloud_cb (const PointCloudT::ConstPtr& input)
 	pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices);
 	pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients);
 	// Build a passthrough filter to remove spurious NaNs
-	pcl::PassThrough<PointT> pass;
+	/*pcl::PassThrough<PointT> pass;
 	pass.setInputCloud (input);
 	pass.setFilterFieldName ("x");
 	pass.setFilterLimits (-1.5, 1.5);
@@ -75,7 +75,7 @@ void CylinderSegmentationROS::cloud_cb (const PointCloudT::ConstPtr& input)
 	extract.setInputCloud (cloud_filtered);
 	extract.setIndices (inliers_plane);
 	extract.setNegative (true);
-	extract.filter (*cloud_filtered);
+	extract.filter (*cloud_filtered);*/
 
 	visualization_msgs::MarkerArray markers_;
 	// Create a container for the data.	

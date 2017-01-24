@@ -1,6 +1,6 @@
-angle_bins: 40
-radius_bins: 50
-position_bins: 50
+angle_bins: 30
+radius_bins: 20
+position_bins: 40
 min_radius: 50
 max_radius: 200
 gaussian_sphere_points_num: 1000

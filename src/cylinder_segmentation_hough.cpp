@@ -122,7 +122,6 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 
 Eigen::Matrix<float,5,1> CylinderSegmentationHough::findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_)
 {
-
 	// Get position voting boundaries
 	Eigen::Vector4f min_pt,max_pt;
 	pcl::getMinMax3D(*point_cloud_in_,min_pt,max_pt);
@@ -137,7 +136,6 @@ Eigen::Matrix<float,5,1> CylinderSegmentationHough::findCylinderPositionRadius(c
 		}
 	}
 	
-
 	ROS_INFO_STREAM("  4.2. Vote");
 	for(unsigned int r=0; r<radius_bins;++r)
 	{	
@@ -174,8 +172,8 @@ Eigen::Matrix<float,5,1> CylinderSegmentationHough::findCylinderPositionRadius(c
 	for (unsigned int u_index=0; u_index < position_bins; ++u_index) {
 		for (unsigned int v_index=0; v_index < position_bins; ++v_index) {
 			for (unsigned int r_index=0; r_index < radius_bins; ++r_index) {
-
-				if(cyl_circ_accum[u_index][v_index][r_index]>most_votes) {
+				if(cyl_circ_accum[u_index][v_index][r_index]>most_votes) 
+				{
 					best_u_bin=u_index;
 					best_v_bin=v_index;
 					best_r_bin=r_index;
@@ -206,12 +204,10 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	ne.setKSearch (50);
 	ne.compute (*cloud_normals);
 
-	
     	Eigen::Vector3f cylinder_direction=findCylinderDirection(cloud_normals);
 
 	//std::cout << "dir_vector:" << cylinder_direction << std::endl;
 	
-
 	ROS_INFO_STREAM(" 4. Step 2");
 
 	//Get rotation matrix
@@ -238,7 +234,9 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 		aux=Eigen::AngleAxisf(acos(cylinder_direction.dot(up)),rot_axis);
 		R2.block(0,0,3,3)=aux;
 	}
-
+	Eigen::Vector4f min_pt,max_pt;
+	pcl::getMinMax3D(*point_cloud_in_,min_pt,max_pt);
+	//R2.block(0,3,3,1)=min_pt.block(0,0,3,1);
     	//std::cout << R2 << std::endl;
 	//std::cout << "result rot:" << std::endl << R2.block(0,0,3,3)*cylinder_direction << std::endl;
   	// HERE FILTER POINTS THAT HAVE NORMAL NOT PERPENDICULAR TO CILINDER DIRECTION (CHECK CROSS PRODUCT)
@@ -256,6 +254,8 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 		}
 	}
 
+	std::cout << "points before:" << point_cloud_in_->size() << std::endl;
+
 	PointCloudT::Ptr transformed_cloud (new pcl::PointCloud<PointT> ());
 	pcl::ExtractIndices<PointT> extract;
 	extract.setInputCloud (point_cloud_in_);
@@ -263,11 +263,9 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	extract.setNegative (false);
 	extract.filter (*transformed_cloud);
 
-
+	std::cout << "points after:" << transformed_cloud->size() << std::endl;
 
 	// Executing the transformation that aligns the cylinder rotation axis with z_up)
-
-	// You can either apply transform_1 or transform_2; they are the same
 	pcl::transformPointCloud (*transformed_cloud, *transformed_cloud, R2);
 
 
@@ -275,7 +273,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	float radius=position_and_radius[3];
 	float height=position_and_radius[4];
 	// Convert back to original coordinates
-	Eigen::Vector3f cylinder_position=R2.block(0,0,3,3).transpose()*position_and_radius.block(0,0,1,3);
+	Eigen::Vector3f cylinder_position=R2.block(0,0,3,3).transpose()*position_and_radius.block(0,0,3,1);
 
 	pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);
     	coefficients_cylinder->values.resize(7);
