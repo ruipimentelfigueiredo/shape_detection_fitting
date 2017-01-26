@@ -19,6 +19,8 @@
 #include <pcl/sample_consensus/sac_model_cylinder.h>
 #include <pcl/sample_consensus/ransac.h>
 #include <pcl/filters/project_inliers.h>
+#include <pcl/registration/icp.h>
+
 #include <Eigen/Geometry>
 #include <tf/tf.h>
 
@@ -49,7 +51,7 @@ class CylinderSegmentationHough
 {
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 
-
+	
 
 	// private attributes
 	unsigned int gaussian_sphere_points_num;
@@ -60,6 +62,8 @@ class CylinderSegmentationHough
 	float max_radius;
 	float angle_step;
 	float r_step;
+
+	bool do_refine;
 	std::vector<float> cyl_direction_accum;
 	std::vector<Eigen::Vector3f> gaussian_sphere_points;
 	std::vector<std::vector<std::vector<unsigned int> > > cyl_circ_accum;
@@ -76,7 +80,8 @@ class CylinderSegmentationHough
 	Eigen::Matrix<float,5,1> findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_);
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::ConstPtr cloud,  pcl::PointCloud<pcl::Normal>::ConstPtr normals, pcl::ModelCoefficients::Ptr coefficients_cylinder);
 	public:
-		CylinderSegmentationHough(unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,float min_radius_=0.01,float max_radius_=0.1, unsigned int gaussian_sphere_points_num_=900);
+		CylinderSegmentationHough(unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,float min_radius_=0.01,float max_radius_=0.1, unsigned int gaussian_sphere_points_num_=900, bool refine_=false);
 		pcl::ModelCoefficients::Ptr segment(const PointCloudT::ConstPtr & point_cloud_in_);
+		Eigen::Matrix4f refine(const PointCloudT::ConstPtr & point_cloud_source_, const PointCloudT::ConstPtr & point_cloud_target_);
 };
 

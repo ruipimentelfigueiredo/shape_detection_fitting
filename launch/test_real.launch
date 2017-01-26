@@ -1,13 +1,20 @@
 <?xml version="1.0"?>
 <launch>
-  	<arg name="file_name" default="table_scene_mug_stereo_textured.pcd"/>
+  	<arg name="file_name" default="2017-01-12-19-25-31.bag"/>
   	<!--<arg name="file_name" default="cylinder.pcd"/>-->
 
   	<arg name="cloud_out" default="cylinders_pcl"/>
   	<arg name="rviz_file" default="cylinders.rviz"/>
-      	<node pkg="active_semantic_mapping" type="cylinder_segmentation_test" name="cloud_publisher" args="$(find active_semantic_mapping)/data/$(arg file_name)" output="screen">
-	        <remap from="cloud_out" to="$(arg cloud_out)"/>
-	</node>
+
+	<!-- rosbag -->
+	<node pkg="rosbag" type="play" name="player" output="screen" args="--clock $(find active_semantic_mapping)/data/$(arg file_name)"/>
+
+	<!-- mapping -->
+	<include file="$(find active_semantic_mapping)/launch/rtabmap+ork.launch">
+  		<arg name="cloud_in" value="$(arg cloud_out)"/>
+	</include>  
+
+	<!-- segmentation -->
 	<include file="$(find active_semantic_mapping)/launch/cylinder_segmentation.launch">
   		<arg name="cloud_in" value="$(arg cloud_out)"/>
 	</include>  

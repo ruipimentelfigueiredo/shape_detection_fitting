@@ -1,6 +1,6 @@
 #include "cylinder_segmentation_hough.h"
 
-CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float min_radius_, float max_radius_,unsigned int gaussian_sphere_points_num_) : 
+CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float min_radius_, float max_radius_,unsigned int gaussian_sphere_points_num_, bool do_refine_) : 
 	gaussian_sphere_points_num(gaussian_sphere_points_num_),
 	angle_bins(angle_bins_),
 	angle_step(2*M_PI/angle_bins),
@@ -13,7 +13,8 @@ CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,un
 	cloud_filtered(new pcl::PointCloud<PointT>),
 	cloud_normals(new pcl::PointCloud<pcl::Normal>),
 	tree(new pcl::search::KdTree<PointT> ()),
-	inliers_cylinder(new pcl::PointIndices)
+	inliers_cylinder(new pcl::PointIndices),
+	do_refine(do_refine_)
 {
 
 	// Create randomized structure
@@ -254,7 +255,6 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 		}
 	}
 
-	std::cout << "points before:" << point_cloud_in_->size() << std::endl;
 
 	PointCloudT::Ptr transformed_cloud (new pcl::PointCloud<PointT> ());
 	pcl::ExtractIndices<PointT> extract;
@@ -263,7 +263,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	extract.setNegative (false);
 	extract.filter (*transformed_cloud);
 
-	std::cout << "points after:" << transformed_cloud->size() << std::endl;
+
 
 	// Executing the transformation that aligns the cylinder rotation axis with z_up)
 	pcl::transformPointCloud (*transformed_cloud, *transformed_cloud, R2);
@@ -288,6 +288,10 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 
 	coefficients_cylinder->values[7]=height;
 
+	/*if(do_refine)
+	{
+
+	}*/
 	// EXTRACT HEIGHT AND MID POINT FOR INLIERS ONLY!!!
 	// Create the filtering object
 	/*PointCloudT::Ptr cloud_projected(new PointCloudT);
@@ -325,4 +329,17 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 
 }
 
+Eigen::Matrix4f CylinderSegmentationHough::refine(const PointCloudT::ConstPtr & point_cloud_source_, const PointCloudT::ConstPtr & point_cloud_target_)
+{
+	pcl::IterativeClosestPoint<PointT, PointT> icp;
+
+	icp.setInputSource(point_cloud_source_);
+	icp.setInputTarget(point_cloud_target_);
+	PointCloudT::Ptr Final(new PointCloudT);
+	icp.align(*Final);
+	std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
+	std::cout << icp.getFinalTransformation() << std::endl;
+
+	return icp.getFinalTransformation();
+}
 
