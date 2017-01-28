@@ -42,8 +42,11 @@ include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_library (cylinder_segmentation_hough src/cylinder_segmentation_hough.cpp)
+add_library (cylinder_segmentation_hough src/cylinder_segmentation.cpp src/cylinder_segmentation_hough.cpp)
 target_link_libraries (cylinder_segmentation_hough ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+
+add_library (cylinder_segmentation_ransac src/cylinder_segmentation.cpp src/cylinder_segmentation_ransac.cpp)
+target_link_libraries (cylinder_segmentation_ransac ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
 target_link_libraries (cylinder_segmentation_test cylinder_segmentation_hough)

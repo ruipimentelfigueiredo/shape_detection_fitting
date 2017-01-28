@@ -1,4 +1,6 @@
 #include "cylinder_segmentation_hough.h"
+#include "visualization_msgs/MarkerArray.h"
+
 class CylinderSegmentationROS {
 	ros::NodeHandle n;
 	ros::NodeHandle n_priv;
