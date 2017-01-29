@@ -21,16 +21,23 @@ int main (int argc, char** argv)
  	unsigned int position_bins=50;
 
 	// TESTING PARAMS
- 	float mix_radius=10.0;
+ 	float min_radius=10.0;
  	float max_radius=1000.0;
 	float noise_level=0.1; // percentage of object size (std_dev)
 	ros::Publisher cloud_pub;
 	cloud_pub=n.advertise<pcl::PointCloud<PointT> >( "cylinders_pcl", 0 );
 
+
+
+
 	while (ros::ok())
 	{
 
+
 		pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
+
+		//pcl::PCDReader reader;
+ 		//reader.read (argv[1], *cloud);
 		// Read in the cloud data
 		//pcl::PCDReader reader;
 		//reader.read (argv[1], *cloud);

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-  	<!--<arg name="file_name" default="table_scene_mug_stereo_textured.pcd"/>-->
-  	<arg name="file_name" default="cylinder.pcd"/>
+  	<arg name="file_name" default="table_scene_mug_stereo_textured.pcd"/>
+  	<!--<arg name="file_name" default="cylinder.pcd"/>-->
 
 
 

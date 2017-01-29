@@ -199,7 +199,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	Eigen::Vector3f rot_axis = cylinder_direction.cross(up);
 
 	rot_axis.normalize();
-	if( isnan(rot_axis[0])||isnan(rot_axis[1])||isnan(rot_axis[2]))
+	if(std::isnan(rot_axis[0])||std::isnan(rot_axis[1])||std::isnan(rot_axis[2]))
 	{
 		R2=Eigen::Matrix4f::Identity();
 	}
