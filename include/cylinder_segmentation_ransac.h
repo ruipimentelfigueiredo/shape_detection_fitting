@@ -5,12 +5,6 @@
 #include <pcl/sample_consensus/sac_model_cylinder.h>
 #include <pcl/sample_consensus/ransac.h>
 
-typedef pcl::PointXYZ PointT;
-typedef pcl::Normal NormalT;
-typedef pcl::PointCloud<PointT> PointCloudT;
-typedef pcl::PointCloud<NormalT> NormalCloudT;
-//pcl::visualization::CloudViewer viewer("Cloud Viewer");
-
 class CylinderSegmentationRansac : public CylinderSegmentation
 {
 	// Parameters

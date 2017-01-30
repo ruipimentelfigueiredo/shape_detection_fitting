@@ -12,7 +12,7 @@ CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,un
 
 	// Create randomized structure
 	// By randomly sampling a unitary sphere from a 3D, zero mean Gaussian distribution
-        for(int i=0;i<gaussian_sphere_points_num;++i)
+        for(unsigned int i=0;i<gaussian_sphere_points_num;++i)
         {
 		Eigen::Vector3f random_point;
 		cv::Mat aux(1, 1, CV_32F);
@@ -37,10 +37,10 @@ CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,un
 
 	// Alocate memory for circle accumulator
 	cyl_circ_accum.resize(position_bins);
-	for(int i=0;i<position_bins;++i)
+	for(unsigned int i=0;i<position_bins;++i)
 	{
 		cyl_circ_accum[i].resize(position_bins);
-		for(int j=0;j<position_bins;++j)
+		for(unsigned int j=0;j<position_bins;++j)
 		{
 			cyl_circ_accum[i][j].resize(radius_bins);
 		}

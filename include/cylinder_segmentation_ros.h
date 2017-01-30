@@ -1,6 +1,7 @@
 #include "cylinder_segmentation_hough.h"
 #include "visualization_msgs/MarkerArray.h"
 
+template <class detector_type>
 class CylinderSegmentationROS {
 	ros::NodeHandle n;
 	ros::NodeHandle n_priv;
@@ -11,10 +12,12 @@ class CylinderSegmentationROS {
 	ros::Publisher cloud_pub;
 	void cloud_cb (const PointCloudT::ConstPtr& input);
 	void clusters_cb (const visualization_msgs::MarkerArray::ConstPtr& input);
-public:
-	boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation;
 
-	CylinderSegmentationROS(ros::NodeHandle & n_);
+	boost::shared_ptr<detector_type> cylinder_segmentation;
+public:
+
+
+	CylinderSegmentationROS(ros::NodeHandle & n_, boost::shared_ptr<detector_type> & cylinder_segmentation_);
 
 	visualization_msgs::Marker createMarker(const pcl::ModelCoefficients::Ptr & model_params, int model_type, const std::string & frame, int id=0);
 };

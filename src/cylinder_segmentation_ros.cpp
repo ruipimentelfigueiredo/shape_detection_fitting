@@ -1,34 +1,20 @@
 #include "cylinder_segmentation_ros.h"
 
-CylinderSegmentationROS::CylinderSegmentationROS(ros::NodeHandle & n_) : n(n_), n_priv("~")
+template <class detector_type>
+CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle & n_, boost::shared_ptr<detector_type> & cylinder_segmentation_) : 
+	n(n_), 
+	n_priv("~"),
+	cylinder_segmentation(cylinder_segmentation_)
+	
 {
-	int angle_bins;
-	int radius_bins;
- 	int position_bins;
-	int gaussian_sphere_points_num;
- 	double min_radius;
- 	double max_radius;
-    	n_priv.param("angle_bins",angle_bins,50);
-    	n_priv.param("radius_bins",radius_bins,50);
-    	n_priv.param("position_bins",position_bins,50);
-    	n_priv.param("min_radius", min_radius, 0.1);
-    	n_priv.param("max_radius", max_radius, 0.1);
-    	n_priv.param("gaussian_sphere_points_num", gaussian_sphere_points_num, 1000);
-	ROS_INFO_STREAM("angle_bins: "<< angle_bins);
-	ROS_INFO_STREAM("radius_bins: "<< radius_bins);
-	ROS_INFO_STREAM("position_bins: "<< position_bins);
-	ROS_INFO_STREAM("min_radius: "<< min_radius);
-	ROS_INFO_STREAM("max_radius: "<< max_radius);
-	ROS_INFO_STREAM("gaussian_sphere_points_num: "<< gaussian_sphere_points_num);
-	cylinder_segmentation=boost::shared_ptr<CylinderSegmentationHough>(new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num));
 	//cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
 	point_cloud_sub=n.subscribe<pcl::PointCloud<PointT> > ("cloud_in", 1, &CylinderSegmentationROS::cloud_cb, this);
 	vis_pub = n.advertise<visualization_msgs::MarkerArray>( "cylinders_markers", 0 );
 	cloud_pub=n.advertise<pcl::PointCloud<PointT> >("input_cloud", 0 );
 }
 
-
-void CylinderSegmentationROS::cloud_cb (const PointCloudT::ConstPtr& input)
+template <class detector_type>
+void CylinderSegmentationROS<detector_type>::cloud_cb (const PointCloudT::ConstPtr& input)
 {
 	pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
 	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
@@ -92,7 +78,8 @@ void CylinderSegmentationROS::cloud_cb (const PointCloudT::ConstPtr& input)
 	cloud_pub.publish(input);
 }
 
-void CylinderSegmentationROS::clusters_cb (const visualization_msgs::MarkerArray::ConstPtr& input)
+template <class detector_type>
+void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_msgs::MarkerArray::ConstPtr& input)
 {
 	// Create a container for the data.
 	sensor_msgs::PointCloud2 output;
@@ -127,7 +114,8 @@ void CylinderSegmentationROS::clusters_cb (const visualization_msgs::MarkerArray
 
 }
 
-visualization_msgs::Marker CylinderSegmentationROS::createMarker(const pcl::ModelCoefficients::Ptr & model_params, int model_type, const std::string & frame, int id)
+template <class detector_type>
+visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(const pcl::ModelCoefficients::Ptr & model_params, int model_type, const std::string & frame, int id)
 {
 
 	tf::Vector3 axis_vector(model_params->values[3], model_params->values[4], model_params->values[5]);
@@ -187,9 +175,35 @@ int main (int argc, char** argv)
 	*/
 
 	ros::NodeHandle n;
+	ros::NodeHandle n_priv("~");
 	ros::Rate loop_rate(30);
 
-	CylinderSegmentationROS cylinder_segmentation_ros(n);
+	int angle_bins;
+	int radius_bins;
+ 	int position_bins;
+	int gaussian_sphere_points_num;
+ 	double min_radius;
+ 	double max_radius;
+    	n_priv.param("angle_bins",angle_bins,50);
+    	n_priv.param("radius_bins",radius_bins,50);
+    	n_priv.param("position_bins",position_bins,50);
+    	n_priv.param("min_radius", min_radius, 0.1);
+    	n_priv.param("max_radius", max_radius, 0.1);
+    	n_priv.param("gaussian_sphere_points_num", gaussian_sphere_points_num, 1000);
+
+	ROS_INFO_STREAM("angle_bins: "<< angle_bins);
+	ROS_INFO_STREAM("radius_bins: "<< radius_bins);
+	ROS_INFO_STREAM("position_bins: "<< position_bins);
+	ROS_INFO_STREAM("min_radius: "<< min_radius);
+	ROS_INFO_STREAM("max_radius: "<< max_radius);
+	ROS_INFO_STREAM("gaussian_sphere_points_num: "<< gaussian_sphere_points_num);
+	
+
+
+	boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation(new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num));
+
+
+	CylinderSegmentationROS<CylinderSegmentationHough> cylinder_segmentation_ros(n, cylinder_segmentation);
 	while (ros::ok())
 	{
 		ros::spinOnce();

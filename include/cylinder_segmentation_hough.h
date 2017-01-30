@@ -2,7 +2,6 @@
 
 class CylinderSegmentationHough : public CylinderSegmentation
 {
-
 	// private attributes
 	unsigned int gaussian_sphere_points_num;
 	unsigned int angle_bins;
