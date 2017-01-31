@@ -1,3 +1,5 @@
+#ifndef CYLINDERSEGMENTATIONRANSAC_H
+#define CYLINDERSEGMENTATIONRANSAC_H
 #include "cylinder_segmentation.h"
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
@@ -19,5 +21,4 @@ class CylinderSegmentationRansac : public CylinderSegmentation
 		pcl::ModelCoefficients::Ptr segment(const PointCloudT::ConstPtr & point_cloud_in_);
 };
 
-
-
+#endif // CYLINDERSEGMENTATIONRANSAC_H

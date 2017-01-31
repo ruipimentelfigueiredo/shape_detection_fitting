@@ -4,7 +4,6 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
         - /TF1/Frames1
       Splitter Ratio: 0.553340971
     Tree Height: 775
@@ -35,13 +34,29 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        camera_depth_frame:
+          Value: true
+        camera_depth_optical_frame:
+          Value: true
+        camera_link:
+          Value: true
+        camera_rgb_frame:
+          Value: true
+        camera_rgb_optical_frame:
+          Value: true
       Marker Scale: 2.9000001
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        camera_link:
+          camera_depth_frame:
+            camera_depth_optical_frame:
+              {}
+          camera_rgb_frame:
+            camera_rgb_optical_frame:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -80,9 +95,9 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: RGB8
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -95,15 +110,33 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.00999999978
       Style: Flat Squares
-      Topic: /input_cloud
+      Topic: /camera/depth_registered/points
       Unreliable: true
       Use Fixed Frame: true
       Use rainbow: true
+      Value: false
+    - Bounding Box: false
+      Class: object_recognition_ros/OrkTable
+      Color: 0; 255; 255
+      Enabled: true
+      Hull: true
+      Name: OrkTable
+      Top: true
+      Topic: /table_array
+      Unreliable: true
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /tabletop/clusters
+      Name: OrkClusters
+      Namespaces:
+        tabletop_node: true
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
-    Fixed Frame: world
+    Fixed Frame: camera_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -124,7 +157,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 8.17487717
+      Distance: 1.50715327
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -138,10 +171,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.154797897
+      Pitch: 0.47979793
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.31843734
+      Yaw: 2.72344065
     Saved: ~
 Window Geometry:
   Displays:

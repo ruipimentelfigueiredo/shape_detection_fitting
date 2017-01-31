@@ -1,3 +1,5 @@
+#ifndef CYLINDERSEGMENTATIONHOUGH_H
+#define CYLINDERSEGMENTATIONHOUGH_H
 #include "cylinder_segmentation.h"
 
 class CylinderSegmentationHough : public CylinderSegmentation
@@ -27,3 +29,4 @@ class CylinderSegmentationHough : public CylinderSegmentation
 
 };
 
+#endif // CYLINDERSEGMENTATIONHOUGH_H

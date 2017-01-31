@@ -55,7 +55,7 @@ add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
 target_link_libraries (cylinder_segmentation_test cylinder_segmentation_hough)
 
 add_executable (cylinder_segmentation_ros src/cylinder_segmentation_ros.cpp)
-target_link_libraries (cylinder_segmentation_ros cylinder_segmentation_hough)
+target_link_libraries (cylinder_segmentation_ros cylinder_segmentation_hough cylinder_segmentation_ransac)
 
 #add_executable (hough_lines_cuda src/hough_lines_cuda.cpp)
 #target_link_libraries (hough_lines_cuda -lopencv_cudaimgproc ${PCL_LIBRARIES} ${catkin_LIBRARIES})

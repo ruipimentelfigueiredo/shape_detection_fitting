@@ -209,8 +209,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 		aux=Eigen::AngleAxisf(acos(cylinder_direction.dot(up)),rot_axis);
 		R2.block(0,0,3,3)=aux;
 	}
-	Eigen::Vector4f min_pt,max_pt;
-	pcl::getMinMax3D(*point_cloud_in_,min_pt,max_pt);
+
 	//R2.block(0,3,3,1)=min_pt.block(0,0,3,1);
     	//std::cout << R2 << std::endl;
 	//std::cout << "result rot:" << std::endl << R2.block(0,0,3,3)*cylinder_direction << std::endl;
@@ -230,7 +229,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 	}
 
 
-	PointCloudT::Ptr transformed_cloud (new pcl::PointCloud<PointT> ());
+
 	pcl::ExtractIndices<PointT> extract;
 	extract.setInputCloud (point_cloud_in_);
 	extract.setIndices (inliers_cylinder);

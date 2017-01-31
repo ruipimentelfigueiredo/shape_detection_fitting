@@ -1,4 +1,5 @@
 #include "cylinder_segmentation_ros.h"
+#include <pcl/filters/voxel_grid.h>
 
 template <class detector_type>
 CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle & n_, boost::shared_ptr<detector_type> & cylinder_segmentation_) : 
@@ -7,8 +8,9 @@ CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle 
 	cylinder_segmentation(cylinder_segmentation_)
 	
 {
-	//cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
+	cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
 	point_cloud_sub=n.subscribe<pcl::PointCloud<PointT> > ("cloud_in", 1, &CylinderSegmentationROS::cloud_cb, this);
+	
 	vis_pub = n.advertise<visualization_msgs::MarkerArray>( "cylinders_markers", 0 );
 	cloud_pub=n.advertise<pcl::PointCloud<PointT> >("input_cloud", 0 );
 }
@@ -20,6 +22,7 @@ void CylinderSegmentationROS<detector_type>::cloud_cb (const PointCloudT::ConstP
 	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
 	pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices);
 	pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients);
+
 	// Build a passthrough filter to remove spurious NaNs
 	/*pcl::PassThrough<PointT> pass;
 	pass.setInputCloud (input);
@@ -104,7 +107,16 @@ void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_ms
 					//pcl::PointCloudinput->markers[i].points
 		}
 
-		pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation->segment(cloud_);
+		pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
+
+
+		// Create the filtering object
+		pcl::VoxelGrid<PointT> sor;
+		sor.setInputCloud(cloud_);
+		sor.setLeafSize(0.005f, 0.005f, 0.005f);
+		sor.filter(*cloud_filtered);
+
+		pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation->segment(cloud_filtered);
 		visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,input->markers[i].header.frame_id, i);
 
 		markers_.markers.push_back(marker);
@@ -160,7 +172,7 @@ visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(
 	marker.color.r = 0.0;
 	marker.color.g = 1.0;
 	marker.color.b = 0.0;
-	//marker.lifetime = ros::Duration(0.1);
+	marker.lifetime = ros::Duration(0.05);
 	return marker;
 }
 
@@ -178,37 +190,76 @@ int main (int argc, char** argv)
 	ros::NodeHandle n_priv("~");
 	ros::Rate loop_rate(30);
 
-	int angle_bins;
-	int radius_bins;
- 	int position_bins;
-	int gaussian_sphere_points_num;
+	bool use_ransac;
+
+	// Common params
  	double min_radius;
  	double max_radius;
-    	n_priv.param("angle_bins",angle_bins,50);
-    	n_priv.param("radius_bins",radius_bins,50);
-    	n_priv.param("position_bins",position_bins,50);
-    	n_priv.param("min_radius", min_radius, 0.1);
-    	n_priv.param("max_radius", max_radius, 0.1);
-    	n_priv.param("gaussian_sphere_points_num", gaussian_sphere_points_num, 1000);
 
-	ROS_INFO_STREAM("angle_bins: "<< angle_bins);
-	ROS_INFO_STREAM("radius_bins: "<< radius_bins);
-	ROS_INFO_STREAM("position_bins: "<< position_bins);
+    	n_priv.param("use_ransac",use_ransac,true);
+	ROS_INFO_STREAM("use_ransac: "<< use_ransac);
+    	
+	n_priv.param("min_radius", min_radius, 0.1);
+    	n_priv.param("max_radius", max_radius, 0.1);
+
 	ROS_INFO_STREAM("min_radius: "<< min_radius);
 	ROS_INFO_STREAM("max_radius: "<< max_radius);
-	ROS_INFO_STREAM("gaussian_sphere_points_num: "<< gaussian_sphere_points_num);
-	
 
-
-	boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation(new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num));
-
-
-	CylinderSegmentationROS<CylinderSegmentationHough> cylinder_segmentation_ros(n, cylinder_segmentation);
-	while (ros::ok())
+	if (use_ransac)
 	{
-		ros::spinOnce();
-		loop_rate.sleep();
+		// Ransac params
+		double normal_distance_weight;
+		int max_iterations;
+		double distance_threshold;
+
+	    	n_priv.param("normal_distance_weight",normal_distance_weight,0.1);
+	    	n_priv.param("max_iterations",max_iterations,100);
+	    	n_priv.param("distance_threshold",distance_threshold,0.1);
+
+		ROS_INFO_STREAM("normal_distance_weight: "<< normal_distance_weight);
+		ROS_INFO_STREAM("max_iterations: "<< max_iterations);
+		ROS_INFO_STREAM("distance_threshold: "<< distance_threshold);
+
+		boost::shared_ptr<CylinderSegmentationRansac> cylinder_segmentation(new CylinderSegmentationRansac((float)normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(float)min_radius, (float)max_radius));
+		CylinderSegmentationROS<CylinderSegmentationRansac> cylinder_segmentation_ros(n, cylinder_segmentation);
+
+		while (ros::ok())
+		{
+			ros::spinOnce();
+			loop_rate.sleep();
+		}
 	}
+	else
+	{
+		// Hough params
+		int angle_bins;
+		int radius_bins;
+	 	int position_bins;
+		int gaussian_sphere_points_num;
+
+	    	n_priv.param("angle_bins",angle_bins,50);
+	    	n_priv.param("radius_bins",radius_bins,50);
+	    	n_priv.param("position_bins",position_bins,50);
+	    	n_priv.param("gaussian_sphere_points_num", gaussian_sphere_points_num, 1000);
+
+		ROS_INFO_STREAM("angle_bins: "<< angle_bins);
+		ROS_INFO_STREAM("radius_bins: "<< radius_bins);
+		ROS_INFO_STREAM("position_bins: "<< position_bins);
+		ROS_INFO_STREAM("gaussian_sphere_points_num: "<< gaussian_sphere_points_num);
+
+		boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation(new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num));
+		CylinderSegmentationROS<CylinderSegmentationHough> cylinder_segmentation_ros(n, cylinder_segmentation);
+
+
+		while (ros::ok())
+		{
+			ros::spinOnce();
+			loop_rate.sleep();
+		}
+	}
+
+
+
   
 	return (0);
 }

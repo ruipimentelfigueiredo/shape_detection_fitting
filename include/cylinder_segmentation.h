@@ -1,3 +1,5 @@
+#ifndef CYLINDERSEGMENTATION_H
+#define CYLINDERSEGMENTATION_H
 #include <pcl_ros/point_cloud.h>
 
 #include <pcl/common/transforms.h>
@@ -41,7 +43,8 @@ class CylinderSegmentation
 	pcl::NormalEstimation<PointT, pcl::Normal> ne;
 	pcl::search::KdTree<PointT>::Ptr tree; 
 
-	pcl::PointCloud<PointT>::Ptr cloud_filtered;// (new pcl::PointCloud<PointT>);
+	PointCloudT::Ptr cloud_filtered;// (new pcl::PointCloud<PointT>);
+	PointCloudT::Ptr transformed_cloud;// (new pcl::PointCloud<PointT> ());
 	pcl::PointIndices::Ptr inliers_cylinder;// (new pcl::PointIndices);
 
 	pcl::PassThrough<PointT> pass;
@@ -56,11 +59,12 @@ class CylinderSegmentation
 			cloud_normals(new pcl::PointCloud<pcl::Normal>),
 			tree(new pcl::search::KdTree<PointT> ()),	
 			cloud_filtered(new pcl::PointCloud<PointT>),
+			transformed_cloud(new pcl::PointCloud<PointT> ()),
 			inliers_cylinder(new pcl::PointIndices)
 		{};
 
 		Eigen::Matrix4f refine(const PointCloudT::ConstPtr & point_cloud_source_, const PointCloudT::ConstPtr & point_cloud_target_);
 };
 
-
+#endif // CYLINDERSEGMENTATION_H
 
