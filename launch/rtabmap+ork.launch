@@ -210,6 +210,6 @@
     <remap from="cloud_in" to="$(arg camera_cloud_topic)"/>
     <remap from="clusters_in" to="$(arg tabletop_clusters_topic)"/>
   </node>
-	<!-- rosbag -->
-	<node pkg="rosbag" type="play" name="player" output="screen" args="--clock $(find active_semantic_mapping)/data/$(arg file_name)"/>
+  <!-- rosbag -->
+  <node pkg="rosbag" type="play" name="player" output="screen" args="--clock $(find active_semantic_mapping)/data/$(arg file_name)"/>
 </launch>
