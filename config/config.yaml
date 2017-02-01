@@ -2,7 +2,7 @@ use_ransac: false
 
 # common
 min_radius: 0.01
-max_radius: 0.1
+max_radius: 0.06
 
 # hough
 gaussian_sphere_points_num: 600
@@ -12,5 +12,13 @@ position_bins: 20
 
 # ransac
 normal_distance_weight: 0.1
-max_iterations: 1000
-distance_threshold: 0.005
+max_iterations: 10000
+distance_threshold: 0.05
+
+
+# voxel grid
+filter_field_name: z
+filter_limit_min: 0.01
+filter_limit_max: 1.5
+filter_limit_negative: False
+leaf_size: 0.03

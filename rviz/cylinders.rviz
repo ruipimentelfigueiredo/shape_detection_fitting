@@ -4,6 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /TF1/Frames1
       Splitter Ratio: 0.553340971
     Tree Height: 775
@@ -25,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: rgbd
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -44,6 +45,8 @@ Visualization Manager:
           Value: true
         camera_rgb_optical_frame:
           Value: true
+        odom:
+          Value: true
       Marker Scale: 2.9000001
       Name: TF
       Show Arrows: true
@@ -57,6 +60,8 @@ Visualization Manager:
           camera_rgb_frame:
             camera_rgb_optical_frame:
               {}
+        odom:
+          {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -136,7 +141,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
-    Fixed Frame: camera_link
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -157,7 +162,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.50715327
+      Distance: 5.24270725
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -171,10 +176,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.47979793
+      Pitch: 0.634797573
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.72344065
+      Yaw: 2.91843772
     Saved: ~
 Window Geometry:
   Displays:

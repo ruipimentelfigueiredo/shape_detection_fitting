@@ -41,6 +41,9 @@ NO_MODULE # should be optional, tells CMake to use config mode
 PATHS /usr/local # look here
 NO_DEFAULT_PATH) # and don't look anywhere else
 
+set(TRACKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tracking/cpp)
+include_directories(${TRACKER_DIR}/HybridEstimator)
+
 include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})

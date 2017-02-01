@@ -89,7 +89,7 @@ void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_ms
 
 	visualization_msgs::MarkerArray markers_;
 	//pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation.segment(input);
-	for(int i=0; i<input->markers.size();++i)
+	for(unsigned int i=0; i<input->markers.size();++i)
 	{
 
 		PointCloudT::Ptr cloud_(new PointCloudT);
@@ -97,7 +97,7 @@ void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_ms
 		cloud_->header.frame_id = input->markers[i].header.frame_id;
 		//cloud_->height = input->markers[i].height;
 
-		for (int p=0; p<input->markers[i].points.size();++p)
+		for (unsigned int p=0; p<input->markers[i].points.size();++p)
 		{
 
 			double x_=input->markers[i].points[p].x;

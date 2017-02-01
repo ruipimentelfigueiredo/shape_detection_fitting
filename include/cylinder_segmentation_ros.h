@@ -1,9 +1,16 @@
 #include "cylinder_segmentation_hough.h"
 #include "cylinder_segmentation_ransac.h"
 #include "visualization_msgs/MarkerArray.h"
+#include "multiple_tracker_manager.h"
+
+
 
 template <class detector_type>
 class CylinderSegmentationROS {
+
+	MultipleTrackerManager tracker_manager;
+	
+
 	ros::NodeHandle n;
 	ros::NodeHandle n_priv;
 	ros::Subscriber point_cloud_sub;
