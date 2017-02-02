@@ -1,7 +1,6 @@
 #ifndef TRACKER_H
 #define TRACKER_H
 
-
 #include "BaseBayesianTracker.hpp"
 
 template <class Obj, class PosEstim> class Tracker : public BaseBayesianTracker<Obj>
@@ -33,19 +32,22 @@ public:
         	this->objectPTR->setCovariance(stateCov.block(0, 0, obsSize, obsSize));
 
 	};
+
 	void postPredictComputations() {};
 
 	void update(Detection<Obj> &det)
 	{
+
 		VectorXd detPosition = det.getObjPTR()->getState();
+
+
 		positionEstimator->update(detPosition);
+
 		VectorXd state = positionEstimator->getStatePost();
 		MatrixXd stateCov = positionEstimator->getCovPost();
 
         	this->objectPTR->setState(state.head(obsSize));
         	this->objectPTR->setCovariance(stateCov.block(0, 0, obsSize, obsSize));
-
-
 	};
 
 	void postUpdateComputations() {};

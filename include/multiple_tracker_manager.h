@@ -11,7 +11,9 @@ class Cylinder : public Object
 {
 	public:
 		Cylinder(const VectorXd & state_, const MatrixXd & covariance_) : state(state_), covariance(covariance_)
-		{};
+		{
+			objectType=Object::TYPE_CYLINDER;
+		};
 
 		~Cylinder()
 		{};
@@ -29,7 +31,37 @@ class Cylinder : public Object
 
 		double compareWith(Object & otherObject, int mode, int metric)
 		{
-			
+			assert(this->getObjectType() == otherObject.getObjectType() && "Objects should have the same type if you wish to compare them. Check the types of detections and tracks if you are using them.");
+
+			Cylinder &otherPerson = dynamic_cast<Cylinder&>(otherObject);
+
+			switch (mode)
+			{
+				case(COMP_POSITION):
+
+					assert((metric == Comparator::METRIC_MAHALANOBIS || metric == Comparator::METRIC_EUCLIDEAN) && "Position distance can only use the Euclidean or the Mahalanobis metrics for now.");
+
+					//Mahalanobis distance between the detected person's position and this ones
+					//position distribution
+
+					if (metric == Comparator::METRIC_MAHALANOBIS)
+					{
+
+						return Comparator::mahalanobis(otherPerson.state, this->state, this->covariance.block(0,0,otherPerson.state.rows(),otherPerson.state.rows()));
+					}
+
+					else if (metric == Comparator::METRIC_EUCLIDEAN)
+					{
+						return Comparator::euclidean(otherPerson.state, this->state);
+					}
+
+					break;
+				default:
+
+					break;
+			}
+
+			return 0.0;
 		}
 
 		VectorXd getState()	
@@ -55,7 +87,7 @@ class Cylinder : public Object
 
 class MultipleTrackerManager
 {
-	static int current_index;
+	int current_index;
 	std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers;
 
 	protected:
@@ -90,23 +122,26 @@ class MultipleTrackerManager
 					0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0;
 
-		double T = 0.5;
+		double T = 0.03;
 
+		double vel_scale=10000.0;
 		MatrixXd processNoiseCovariance(14,14);
-		processNoiseCovariance << pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, pow(T, 3)/2, 0, 0, 0, 0, 0,
-        					0, pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, pow(T, 3)/2, 0, 0, 0, 0,
-						0, 0, pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, pow(T, 3)/2, 0, 0, 0, 
-						0, 0, 0, pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, pow(T, 3)/2, 0, 0,
-						0, 0, 0, 0, pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, pow(T, 3)/2, 0,
-						0, 0, 0, 0, 0, pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, pow(T, 3)/2,
+		processNoiseCovariance << pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, vel_scale*pow(T, 3)/2, 0, 0, 0, 0, 0,
+        					0, pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, vel_scale*pow(T, 3)/2, 0, 0, 0, 0,
+						0, 0, pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, vel_scale*pow(T, 3)/2, 0, 0, 0, 
+						0, 0, 0, pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, vel_scale*pow(T, 3)/2, 0, 0,
+						0, 0, 0, 0, pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, vel_scale*pow(T, 3)/2, 0,
+						0, 0, 0, 0, 0, pow(T,4)/4, 0, 0, 0, 0, 0, 0, 0, vel_scale*pow(T, 3)/2,
 						0, 0, 0, 0, 0, 0,  pow(T, 2), 0, 0, 0, 0, 0, 0, 0,
 						0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0, 0, 0, 0, 0, 0,
-						0, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0, 0, 0, 0, 0,
-						0, 0, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0, 0, 0, 0,
-						0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0, 0, 0,
-						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0, 0,
-						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0,
-						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2);
+						vel_scale*pow(T, 3)/2, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0, 0, 0, 0, 0,
+						0, vel_scale*pow(T, 3)/2, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0, 0, 0, 0,
+						0, 0, vel_scale*pow(T, 3)/2, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0, 0, 0,
+						0, 0, 0, vel_scale*pow(T, 3)/2, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0, 0,
+						0, 0, 0, 0, vel_scale*pow(T, 3)/2, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2), 0,
+						0, 0, 0, 0, 0, vel_scale*pow(T, 3)/2, 0, 0, 0, 0, 0, 0, 0,  pow(T, 2);
+
+		processNoiseCovariance=processNoiseCovariance*1.0;
 
 		MatrixXd observationNoiseCov(8,8);
 		observationNoiseCov << 1, 0, 0, 0, 0, 0, 0, 0,
@@ -118,40 +153,77 @@ class MultipleTrackerManager
 				       0, 0, 0, 0, 0, 0, 1, 0,
 				       0, 0, 0, 0, 0, 0, 0, 1;
 
-		
+		observationNoiseCov=observationNoiseCov*10000.0;
 		return std::shared_ptr<KalmanFilter>(new KalmanFilter(stateTransitionModel, observationModel, processNoiseCovariance, observationNoiseCov, initial_state, initial_cov));
 	}
 
 	public:
 
-	MultipleTrackerManager() {};
+	MultipleTrackerManager() :current_index(0) {
+		
+	};
 
 
 	// Process new measurements
-	void process(std::vector<Eigen::VectorXd> & detections_)
+	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > & process(std::vector<Eigen::VectorXd> & detections_)
 	{
-		MatrixXd initial_cov(8,8);
-		initial_cov << 1, 0, 0, 0, 0, 0, 0, 0,
-			       0, 1, 0, 0, 0, 0, 0, 0,
-			       0, 0, 1, 0, 0, 0, 0, 0,
-			       0, 0, 0, 1, 0, 0, 0, 0,
-			       0, 0, 0, 0, 1, 0, 0, 0,
-			       0, 0, 0, 0, 0, 1, 0, 0,
-			       0, 0, 0, 0, 0, 0, 1, 0,
-			       0, 0, 0, 0, 0, 0, 0, 1;
+		// KALMAN INIT COV
+		MatrixXd initial_cov(14,14);
+		initial_cov <<  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			        0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			        0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			        0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			        0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			        0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+			        0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1;
+		initial_cov=initial_cov*1000.0;
+
+		// DETECTIONS COV
+		MatrixXd initial_dummy_det_cov(8,8);
+		initial_dummy_det_cov <<  	1, 0, 0, 0, 0, 0, 0, 0, 
+						0, 1, 0, 0, 0, 0, 0, 0,
+						0, 0, 1, 0, 0, 0, 0, 0,  
+						0, 0, 0, 1, 0, 0, 0, 0,
+						0, 0, 0, 0, 1, 0, 0, 0,
+						0, 0, 0, 0, 0, 1, 0, 0,
+						0, 0, 0, 0, 0, 0, 1, 0, 
+						0, 0, 0, 0, 0, 0, 0, 1;
+
+
+		initial_dummy_det_cov=initial_dummy_det_cov*10000000000000000000.0;
 		std::vector<std::shared_ptr<Detection<Cylinder>>> detectionList;
+
+		// 0. Predict
+		for(unsigned int t=0; t<trackers.size();++t)
+		{
+			VectorXd temp=VectorXd();
+			trackers[t]->predict(temp);
+		}
+
+
 		// 1. Transform detections to right structure
 		for(unsigned int d=0; d<detections_.size(); ++d)
 		{
-			std::shared_ptr<Cylinder> cyl(new Cylinder(detections_[d], initial_cov));
-			std::shared_ptr<Detection<Cylinder>> detection1(new Detection<Cylinder>(cyl, "Camera"));
-			detectionList.push_back(detection1);
+			std::shared_ptr<Cylinder> cyl(new Cylinder(detections_[d], initial_dummy_det_cov));
+			std::shared_ptr<Detection<Cylinder>> detection(new Detection<Cylinder>(cyl, "Camera"));
+			detectionList.push_back(detection);
 		}
+	
+
 
 		// 2. Associate
-		HungarianAssociator<Cylinder, Tracker<Cylinder, KalmanFilter> > associator(Cylinder::COMP_POSITION, Comparator::METRIC_EUCLIDEAN);
+		HungarianAssociator<Cylinder, Tracker<Cylinder, KalmanFilter> > associator(Cylinder::COMP_POSITION, Comparator::METRIC_MAHALANOBIS);
+
 		AssociationList<Cylinder, Tracker<Cylinder, KalmanFilter> > assocList = associator.associateData(trackers, detectionList);
-	
+
+		
 		vector<Association<Cylinder, Tracker<Cylinder, KalmanFilter>>> success = assocList.getSuccessfulAssociations();
 		vector<shared_ptr<Detection<Cylinder> > > unDetections = assocList.getUnassociatedDetections();
 
@@ -162,11 +234,19 @@ class MultipleTrackerManager
 		}
 
 		// 4. Create trackers for unassociated detections
-		for(unsigned int a=0; a<success.size();++a)
+		for(unsigned int a=0; a<unDetections.size();++a)
 		{
-			std::shared_ptr<Tracker<Cylinder,KalmanFilter> > aux(new Tracker<Cylinder,KalmanFilter>(unDetections[a]->getObjPTR(),trackerInit(unDetections[a]->getObjPTR()->getState(),unDetections[a]->getObjPTR()->getCovariance())));
+			Eigen::VectorXd initial_state(14);
+			initial_state=Eigen::VectorXd::Zero(14);
+
+			initial_state.head(8)=unDetections[a]->getObjPTR()->getState().head(8);
+			std::shared_ptr<Tracker<Cylinder,KalmanFilter> > aux(new Tracker<Cylinder,KalmanFilter>(unDetections[a]->getObjPTR(),trackerInit(initial_state,initial_cov)));
+			aux->setTrackerId(current_index);
 			trackers.push_back(aux);
+			current_index++;
 		}
+
+		return trackers;
 	}
 };
 

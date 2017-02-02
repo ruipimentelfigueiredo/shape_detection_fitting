@@ -43,6 +43,9 @@ NO_DEFAULT_PATH) # and don't look anywhere else
 
 set(TRACKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tracking/cpp)
 include_directories(${TRACKER_DIR}/HybridEstimator)
+#include(${TRACKER_DIR}/HybridEstimator/CMakeLists.txt)
+## foveated stereo lib
+add_subdirectory(${TRACKER_DIR}/HybridEstimator)
 
 include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -58,7 +61,7 @@ add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
 target_link_libraries (cylinder_segmentation_test cylinder_segmentation_hough)
 
 add_executable (cylinder_segmentation_ros src/cylinder_segmentation_ros.cpp)
-target_link_libraries (cylinder_segmentation_ros cylinder_segmentation_hough cylinder_segmentation_ransac)
+target_link_libraries (cylinder_segmentation_ros cylinder_segmentation_hough cylinder_segmentation_ransac HybridEstimator)
 
 #add_executable (hough_lines_cuda src/hough_lines_cuda.cpp)
 #target_link_libraries (hough_lines_cuda -lopencv_cudaimgproc ${PCL_LIBRARIES} ${catkin_LIBRARIES})

@@ -8,6 +8,19 @@ CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle 
 	cylinder_segmentation(cylinder_segmentation_)
 	
 {
+
+	// INITIALIZE VISUALIZATION COLORS
+	id_colors_map.insert(std::pair<int,Color>(0,Color(0,   0.9  , 0.9, 0.2) ) );
+	id_colors_map.insert(std::pair<int,Color>(1,Color(0,   0.5, 0.7) ) );
+	id_colors_map.insert(std::pair<int,Color>(2,Color(0.4, 0.1, 0.4) ) );
+	id_colors_map.insert(std::pair<int,Color>(3,Color(0.3, 0.1, 0.9) ) );
+	id_colors_map.insert(std::pair<int,Color>(4,Color(0.1, 0.4, 0.1) ) );
+	id_colors_map.insert(std::pair<int,Color>(5,Color(0.5, 0.5, 0.9) ) );
+	id_colors_map.insert(std::pair<int,Color>(6,Color(0.1, 0.7, 0.1) ) );
+	id_colors_map.insert(std::pair<int,Color>(7,Color(0.9, 0.1, 0.5) ) );
+	id_colors_map.insert(std::pair<int,Color>(8,Color(0.9, 0.3, 0.3) ) );
+	id_colors_map.insert(std::pair<int,Color>(9,Color(0.2, 0.0, 0.9) ) );
+
 	cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
 	point_cloud_sub=n.subscribe<pcl::PointCloud<PointT> > ("cloud_in", 1, &CylinderSegmentationROS::cloud_cb, this);
 	
@@ -73,8 +86,11 @@ void CylinderSegmentationROS<detector_type>::cloud_cb (const PointCloudT::ConstP
 	Eigen::VectorXf model_params=cylinder_segmentation->segment(input);
 	ROS_INFO_STREAM("Cylinders detection time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
+	std::string marker_namespace_= "detections";
 	// Publish the data.
-	visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,input->header.frame_id, 0);
+
+	Color color_=id_colors_map.find(0)->second;
+	visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,input->header.frame_id, color_,0, marker_namespace_);
 	markers_.markers.push_back(marker);
 	vis_pub.publish( markers_ );
 
@@ -84,6 +100,8 @@ void CylinderSegmentationROS<detector_type>::cloud_cb (const PointCloudT::ConstP
 template <class detector_type>
 void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_msgs::MarkerArray::ConstPtr& input)
 {
+	if(input->markers.size()==0) return;
+
 	// Create a container for the data.
 	sensor_msgs::PointCloud2 output;
 
@@ -95,6 +113,12 @@ void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_ms
 	markers_.markers.push_back(marker_);
 	//pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation.segment(input);
 	const clock_t begin_time = clock();
+	std::vector<Eigen::VectorXd> detections_;
+	std::string marker_namespace_= "detections";
+
+		
+
+	std::string detections_frame_id=input->markers[0].header.frame_id;
 	for(unsigned int i=0; i<input->markers.size();++i)
 	{
 
@@ -123,12 +147,29 @@ void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_ms
 		sor.filter(*cloud_filtered);
 
 		Eigen::VectorXf model_params=cylinder_segmentation->segment(cloud_filtered);
-		visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,input->markers[i].header.frame_id, i);
+		detections_.push_back(model_params.cast <double> ());
+		Color color_=id_colors_map.find(0)->second;
+		visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_namespace_);
 
 
 		markers_.markers.push_back(marker);
 	}
 	ROS_INFO_STREAM("Cylinders detection time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
+
+	const clock_t begin_time_ = clock();
+	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers=tracker_manager.process(detections_);
+
+	marker_namespace_= "trackers";
+
+	for(unsigned int i=0; i<trackers.size();++i)
+	{
+		Eigen::VectorXf tracker_=trackers[i]->getObjPTR()->getState().cast<float>();
+		Color color_=id_colors_map.find(trackers[i]->getTrackerId() + 1)->second;
+		visualization_msgs::Marker marker=createMarker(tracker_,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_namespace_);
+		markers_.markers.push_back(marker);
+	}
+
+	ROS_INFO_STREAM("Cylinders tracking time: "<<float( clock () - begin_time_ ) /  CLOCKS_PER_SEC<< " seconds");
 
 	// Publish the data.
 	vis_pub.publish( markers_ );
@@ -136,9 +177,9 @@ void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_ms
 }
 
 template <class detector_type>
-visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(const Eigen::VectorXf & model_params, int model_type, const std::string & frame, int id)
+visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(const Eigen::VectorXf & model_params, int model_type, const std::string & frame, Color & color_, int id, std::string & marker_namespace_)
 {
-
+	// Convert direction vector to quaternion
 	tf::Vector3 axis_vector(model_params[3], model_params[4], model_params[5]);
 	tf::Vector3 up_vector(0.0, 0.0, 1.0);
 	tf::Quaternion q;
@@ -162,7 +203,7 @@ visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(
 	visualization_msgs::Marker marker;
 	marker.header.frame_id =frame;
 	marker.header.stamp = ros::Time();
-	marker.ns = "model";
+	marker.ns = marker_namespace_;
 	marker.id = id;
 	marker.type = model_type;
 	marker.action = visualization_msgs::Marker::ADD;
@@ -178,9 +219,9 @@ visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(
 	marker.scale.y = 2*model_params[6];
 	marker.scale.z = height;
 	marker.color.a = 1.0; // Don't forget to set the alpha!
-	marker.color.r = 0.0;
-	marker.color.g = 1.0;
-	marker.color.b = 0.0;
+	marker.color.r = color_.r;
+	marker.color.g = color_.g;
+	marker.color.b = color_.b;
 	//marker.lifetime = ros::Duration(0.05);
 	return marker;
 }
