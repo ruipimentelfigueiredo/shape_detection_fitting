@@ -24,7 +24,7 @@ class CylinderSegmentationHough : public CylinderSegmentation
 	public:
 		CylinderSegmentationHough(unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,float min_radius_=0.01,float max_radius_=0.1, unsigned int gaussian_sphere_points_num_=900, bool do_refine_=false);
 
-		pcl::ModelCoefficients::Ptr segment(const PointCloudT::ConstPtr & point_cloud_in_);
+		Eigen::VectorXf segment(const PointCloudT::ConstPtr & point_cloud_in_);
 
 
 };

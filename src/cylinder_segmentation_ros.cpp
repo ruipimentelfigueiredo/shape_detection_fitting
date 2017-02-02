@@ -70,8 +70,8 @@ void CylinderSegmentationROS<detector_type>::cloud_cb (const PointCloudT::ConstP
 	// Create a container for the data.	
 	// Do data processing here...
 	const clock_t begin_time = clock();
-	pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation->segment(input);
-	std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds"<<std::endl;
+	Eigen::VectorXf model_params=cylinder_segmentation->segment(input);
+	ROS_INFO_STREAM("Cylinders detection time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
 	// Publish the data.
 	visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,input->header.frame_id, 0);
@@ -88,7 +88,13 @@ void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_ms
 	sensor_msgs::PointCloud2 output;
 
 	visualization_msgs::MarkerArray markers_;
+
+	// First delete all markers
+	visualization_msgs::Marker marker_;
+	marker_.action = 3;
+	markers_.markers.push_back(marker_);
 	//pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation.segment(input);
+	const clock_t begin_time = clock();
 	for(unsigned int i=0; i<input->markers.size();++i)
 	{
 
@@ -116,21 +122,24 @@ void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_ms
 		sor.setLeafSize(0.005f, 0.005f, 0.005f);
 		sor.filter(*cloud_filtered);
 
-		pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation->segment(cloud_filtered);
+		Eigen::VectorXf model_params=cylinder_segmentation->segment(cloud_filtered);
 		visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,input->markers[i].header.frame_id, i);
+
 
 		markers_.markers.push_back(marker);
 	}
+	ROS_INFO_STREAM("Cylinders detection time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
+
 	// Publish the data.
 	vis_pub.publish( markers_ );
 
 }
 
 template <class detector_type>
-visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(const pcl::ModelCoefficients::Ptr & model_params, int model_type, const std::string & frame, int id)
+visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(const Eigen::VectorXf & model_params, int model_type, const std::string & frame, int id)
 {
 
-	tf::Vector3 axis_vector(model_params->values[3], model_params->values[4], model_params->values[5]);
+	tf::Vector3 axis_vector(model_params[3], model_params[4], model_params[5]);
 	tf::Vector3 up_vector(0.0, 0.0, 1.0);
 	tf::Quaternion q;
 	if(axis_vector.dot(up_vector)>0.99)
@@ -148,8 +157,8 @@ visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(
 	q.normalize();
 	geometry_msgs::Quaternion cylinder_orientation;
 	tf::quaternionTFToMsg(q, cylinder_orientation);
-	float height=model_params->values[7];
-	ROS_INFO_STREAM(frame);
+	float height=model_params[7];
+
 	visualization_msgs::Marker marker;
 	marker.header.frame_id =frame;
 	marker.header.stamp = ros::Time();
@@ -157,22 +166,22 @@ visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(
 	marker.id = id;
 	marker.type = model_type;
 	marker.action = visualization_msgs::Marker::ADD;
-	marker.pose.position.x = model_params->values[0]+0.5*height*axis_vector[0];
-	marker.pose.position.y = model_params->values[1]+0.5*height*axis_vector[1];
-	marker.pose.position.z = model_params->values[2]+0.5*height*axis_vector[2];
+	marker.pose.position.x = model_params[0]+0.5*height*axis_vector[0];
+	marker.pose.position.y = model_params[1]+0.5*height*axis_vector[1];
+	marker.pose.position.z = model_params[2]+0.5*height*axis_vector[2];
 	marker.pose.orientation = cylinder_orientation;
 /*		marker.pose.orientation.x = Q.x();
 	marker.pose.orientation.y = Q.y();
 	marker.pose.orientation.z = Q.z();
 	marker.pose.orientation.w = Q.w();*/
-	marker.scale.x = 2*model_params->values[6];
-	marker.scale.y = 2*model_params->values[6];
+	marker.scale.x = 2*model_params[6];
+	marker.scale.y = 2*model_params[6];
 	marker.scale.z = height;
 	marker.color.a = 1.0; // Don't forget to set the alpha!
 	marker.color.r = 0.0;
 	marker.color.g = 1.0;
 	marker.color.b = 0.0;
-	marker.lifetime = ros::Duration(0.05);
+	//marker.lifetime = ros::Duration(0.05);
 	return marker;
 }
 

@@ -25,6 +25,6 @@ class CylinderSegmentationROS {
 public:
 
 	CylinderSegmentationROS(ros::NodeHandle & n_, boost::shared_ptr<detector_type> & cylinder_segmentation_);
-	visualization_msgs::Marker createMarker(const pcl::ModelCoefficients::Ptr & model_params, int model_type, const std::string & frame, int id=0);
+	visualization_msgs::Marker createMarker(const Eigen::VectorXf & model_params, int model_type, const std::string & frame, int id=0);
 };
 

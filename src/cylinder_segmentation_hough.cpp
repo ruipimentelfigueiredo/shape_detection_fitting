@@ -55,14 +55,14 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 {
 
 	//3. for each point normal
-	ROS_INFO_STREAM(" 3. Step 1");
+	ROS_DEBUG_STREAM(" 3. Step 1");
 			
-	ROS_INFO_STREAM("  3.1. Reset accumulator");
+	ROS_DEBUG_STREAM("  3.1. Reset accumulator");
 
 	std::fill(cyl_direction_accum.begin(),cyl_direction_accum.end(), 0);
 
 
-	ROS_INFO_STREAM("  3.2. Vote");
+	ROS_DEBUG_STREAM("  3.2. Vote");
 	for(NormalCloudT::const_iterator n_it = cloud_normals->begin(); n_it != cloud_normals->end(); ++n_it)
 	{
 		for(int i=0; i<gaussian_sphere_points.size(); ++i)
@@ -72,7 +72,7 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 		}
 	}
 
-	ROS_INFO_STREAM("  3.3. Get max peak");
+	ROS_DEBUG_STREAM("  3.3. Get max peak");
 
 
 	float most_votes=0.0;
@@ -87,11 +87,11 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 	}
 	
 
-	ROS_INFO_STREAM("  3.4. Convert back to continuous");
+	ROS_DEBUG_STREAM("  3.4. Convert back to continuous");
 
-	//ROS_INFO_STREAM("    best votes="<< most_votes<<" best_direction_index="<<best_direction_index);
+	//ROS_DEBUG_STREAM("    best votes="<< most_votes<<" best_direction_index="<<best_direction_index);
 
-	ROS_INFO_STREAM("  3.5. Convert to direction vector");
+	ROS_DEBUG_STREAM("  3.5. Convert to direction vector");
 	return gaussian_sphere_points[best_direction_index];
 }
 
@@ -100,18 +100,18 @@ Eigen::Matrix<float,5,1> CylinderSegmentationHough::findCylinderPositionRadius(c
 	// Get position voting boundaries
 	Eigen::Vector4f min_pt,max_pt;
 	pcl::getMinMax3D(*point_cloud_in_,min_pt,max_pt);
-	//ROS_INFO_STREAM(" min="<< min_pt <<" max="<<max_pt);
+	//ROS_DEBUG_STREAM(" min="<< min_pt <<" max="<<max_pt);
 	float u_position_step=(max_pt-min_pt)[0]/position_bins;
 	float v_position_step=(max_pt-min_pt)[1]/position_bins;
 
-	ROS_INFO_STREAM("  4.1. Reset accumulator");
+	ROS_DEBUG_STREAM("  4.1. Reset accumulator");
 	for (unsigned int u_index=0; u_index < position_bins; ++u_index) {
 		for (unsigned int v_index=0; v_index < position_bins; ++v_index) {
 			std::fill(cyl_circ_accum[u_index][v_index].begin(),cyl_circ_accum[u_index][v_index].end(), 0);
 		}
 	}
 	
-	ROS_INFO_STREAM("  4.2. Vote");
+	ROS_DEBUG_STREAM("  4.2. Vote");
 	for(unsigned int r=0; r<radius_bins;++r)
 	{	
 		float current_radius=r_step*r+min_radius;
@@ -127,7 +127,7 @@ Eigen::Matrix<float,5,1> CylinderSegmentationHough::findCylinderPositionRadius(c
 				// Get discretized coordinates
 				unsigned int u_hough=floor( (current_radius*cos(current_angle)+u)/u_position_step);
 				unsigned int v_hough=floor( (current_radius*sin(current_angle)+v)/v_position_step);
-				//std::cout << cos(current_angle) <<" " <<u << " u_houg:" << u_hough << " v_hough:" << v_hough<< std::endl;
+
 				//if(u_hough<0||v_hough<0||u_hough>=position_bins||v_hough>=position_bins)
 				if(u_hough>=position_bins)
 					continue;//u_hough=position_bins-1;
@@ -135,7 +135,7 @@ Eigen::Matrix<float,5,1> CylinderSegmentationHough::findCylinderPositionRadius(c
 					continue;//v_hough=position_bins-1;
 				//	continue;
 
-				//std::cout << "nunca cheguei aqui" << std::endl;
+
 				++cyl_circ_accum[u_hough][v_hough][r];
 			}
 		}
@@ -162,7 +162,7 @@ Eigen::Matrix<float,5,1> CylinderSegmentationHough::findCylinderPositionRadius(c
 	float best_u=best_u_bin*u_position_step+min_pt[0];
 	float best_v=best_v_bin*v_position_step+min_pt[1];
 	float best_r=best_r_bin*r_step+min_radius;
-	//ROS_INFO_STREAM("    best votes="<< most_votes<<" best_u="<< best_u_bin <<" best_v="<<best_v_bin<<" best_r="<<best_r);
+	//ROS_DEBUG_STREAM("    best votes="<< most_votes<<" best_u="<< best_u_bin <<" best_v="<<best_v_bin<<" best_r="<<best_r);
 	// Get u v in original frame
 	Eigen::Matrix<float,5,1> result;
 	result << best_u, best_v, min_pt[2], best_r, (max_pt[2]-min_pt[2]);
@@ -170,20 +170,18 @@ Eigen::Matrix<float,5,1> CylinderSegmentationHough::findCylinderPositionRadius(c
 
 }
 
-pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT::ConstPtr & point_cloud_in_)
+Eigen::VectorXf CylinderSegmentationHough::segment(const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	//1.  Estimate point normals
-	ROS_INFO_STREAM(" 2. Estimate normals");
+	ROS_DEBUG_STREAM(" 2. Estimate normals");
 	ne.setSearchMethod (tree);
 	ne.setInputCloud (point_cloud_in_);
 	ne.setKSearch (50);
 	ne.compute (*cloud_normals);
 
     	Eigen::Vector3f cylinder_direction=findCylinderDirection(cloud_normals);
-
-	//std::cout << "dir_vector:" << cylinder_direction << std::endl;
 	
-	ROS_INFO_STREAM(" 4. Step 2");
+	ROS_DEBUG_STREAM(" 4. Step 2");
 
 	//Get rotation matrix
 	Eigen::Matrix4f R2;
@@ -298,7 +296,26 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationHough::segment(const PointCloudT
 		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 	}//*/
 
-	return coefficients_cylinder;
+	Eigen::VectorXf coeffs(8,1);
+	coeffs << 
+		coefficients_cylinder->values[0],
+		coefficients_cylinder->values[1],
+		coefficients_cylinder->values[2],
+		coefficients_cylinder->values[3],
+		coefficients_cylinder->values[4],
+		coefficients_cylinder->values[5],
+		coefficients_cylinder->values[6],
+		coefficients_cylinder->values[7];
+	/*viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
+
+
+	while (!viewer->wasStopped ())
+	{
+		viewer->spinOnce (100);
+		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+	}//*/
+
+	return coeffs;
 
 }
 

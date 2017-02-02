@@ -6,7 +6,7 @@ CylinderSegmentationRansac::CylinderSegmentationRansac(float normal_distance_wei
 	distance_threshold(distance_threshold_)
 {};
 
-pcl::ModelCoefficients::Ptr CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr & point_cloud_in_)
+Eigen::VectorXf CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	// Estimate point normals
 	ne.setSearchMethod (tree);
@@ -90,7 +90,16 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationRansac::segment(const PointCloud
     	coefficients_cylinder->values[2]=cylinder_position_final[2];
 	coefficients_cylinder->values[7]=fabs(max_pt[2]-min_pt[2]);
 
-	
+	Eigen::VectorXf coeffs(8,1);
+	coeffs << 
+		coefficients_cylinder->values[0],
+		coefficients_cylinder->values[1],
+		coefficients_cylinder->values[2],
+		coefficients_cylinder->values[3],
+		coefficients_cylinder->values[4],
+		coefficients_cylinder->values[5],
+		coefficients_cylinder->values[6],
+		coefficients_cylinder->values[7];
 	/*viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
 
 
@@ -100,7 +109,7 @@ pcl::ModelCoefficients::Ptr CylinderSegmentationRansac::segment(const PointCloud
 		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 	}//*/
 
-	return coefficients_cylinder;
+	return coeffs;
 }
 
 
