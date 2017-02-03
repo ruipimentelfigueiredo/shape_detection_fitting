@@ -27,30 +27,30 @@ CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle 
         sensor_msgs::CameraInfoConstPtr camera_info=ros::topic::waitForMessage<sensor_msgs::CameraInfo>(camera_info_topic, ros::Duration(10.0));
 
         //set the cameras intrinsic parameters
-        cam_intrinsic = cv::Mat::zeros(3,4,CV_32F);
-        cam_intrinsic.at<float>(0,0) = (float)camera_info->K.at(0);
-        cam_intrinsic.at<float>(1,1) = (float)camera_info->K.at(4);
-        cam_intrinsic.at<float>(0,2) = (float)camera_info->K.at(2);
-        cam_intrinsic.at<float>(1,2) = (float)camera_info->K.at(5);
-        cam_intrinsic.at<float>(2,2) = 1.0;
-        cam_intrinsic.at<float>(3,3) = 1.0;
+        cam_intrinsic = Eigen::Matrix4f::Identity();
+        cam_intrinsic(0,0) = (float)camera_info->K.at(0);
+        cam_intrinsic(0,2) = (float)camera_info->K.at(2);
+        cam_intrinsic(1,1) = (float)camera_info->K.at(4);
+        cam_intrinsic(1,2) = (float)camera_info->K.at(5);
+        cam_intrinsic(3,3) = 0.0;
+
+
 	// Advertise cylinders
 	vis_pub = n.advertise<visualization_msgs::MarkerArray>( "cylinders_markers", 1);
 
 	image_pub=n.advertise<sensor_msgs::Image >("cylinders_image", 1);
 
 	// Subscribe to point cloud and planar segmentation
-        point_cloud_sub=boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > (new message_filters::Subscriber<sensor_msgs::Image>(n, "image_in", 10));
+        image_sub=boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > (new message_filters::Subscriber<sensor_msgs::Image>(n, "image_in", 10));
         clusters_sub=boost::shared_ptr<message_filters::Subscriber<active_semantic_mapping::Clusters> > (new message_filters::Subscriber<active_semantic_mapping::Clusters>(n, "clusters_out_aux", 10));
 
-	sync=boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > (new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), *point_cloud_sub, *clusters_sub));
+	sync=boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > (new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), *image_sub, *clusters_sub));
         sync->registerCallback(boost::bind(&CylinderSegmentationROS<detector_type>::callback, this, _1, _2));
 
 	// Aux subscriber
 	cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
 	cluster_pub=n.advertise<active_semantic_mapping::Clusters>( "clusters_out_aux", 2);
-	//point_cloud_sub=n.subscribe<pcl::PointCloud<PointT> > ("cloud_in", 1, &CylinderSegmentationROS::cloud_cb, this);
-	
+
 	
 }
 
@@ -100,35 +100,30 @@ void CylinderSegmentationROS<detector_type>::callback (const sensor_msgs::Image:
 
 		// Get XY max and min and construct image
 
+		PointCloudT::Ptr cloud_projected(new PointCloudT);
+  		pcl::transformPointCloud (*cloud_filtered, *cloud_projected, cam_intrinsic);
+
+		for (unsigned int p=0; p<cloud_projected->points.size();++p)
+		{	
+			cloud_projected->points[p].x/=cloud_projected->points[p].z;
+			cloud_projected->points[p].y/=cloud_projected->points[p].z;
+			cloud_projected->points[p].z=1.0;
+		}
+
+		// Get minmax
 		Eigen::Vector4f min_pt,max_pt;
+		pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
 
-		pcl::getMinMax3D(*cloud_filtered,min_pt,max_pt);
-		cv::Mat min_point(4,1,CV_32F);
-		min_point.at<float>(0)=min_pt[0];
-		min_point.at<float>(1)=min_pt[1];
-		min_point.at<float>(2)=min_pt[2];
-		min_point.at<float>(3)=1.0;
-
-		cv::Mat max_point(4,1,CV_32F);
-		max_point.at<float>(0)=max_pt[0];
-		max_point.at<float>(1)=max_pt[1];
-		max_point.at<float>(2)=max_pt[2];
-		max_point.at<float>(3)=1.0;
-
-		// Project
-		min_point=cam_intrinsic*min_point;
-		max_point=cam_intrinsic*max_point;
-		
-		cv::Rect rect(min_point.at<float>(0), min_point.at<float>(1), max_point.at<float>(0)-min_point.at<float>(0), max_point.at<float>(1)-min_point.at<float>(1));
+	
+		cv::Rect rect(min_pt[0], min_pt[1], max_pt[0]-min_pt[0], max_pt[1]-min_pt[1]);
 		clusters_bboxes.push_back(rect);
-		//ROS_ERROR_STREAM("min_pt:" << min_pt);	
-		//ROS_ERROR_STREAM("cam_intrinsic:" << cam_intrinsic);
-		//ROS_INFO_STREAM("min_point:" << min_point << " max_point:" << max_point);
-		cv::rectangle(image_cv, cv::Point(min_point.at<float>(0),min_point.at<float>(1)), cv::Point(max_point.at<float>(0),max_point.at<float>(1)), cv::Scalar(0), 4);
-		//cv::rectangle(image_cv, Point pt1, Point pt2, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
+
+		// Visualize
+		cv::rectangle(image_cv, cv::Point(max_pt[0],max_pt[1]), cv::Point(min_pt[0],min_pt[1]), cv::Scalar(0), 4);
+
 	}
-	ROS_ERROR_STREAM("image frame id:" << input_image->header.frame_id);
-	ROS_ERROR_STREAM("clusters frame id:" << input_clusters->header.frame_id);
+
+
 	sensor_msgs::ImagePtr image_out = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image_cv).toImageMsg();
 	image_pub.publish(image_out);
 
