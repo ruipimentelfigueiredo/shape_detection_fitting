@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <launch>
-  	<arg name="cloud_in" default="/camera/r_camera/image_rect_color"/>
+  	<arg name="image_in" default="/camera/rgb/image_rect_color"/>
   	<arg name="clusters_in" default="/tabletop/clusters"/>
-	<node pkg="active_semantic_mapping" type="cylinder_segmentation_ros" name="cylinder_segmentation" respawn="false" output="screen">
-	        <remap from="cloud_in" to="$(arg cloud_in)"/>
+	<node pkg="active_semantic_mapping" type="cylinder_segmentation_ros" name="cylinder_segmentation" respawn="true" output="screen">
+	        <remap from="image_in" to="$(arg image_in)"/>
 	        <remap from="clusters_in" to="$(arg clusters_in)"/>
     		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
 	</node>

@@ -7,8 +7,23 @@ project(active_semantic_mapping)
 find_package(catkin REQUIRED COMPONENTS
   find_object_2d
   roscpp
+  message_filters
+  visualization_msgs
 )
 
+find_package(OpenCV REQUIRED)
+
+## Generate messages in the 'msg' folder
+ add_message_files(
+   FILES
+   Clusters.msg
+)
+
+generate_messages(
+   DEPENDENCIES
+   std_msgs  # Or other packages containing msgs
+  visualization_msgs
+)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES active_semantic_mapping
@@ -29,6 +44,9 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
+
+
+
 
 ## Declare a C++ library
 # add_library(active_semantic_mapping

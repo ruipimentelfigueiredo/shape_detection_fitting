@@ -6,7 +6,6 @@ CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle 
 	n(n_), 
 	n_priv("~"),
 	cylinder_segmentation(cylinder_segmentation_)
-	
 {
 
 	// INITIALIZE VISUALIZATION COLORS
@@ -14,22 +13,171 @@ CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle 
 	id_colors_map.insert(std::pair<int,Color>(1,Color(0,   0.5, 0.7) ) );
 	id_colors_map.insert(std::pair<int,Color>(2,Color(0.4, 0.1, 0.4) ) );
 	id_colors_map.insert(std::pair<int,Color>(3,Color(0.3, 0.1, 0.9) ) );
-	id_colors_map.insert(std::pair<int,Color>(4,Color(0.1, 0.4, 0.1) ) );
+	id_colors_map.insert(std::pair<int,Color>(4,Color(0.1, 0.4, 0.8) ) );
 	id_colors_map.insert(std::pair<int,Color>(5,Color(0.5, 0.5, 0.9) ) );
-	id_colors_map.insert(std::pair<int,Color>(6,Color(0.1, 0.7, 0.1) ) );
-	id_colors_map.insert(std::pair<int,Color>(7,Color(0.9, 0.1, 0.5) ) );
-	id_colors_map.insert(std::pair<int,Color>(8,Color(0.9, 0.3, 0.3) ) );
-	id_colors_map.insert(std::pair<int,Color>(9,Color(0.2, 0.0, 0.9) ) );
+	id_colors_map.insert(std::pair<int,Color>(6,Color(0.3, 0.7, 0.3) ) );
+	id_colors_map.insert(std::pair<int,Color>(7,Color(0.9, 0.4, 0.5) ) );
+	id_colors_map.insert(std::pair<int,Color>(8,Color(0.9, 0.6, 0.3) ) );
+	id_colors_map.insert(std::pair<int,Color>(9,Color(0.8, 0.0, 0.9) ) );
 
+
+        ROS_INFO("Getting cameras' parameters");
+        std::string camera_info_topic;
+        n_priv.param<std::string>("camera_info_topic", camera_info_topic, "camera_info_topic");
+        sensor_msgs::CameraInfoConstPtr camera_info=ros::topic::waitForMessage<sensor_msgs::CameraInfo>(camera_info_topic, ros::Duration(10.0));
+
+        //set the cameras intrinsic parameters
+        cam_intrinsic = cv::Mat::zeros(3,4,CV_32F);
+        cam_intrinsic.at<float>(0,0) = (float)camera_info->K.at(0);
+        cam_intrinsic.at<float>(1,1) = (float)camera_info->K.at(4);
+        cam_intrinsic.at<float>(0,2) = (float)camera_info->K.at(2);
+        cam_intrinsic.at<float>(1,2) = (float)camera_info->K.at(5);
+        cam_intrinsic.at<float>(2,2) = 1.0;
+        cam_intrinsic.at<float>(3,3) = 1.0;
+	// Advertise cylinders
+	vis_pub = n.advertise<visualization_msgs::MarkerArray>( "cylinders_markers", 1);
+
+	image_pub=n.advertise<sensor_msgs::Image >("cylinders_image", 1);
+
+	// Subscribe to point cloud and planar segmentation
+        point_cloud_sub=boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > (new message_filters::Subscriber<sensor_msgs::Image>(n, "image_in", 10));
+        clusters_sub=boost::shared_ptr<message_filters::Subscriber<active_semantic_mapping::Clusters> > (new message_filters::Subscriber<active_semantic_mapping::Clusters>(n, "clusters_out_aux", 10));
+
+	sync=boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > (new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), *point_cloud_sub, *clusters_sub));
+        sync->registerCallback(boost::bind(&CylinderSegmentationROS<detector_type>::callback, this, _1, _2));
+
+	// Aux subscriber
 	cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
-	point_cloud_sub=n.subscribe<pcl::PointCloud<PointT> > ("cloud_in", 1, &CylinderSegmentationROS::cloud_cb, this);
+	cluster_pub=n.advertise<active_semantic_mapping::Clusters>( "clusters_out_aux", 2);
+	//point_cloud_sub=n.subscribe<pcl::PointCloud<PointT> > ("cloud_in", 1, &CylinderSegmentationROS::cloud_cb, this);
 	
-	vis_pub = n.advertise<visualization_msgs::MarkerArray>( "cylinders_markers", 0 );
-	cloud_pub=n.advertise<pcl::PointCloud<PointT> >("input_cloud", 0 );
+	
+}
+
+
+template <class detector_type>
+void CylinderSegmentationROS<detector_type>::callback (const sensor_msgs::Image::ConstPtr& input_image, const active_semantic_mapping::Clusters::ConstPtr & input_clusters)
+{
+	cv::Mat image_cv;
+	image_cv =cv_bridge::toCvCopy(input_image, "bgr8")->image;
+
+	// Get cluster pcl point clouds and opencv bounding boxes
+	std::vector<PointCloudT::Ptr> clusters_point_clouds;
+	clusters_point_clouds.reserve(input_clusters->markers.markers.size());
+	std::vector<cv::Rect> clusters_bboxes;
+	clusters_bboxes.reserve(input_clusters->markers.markers.size());
+	for(unsigned int i=0; i<input_clusters->markers.markers.size();++i)
+	{
+		//////////////////////
+		// Get pcl clusters //
+		//////////////////////
+
+		PointCloudT::Ptr cloud_(new PointCloudT);
+		cloud_->header.frame_id = input_clusters->header.frame_id;
+		//cloud_->height = input_clusters->markers[i].height;
+
+		for (unsigned int p=0; p<input_clusters->markers.markers[i].points.size();++p)
+		{
+
+			double x_=input_clusters->markers.markers[i].points[p].x;
+			double y_=input_clusters->markers.markers[i].points[p].y;
+			double z_=input_clusters->markers.markers[i].points[p].z;
+			cloud_->points.push_back (pcl::PointXYZ(x_, y_, z_));
+					//pcl::PointCloudinput->markers[i].points
+		}
+
+		PointCloudT::Ptr cloud_filtered (new PointCloudT);
+		// Create the filtering object
+		pcl::VoxelGrid<PointT> sor;
+		sor.setInputCloud(cloud_);
+		sor.setLeafSize(0.005f, 0.005f, 0.005f);
+		sor.filter(*cloud_filtered);
+		clusters_point_clouds.push_back(cloud_filtered);
+		
+		///////////////////////////
+		// Get 2d bounding boxes //
+		///////////////////////////
+
+		// Get XY max and min and construct image
+
+		Eigen::Vector4f min_pt,max_pt;
+
+		pcl::getMinMax3D(*cloud_filtered,min_pt,max_pt);
+		cv::Mat min_point(4,1,CV_32F);
+		min_point.at<float>(0)=min_pt[0];
+		min_point.at<float>(1)=min_pt[1];
+		min_point.at<float>(2)=min_pt[2];
+		min_point.at<float>(3)=1.0;
+
+		cv::Mat max_point(4,1,CV_32F);
+		max_point.at<float>(0)=max_pt[0];
+		max_point.at<float>(1)=max_pt[1];
+		max_point.at<float>(2)=max_pt[2];
+		max_point.at<float>(3)=1.0;
+
+		// Project
+		min_point=cam_intrinsic*min_point;
+		max_point=cam_intrinsic*max_point;
+		
+		cv::Rect rect(min_point.at<float>(0), min_point.at<float>(1), max_point.at<float>(0)-min_point.at<float>(0), max_point.at<float>(1)-min_point.at<float>(1));
+		clusters_bboxes.push_back(rect);
+		//ROS_ERROR_STREAM("min_pt:" << min_pt);	
+		//ROS_ERROR_STREAM("cam_intrinsic:" << cam_intrinsic);
+		//ROS_INFO_STREAM("min_point:" << min_point << " max_point:" << max_point);
+		cv::rectangle(image_cv, cv::Point(min_point.at<float>(0),min_point.at<float>(1)), cv::Point(max_point.at<float>(0),max_point.at<float>(1)), cv::Scalar(0), 4);
+		//cv::rectangle(image_cv, Point pt1, Point pt2, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
+	}
+	ROS_ERROR_STREAM("image frame id:" << input_image->header.frame_id);
+	ROS_ERROR_STREAM("clusters frame id:" << input_clusters->header.frame_id);
+	sensor_msgs::ImagePtr image_out = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image_cv).toImageMsg();
+	image_pub.publish(image_out);
+
+
+
+
+	visualization_msgs::MarkerArray markers_;
+
+	// First delete all markers
+	visualization_msgs::Marker marker_;
+	marker_.action = 3;
+	markers_.markers.push_back(marker_);
+
+	// DETECT
+	const clock_t begin_time = clock();
+	std::vector<Eigen::VectorXd> detections_;
+	std::string detections_frame_id=input_clusters->markers.markers[0].header.frame_id;
+	for(unsigned int i=0; i<clusters_point_clouds.size();++i)
+	{
+		Eigen::VectorXf model_params=cylinder_segmentation->segment(clusters_point_clouds[i]);
+		detections_.push_back(model_params.cast <double> ());
+		Color color_=id_colors_map.find(0)->second;
+		visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_detections_namespace_);
+		markers_.markers.push_back(marker);
+	}
+
+	ROS_INFO_STREAM("Cylinders detection time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
+
+
+	// TRACK
+	const clock_t begin_time_ = clock();
+	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers=tracker_manager.process(detections_);
+
+	for(unsigned int i=0; i<trackers.size();++i)
+	{
+		Eigen::VectorXf tracker_=trackers[i]->getObjPTR()->getState().cast<float>();
+		Color color_=id_colors_map.find(trackers[i]->getTrackerId() + 1)->second;
+		visualization_msgs::Marker marker=createMarker(tracker_,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_trackers_namespace_);
+		markers_.markers.push_back(marker);
+	}
+
+	ROS_INFO_STREAM("Cylinders tracking time: "<<float( clock () - begin_time_ ) /  CLOCKS_PER_SEC<< " seconds");
+
+	// Publish the data.
+	vis_pub.publish( markers_ );
 }
 
 template <class detector_type>
-void CylinderSegmentationROS<detector_type>::cloud_cb (const PointCloudT::ConstPtr& input)
+void CylinderSegmentationROS<detector_type>::cloud_cb (const PointCloudT::ConstPtr& input_cloud)
 {
 	pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
 	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
@@ -38,7 +186,7 @@ void CylinderSegmentationROS<detector_type>::cloud_cb (const PointCloudT::ConstP
 
 	// Build a passthrough filter to remove spurious NaNs
 	/*pcl::PassThrough<PointT> pass;
-	pass.setInputCloud (input);
+	pass.setInputCloud (input_cloud);
 	pass.setFilterFieldName ("x");
 	pass.setFilterLimits (-1.5, 1.5);
 	pass.setFilterFieldName ("y");
@@ -83,101 +231,35 @@ void CylinderSegmentationROS<detector_type>::cloud_cb (const PointCloudT::ConstP
 	// Create a container for the data.	
 	// Do data processing here...
 	const clock_t begin_time = clock();
-	Eigen::VectorXf model_params=cylinder_segmentation->segment(input);
+	Eigen::VectorXf model_params=cylinder_segmentation->segment(input_cloud);
 	ROS_INFO_STREAM("Cylinders detection time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
 	std::string marker_namespace_= "detections";
 	// Publish the data.
 
 	Color color_=id_colors_map.find(0)->second;
-	visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,input->header.frame_id, color_,0, marker_namespace_);
+	visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,input_cloud->header.frame_id, color_,0, marker_namespace_);
 	markers_.markers.push_back(marker);
 	vis_pub.publish( markers_ );
 
-	cloud_pub.publish(input);
+}
+
+
+// AUX METHOD
+template <class detector_type>
+void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_msgs::MarkerArray::ConstPtr& input_clusters)
+{	
+	if(input_clusters->markers.size()==0) return;
+
+	active_semantic_mapping::Clusters clusters;
+	clusters.header=input_clusters->markers[0].header;
+	clusters.markers=*input_clusters;
+	cluster_pub.publish(clusters);
+	return;
 }
 
 template <class detector_type>
-void CylinderSegmentationROS<detector_type>::clusters_cb (const visualization_msgs::MarkerArray::ConstPtr& input)
-{
-	if(input->markers.size()==0) return;
-
-	// Create a container for the data.
-	sensor_msgs::PointCloud2 output;
-
-	visualization_msgs::MarkerArray markers_;
-
-	// First delete all markers
-	visualization_msgs::Marker marker_;
-	marker_.action = 3;
-	markers_.markers.push_back(marker_);
-	//pcl::ModelCoefficients::Ptr model_params=cylinder_segmentation.segment(input);
-	const clock_t begin_time = clock();
-	std::vector<Eigen::VectorXd> detections_;
-	std::string marker_namespace_= "detections";
-
-		
-
-	std::string detections_frame_id=input->markers[0].header.frame_id;
-	for(unsigned int i=0; i<input->markers.size();++i)
-	{
-
-		PointCloudT::Ptr cloud_(new PointCloudT);
-
-		cloud_->header.frame_id = input->markers[i].header.frame_id;
-		//cloud_->height = input->markers[i].height;
-
-		for (unsigned int p=0; p<input->markers[i].points.size();++p)
-		{
-
-			double x_=input->markers[i].points[p].x;
-			double y_=input->markers[i].points[p].y;
-			double z_=input->markers[i].points[p].z;
-			cloud_->points.push_back (pcl::PointXYZ(x_, y_, z_));
-					//pcl::PointCloudinput->markers[i].points
-		}
-
-		pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
-
-
-		// Create the filtering object
-		pcl::VoxelGrid<PointT> sor;
-		sor.setInputCloud(cloud_);
-		sor.setLeafSize(0.005f, 0.005f, 0.005f);
-		sor.filter(*cloud_filtered);
-
-		Eigen::VectorXf model_params=cylinder_segmentation->segment(cloud_filtered);
-		detections_.push_back(model_params.cast <double> ());
-		Color color_=id_colors_map.find(0)->second;
-		visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_namespace_);
-
-
-		markers_.markers.push_back(marker);
-	}
-	ROS_INFO_STREAM("Cylinders detection time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
-
-	const clock_t begin_time_ = clock();
-	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers=tracker_manager.process(detections_);
-
-	marker_namespace_= "trackers";
-
-	for(unsigned int i=0; i<trackers.size();++i)
-	{
-		Eigen::VectorXf tracker_=trackers[i]->getObjPTR()->getState().cast<float>();
-		Color color_=id_colors_map.find(trackers[i]->getTrackerId() + 1)->second;
-		visualization_msgs::Marker marker=createMarker(tracker_,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_namespace_);
-		markers_.markers.push_back(marker);
-	}
-
-	ROS_INFO_STREAM("Cylinders tracking time: "<<float( clock () - begin_time_ ) /  CLOCKS_PER_SEC<< " seconds");
-
-	// Publish the data.
-	vis_pub.publish( markers_ );
-
-}
-
-template <class detector_type>
-visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(const Eigen::VectorXf & model_params, int model_type, const std::string & frame, Color & color_, int id, std::string & marker_namespace_)
+visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(const Eigen::VectorXf & model_params, int model_type, const std::string & frame, Color & color_, int id, const std::string & marker_namespace_)
 {
 	// Convert direction vector to quaternion
 	tf::Vector3 axis_vector(model_params[3], model_params[4], model_params[5]);
@@ -218,7 +300,7 @@ visualization_msgs::Marker CylinderSegmentationROS<detector_type>::createMarker(
 	marker.scale.x = 2*model_params[6];
 	marker.scale.y = 2*model_params[6];
 	marker.scale.z = height;
-	marker.color.a = 1.0; // Don't forget to set the alpha!
+	marker.color.a = color_.a;
 	marker.color.r = color_.r;
 	marker.color.g = color_.g;
 	marker.color.b = color_.b;
