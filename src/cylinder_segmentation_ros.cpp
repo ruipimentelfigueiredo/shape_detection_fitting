@@ -58,6 +58,7 @@ CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle 
 template <class detector_type>
 void CylinderSegmentationROS<detector_type>::callback (const sensor_msgs::Image::ConstPtr& input_image, const active_semantic_mapping::Clusters::ConstPtr & input_clusters)
 {
+	static int image_number=0;
 	cv::Mat image_cv;
 	image_cv =cv_bridge::toCvCopy(input_image, "bgr8")->image;
 
@@ -99,27 +100,56 @@ void CylinderSegmentationROS<detector_type>::callback (const sensor_msgs::Image:
 		///////////////////////////
 
 		// Get XY max and min and construct image
+		for (unsigned int p=0; p<cloud_filtered->points.size();++p)
+		{	
+			cloud_filtered->points[p].x/=cloud_filtered->points[p].z;
+			cloud_filtered->points[p].y/=cloud_filtered->points[p].z;
+			cloud_filtered->points[p].z=1.0;
+		}
 
 		PointCloudT::Ptr cloud_projected(new PointCloudT);
   		pcl::transformPointCloud (*cloud_filtered, *cloud_projected, cam_intrinsic);
 
-		for (unsigned int p=0; p<cloud_projected->points.size();++p)
-		{	
-			cloud_projected->points[p].x/=cloud_projected->points[p].z;
-			cloud_projected->points[p].y/=cloud_projected->points[p].z;
-			cloud_projected->points[p].z=1.0;
-		}
+
 
 		// Get minmax
 		Eigen::Vector4f min_pt,max_pt;
 		pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
 
+
+
+		float padding =0.5;
+		float width=max_pt[0]-min_pt[0];
+		float height=max_pt[1]-min_pt[1];
 	
-		cv::Rect rect(min_pt[0], min_pt[1], max_pt[0]-min_pt[0], max_pt[1]-min_pt[1]);
+		// PAD
+		float width_padding=0.5*padding*width;
+		float height_padding=0.5*padding*height;
+
+		(min_pt[0]-width_padding)  <0 ? min_pt[0]=0 : min_pt[0]-=width_padding;
+		(min_pt[1]-height_padding) <0 ? min_pt[1]=0 : min_pt[1]-=height_padding;
+
+		(max_pt[0]+width_padding)  >(image_cv.cols-1) ? max_pt[0]=(image_cv.cols-1)  : max_pt[0]+=width_padding;
+		(max_pt[1]+height_padding) >(image_cv.rows-1) ? max_pt[1]=(image_cv.rows-1) : max_pt[1]+=height_padding;
+		
+		width=max_pt[0]-min_pt[0];
+		height=max_pt[1]-min_pt[1];
+		// end pad
+
+		cv::Rect rect(min_pt[0], min_pt[1], width, height);
 		clusters_bboxes.push_back(rect);
 
 		// Visualize
-		cv::rectangle(image_cv, cv::Point(max_pt[0],max_pt[1]), cv::Point(min_pt[0],min_pt[1]), cv::Scalar(0), 4);
+		cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0), 4);
+
+		//cv::Mat roi = image_cv(rect);
+
+		/*cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
+		cv::imshow( "Display window", roi );                   // Show our image inside it.
+		cv::waitKey(0);*/ 
+
+ 		imwrite("/home/rui/cylinders/image_"+std::to_string(image_number++)+".jpg", image_cv(rect) );
+
 
 	}
 
