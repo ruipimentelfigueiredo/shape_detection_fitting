@@ -64,12 +64,12 @@ class Cylinder : public Object
 			return 0.0;
 		}
 
-		VectorXd getState()	
+		VectorXd getObservableStates()	
 		{
 			return this->state;
 		}
 
-		MatrixXd getCovariance()
+		MatrixXd getObervableCovariance()
 		{
 			return this->covariance;
 		}
@@ -78,6 +78,7 @@ class Cylinder : public Object
 		{
 			return std::shared_ptr<Object>(new Cylinder(this->state, this->covariance));
 		}
+
 
 	protected:
 		// Attributes
@@ -239,7 +240,7 @@ class MultipleTrackerManager
 			Eigen::VectorXd initial_state(14);
 			initial_state=Eigen::VectorXd::Zero(14);
 
-			initial_state.head(8)=unDetections[a]->getObjPTR()->getState().head(8);
+			initial_state.head(8)=unDetections[a]->getObjPTR()->getObservableStates().head(8);
 			std::shared_ptr<Tracker<Cylinder,KalmanFilter> > aux(new Tracker<Cylinder,KalmanFilter>(unDetections[a]->getObjPTR(),trackerInit(initial_state,initial_cov)));
 			aux->setTrackerId(current_index);
 			trackers.push_back(aux);

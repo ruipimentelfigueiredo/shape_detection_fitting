@@ -12,7 +12,7 @@ public:
 	Tracker(std::shared_ptr<Obj> objectPTR, std::shared_ptr<PosEstim> positionEstimator) : positionEstimator(positionEstimator)
 	{
 		this->objectPTR = objectPTR;
-		obsSize = objectPTR->getState().size();
+		obsSize = objectPTR->getObservableStates().size();
 		this->trackerType = objectPTR->getObjectType();
 	};
 
@@ -38,7 +38,7 @@ public:
 	void update(Detection<Obj> &det)
 	{
 
-		VectorXd detPosition = det.getObjPTR()->getState();
+		VectorXd detPosition = det.getObjPTR()->getObservableStates();
 
 
 		positionEstimator->update(detPosition);

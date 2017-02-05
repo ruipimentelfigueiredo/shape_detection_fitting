@@ -5,6 +5,7 @@ template <class detector_type>
 CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle & n_, boost::shared_ptr<detector_type> & cylinder_segmentation_) : 
 	n(n_), 
 	n_priv("~"),
+    	listener(new tf::TransformListener(ros::Duration(3.0))),
 	cylinder_segmentation(cylinder_segmentation_)
 {
 
@@ -19,7 +20,7 @@ CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle 
 	id_colors_map.insert(std::pair<int,Color>(7,Color(0.9, 0.4, 0.5) ) );
 	id_colors_map.insert(std::pair<int,Color>(8,Color(0.9, 0.6, 0.3) ) );
 	id_colors_map.insert(std::pair<int,Color>(9,Color(0.8, 0.0, 0.9) ) );
-
+	odom_link="/odom";
 
         ROS_INFO("Getting cameras' parameters");
         std::string camera_info_topic;
@@ -37,7 +38,6 @@ CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle 
 
 	// Advertise cylinders
 	vis_pub = n.advertise<visualization_msgs::MarkerArray>( "cylinders_markers", 1);
-
 	image_pub=n.advertise<sensor_msgs::Image >("cylinders_image", 1);
 
 	// Subscribe to point cloud and planar segmentation
@@ -51,13 +51,62 @@ CylinderSegmentationROS<detector_type>::CylinderSegmentationROS(ros::NodeHandle 
 	cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
 	cluster_pub=n.advertise<active_semantic_mapping::Clusters>( "clusters_out_aux", 2);
 
-	
+
+	// Odom subscriber
+	odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &CylinderSegmentationROS::odomCallback, this);	
 }
 
 
 template <class detector_type>
 void CylinderSegmentationROS<detector_type>::callback (const sensor_msgs::Image::ConstPtr& input_image, const active_semantic_mapping::Clusters::ConstPtr & input_clusters)
 {
+	ros::Time odom_time=ros::Time::now();
+
+	tf::StampedTransform deltaTf;
+
+
+	// Get odom delta motion in cartesian coordinates with TF
+	try
+	{
+		listener->waitForTransform(input_clusters->header.frame_id, odom_last_stamp, input_clusters->header.frame_id, odom_time , odom_link, ros::Duration(0.5) );
+		listener->lookupTransform(input_clusters->header.frame_id, odom_last_stamp, input_clusters->header.frame_id, odom_time, odom_link, deltaTf); // delta position
+	}
+	catch (tf::TransformException &ex)
+	{
+		//odom_initialized_=false;
+		ROS_WARN("%s",ex.what());
+		return;
+	}
+
+
+	// Get relative transformation
+	Eigen::Matrix3f rotation;
+	rotation=Eigen::AngleAxisf(deltaTf.getRotation().getAngle(),
+				   Eigen::Vector3f(deltaTf.getRotation().getAxis()[0],
+				    		   deltaTf.getRotation().getAxis()[1],
+				   		   deltaTf.getRotation().getAxis()[2])); 
+
+	Eigen::Vector4f translation(deltaTf.getOrigin().getX(),deltaTf.getOrigin().getY(), deltaTf.getOrigin().getZ(),1.0);
+    	double dx=deltaTf.getOrigin().getX();
+    	double dy=deltaTf.getOrigin().getY();
+    	double dz=deltaTf.getOrigin().getZ();
+    	double d_theta=deltaTf.getRotation().getAxis()[2]*deltaTf.getRotation().getAngle();
+
+	Eigen::Matrix4f transform;
+	transform.block(0,0,3,3)=rotation;
+	transform.block(0,3,4,1)=translation;
+
+	ROS_ERROR_STREAM("dx:"<<dx<<" dy:"<<dy<<" dz:"<<dz);
+	ROS_ERROR_STREAM("transform:"<<transform);
+    	// See if we should update the filter
+    	/*if(!(fabs(dx) > d_thresh_ || fabs(dy) > d_thresh_ || fabs(d_theta) > a_thresh_))
+    	{
+        	return;
+    	}*/
+
+
+	odom_last_stamp=odom_time;
+
 	cv::Mat image_cv;
 	image_cv =cv_bridge::toCvCopy(input_image, "bgr8")->image;
 
@@ -127,9 +176,6 @@ void CylinderSegmentationROS<detector_type>::callback (const sensor_msgs::Image:
 	sensor_msgs::ImagePtr image_out = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image_cv).toImageMsg();
 	image_pub.publish(image_out);
 
-
-
-
 	visualization_msgs::MarkerArray markers_;
 
 	// First delete all markers
@@ -159,7 +205,7 @@ void CylinderSegmentationROS<detector_type>::callback (const sensor_msgs::Image:
 
 	for(unsigned int i=0; i<trackers.size();++i)
 	{
-		Eigen::VectorXf tracker_=trackers[i]->getObjPTR()->getState().cast<float>();
+		Eigen::VectorXf tracker_=trackers[i]->getObjPTR()->getObservableStates().cast<float>();
 		Color color_=id_colors_map.find(trackers[i]->getTrackerId() + 1)->second;
 		visualization_msgs::Marker marker=createMarker(tracker_,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_trackers_namespace_);
 		markers_.markers.push_back(marker);

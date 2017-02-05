@@ -10,7 +10,9 @@
 #include <message_filters/sync_policies/approximate_time.h>
 
 #include <cv_bridge/cv_bridge.h>
+#include <tf/transform_listener.h>
 
+#include <nav_msgs/Odometry.h>
 
 class Color
 {
@@ -23,6 +25,10 @@ class Color
 
 template <class detector_type>
 class CylinderSegmentationROS {
+
+	boost::shared_ptr<tf::TransformListener> listener;
+	ros::Time odom_last_stamp;
+	std::string odom_link;
 
 	const std::string marker_detections_namespace_ ="detections";
 	const std::string marker_trackers_namespace_ ="trackers";
@@ -47,6 +53,8 @@ class CylinderSegmentationROS {
 	ros::Publisher cluster_pub;
 	ros::Subscriber cluster_sub;
 
+	ros::Subscriber odom_sub;
+
 
 	void cloud_cb (const PointCloudT::ConstPtr& input);
 	void clusters_cb (const visualization_msgs::MarkerArray::ConstPtr& input);
@@ -59,6 +67,11 @@ class CylinderSegmentationROS {
     	boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> >sync;
 
   	void callback (const sensor_msgs::Image::ConstPtr& input_image, const active_semantic_mapping::Clusters::ConstPtr & input_clusters);
+  	void odomCallback (const nav_msgs::Odometry::ConstPtr& odom_msg)
+	{
+		ROS_ERROR_STREAM("ODOMETRY linear:" << odom_msg->twist.twist.linear);
+		ROS_ERROR_STREAM("ODOMETRY angular:" << odom_msg->twist.twist.angular);
+	}
 
 public:
 
