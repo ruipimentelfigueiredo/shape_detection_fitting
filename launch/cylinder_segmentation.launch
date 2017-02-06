@@ -2,7 +2,13 @@
 <launch>
   	<arg name="image_in" default="/camera/rgb/image_rect_color"/>
   	<arg name="clusters_in" default="/tabletop/clusters"/>
-	<node pkg="active_semantic_mapping" type="cylinder_segmentation_ros" name="cylinder_segmentation" respawn="true" output="screen">
+	<node pkg="active_semantic_mapping" type="cylinder_segmentation_ros_node" name="cylinder_segmentation" respawn="true" output="screen">
+	        <remap from="image_in" to="$(arg image_in)"/>
+	        <remap from="clusters_in" to="$(arg clusters_in)"/>
+    		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
+	</node>
+
+	<node pkg="active_semantic_mapping" type="cylinder_tracking_ros_node" name="cylinder_tracker" respawn="true" output="screen">
 	        <remap from="image_in" to="$(arg image_in)"/>
 	        <remap from="clusters_in" to="$(arg clusters_in)"/>
     		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />

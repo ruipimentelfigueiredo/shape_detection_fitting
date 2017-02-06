@@ -1,0 +1,34 @@
+<!-- stereo driver nodelet publisher -->
+<library path="lib/libperipheral_stereo_ros_nodelet">
+  <class name="foveated_stereo_ros/PeripheralStereoRosNodelet" type="foveated_stereo_ros::PeripheralStereoRosNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      peripheral stereo nodelet.
+    </description>
+  </class>
+</library>
+
+
+<library path="lib/libperipheral_foveal_stereo_ros_nodelet">
+  <class name="foveated_stereo_ros/PeripheralFovealStereoRosNodelet" type="foveated_stereo_ros::PeripheralFovealStereoRosNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      foveated stereo nodelet.
+    </description>
+  </class>
+</library>
+
+<library path="lib/libconventional_stereo_ros_nodelet">
+  <class name="foveated_stereo_ros/ConventionalStereoRosNodelet" type="foveated_stereo_ros::ConventionalStereoRosNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      foveated stereo nodelet.
+    </description>
+  </class>
+</library>
+
+
+<library path="lib/libego_sphere_manager_ros_nodelet">
+  <class name="foveated_stereo_ros/EgoSphereManagerRosNodelet" type="foveated_stereo_ros::EgoSphereManagerRosNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      ego sphere nodelet.
+    </description>
+  </class>
+</library>

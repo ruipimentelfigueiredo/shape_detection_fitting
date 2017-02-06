@@ -17,6 +17,7 @@ find_package(OpenCV REQUIRED)
  add_message_files(
    FILES
    Clusters.msg
+   Cylinders.msg
 )
 
 generate_messages(
@@ -69,17 +70,31 @@ include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+# CYLINDER LIBS
 add_library (cylinder_segmentation_hough src/cylinder_segmentation.cpp src/cylinder_segmentation_hough.cpp)
 target_link_libraries (cylinder_segmentation_hough ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library (cylinder_segmentation_ransac src/cylinder_segmentation.cpp src/cylinder_segmentation_ransac.cpp)
 target_link_libraries (cylinder_segmentation_ransac ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
+
+# ROS WRAPPERS
+add_library (cylinder_tracking_ros src/cylinder_tracking_ros.cpp)
+target_link_libraries (cylinder_tracking_ros ${catkin_LIBRARIES} HybridEstimator)
+
+# ROS NODES
+add_executable (cylinder_segmentation_ros_node src/cylinder_segmentation_ros_node.cpp)
+target_link_libraries (cylinder_segmentation_ros_node ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough)
+
+add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
+target_link_libraries (cylinder_tracking_ros_node cylinder_tracking_ros)
+
+
+# TESTS
 add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
 target_link_libraries (cylinder_segmentation_test cylinder_segmentation_hough)
 
-add_executable (cylinder_segmentation_ros src/cylinder_segmentation_ros.cpp)
-target_link_libraries (cylinder_segmentation_ros cylinder_segmentation_hough cylinder_segmentation_ransac HybridEstimator)
+
 
 #add_executable (hough_lines_cuda src/hough_lines_cuda.cpp)
 #target_link_libraries (hough_lines_cuda -lopencv_cudaimgproc ${PCL_LIBRARIES} ${catkin_LIBRARIES})

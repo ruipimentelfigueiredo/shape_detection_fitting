@@ -59,6 +59,11 @@ public:
 
 		return shared_ptr<BaseTracker<Obj>>(new Tracker<Obj, PosEstim>(objClone, estimClone));
 	}
+
+	VectorXd getState()	
+	{
+		return this->objectPTR->getObservableStates();
+	}
 	
 private:
 	int obsSize;

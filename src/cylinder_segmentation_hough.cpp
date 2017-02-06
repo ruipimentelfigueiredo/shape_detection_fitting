@@ -65,7 +65,7 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 	//ROS_DEBUG_STREAM("  3.2. Vote");
 	for(NormalCloudT::const_iterator n_it = cloud_normals->begin(); n_it != cloud_normals->end(); ++n_it)
 	{
-		for(int i=0; i<gaussian_sphere_points.size(); ++i)
+		for(unsigned int i=0; i<gaussian_sphere_points.size(); ++i)
 		{
 			//1 - fabs(dot.product)
 			cyl_direction_accum[i]+=1.0-fabs(n_it->getNormalVector3fMap().dot(gaussian_sphere_points[i]));	

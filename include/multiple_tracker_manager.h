@@ -88,6 +88,7 @@ class Cylinder : public Object
 
 class MultipleTrackerManager
 {
+	public:
 	int current_index;
 	std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers;
 
