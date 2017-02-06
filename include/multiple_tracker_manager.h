@@ -6,7 +6,7 @@
 #include "Tracker.hpp"
 #include "HungarianAssociator.hpp"
 #include "Comparator.hpp"
-
+#include <ros/ros.h>
 class Cylinder : public Object
 {
 	public:
@@ -156,7 +156,28 @@ class MultipleTrackerManager
 				       0, 0, 0, 0, 0, 0, 0, 1;
 
 		observationNoiseCov=observationNoiseCov*10000.0;
-		return std::shared_ptr<KalmanFilter>(new KalmanFilter(stateTransitionModel, observationModel, processNoiseCovariance, observationNoiseCov, initial_state, initial_cov));
+
+
+
+		MatrixXd controlModel(14,6);
+
+		controlModel << 1, 0, 0, 0, 0, 0,
+				0, 1, 0, 0, 0, 0, 
+				0, 0, 1, 0, 0, 0,
+				0, 0, 0, 1, 0, 0,
+				0, 0, 0, 0, 1, 0,
+				0, 0, 0, 0, 0, 1, 
+				0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0, 
+				0, 0, 0, 0, 0, 0;
+
+
+		return std::shared_ptr<KalmanFilter>(new KalmanFilter(stateTransitionModel, controlModel, observationModel, processNoiseCovariance, observationNoiseCov, initial_state, initial_cov));
 	}
 
 	public:
@@ -205,8 +226,12 @@ class MultipleTrackerManager
 		// 0. Predict
 		for(unsigned int t=0; t<trackers.size();++t)
 		{
-			VectorXd temp=VectorXd();
+			VectorXd temp(6);
+			temp << 0, 0, 0, 0, 0, 0;
+
+			//VectorXd temp=VectorXd();
 			trackers[t]->predict(temp);
+
 		}
 
 

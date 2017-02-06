@@ -51,8 +51,31 @@ CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,un
 
 
 
-Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals)
+Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_)
 {
+
+
+	// Setup the principal curvatures computation
+	pcl::PrincipalCurvaturesEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalCurvatures> principal_curvatures_estimation;
+
+	// Provide the original point cloud (without normals)
+	principal_curvatures_estimation.setInputCloud ( point_cloud_in_);
+
+	// Provide the point cloud with normals
+	principal_curvatures_estimation.setInputNormals (cloud_normals);
+
+	// Use the same KdTree from the normal estimation
+	principal_curvatures_estimation.setSearchMethod (tree);
+	principal_curvatures_estimation.setKSearch (50);
+
+	// Actually compute the principal curvatures
+	pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr principal_curvatures (new pcl::PointCloud<pcl::PrincipalCurvatures> ());
+	principal_curvatures_estimation.compute (*principal_curvatures);
+
+	//ROS_ERROR_STREAM("all:"<<principal_curvatures->points[0]);
+	//ROS_ERROR_STREAM("principal curvature:"<<cloud_normals->points[0].curvature);
+
+
 
 	//3. for each point normal
 	//ROS_DEBUG_STREAM(" 3. Step 1");
@@ -63,12 +86,21 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 
 
 	//ROS_DEBUG_STREAM("  3.2. Vote");
-	for(NormalCloudT::const_iterator n_it = cloud_normals->begin(); n_it != cloud_normals->end(); ++n_it)
+	for(unsigned int s = 0; s < cloud_normals->size(); ++s)
 	{
+		//float threshold=0.05;
+		//if(principal_curvatures->points[s].pc1<threshold)
+		//	continue;
 		for(unsigned int i=0; i<gaussian_sphere_points.size(); ++i)
 		{
+			
 			//1 - fabs(dot.product)
-			cyl_direction_accum[i]+=1.0-fabs(n_it->getNormalVector3fMap().dot(gaussian_sphere_points[i]));	
+			float curvature_weight=
+						(1.0-fabs(Eigen::Vector3f(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(gaussian_sphere_points[i])));
+			float normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().dot(gaussian_sphere_points[i])));
+			cyl_direction_accum[i]+=curvature_weight*normal_weight;
+
+			//cyl_direction_accum[i]+=normal_weight;		
 		}
 	}
 
@@ -179,7 +211,20 @@ Eigen::VectorXf CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 	ne.setKSearch (50);
 	ne.compute (*cloud_normals);
 
-    	Eigen::Vector3f cylinder_direction=findCylinderDirection(cloud_normals);
+
+	//std::cout << "output points.size (): " << principal_curvatures->points.size () << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+    	Eigen::Vector3f cylinder_direction=findCylinderDirection(cloud_normals,point_cloud_in_);
 	
 	//ROS_DEBUG_STREAM(" 4. Step 2");
 

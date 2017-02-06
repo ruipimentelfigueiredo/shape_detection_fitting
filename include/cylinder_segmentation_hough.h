@@ -18,7 +18,7 @@ class CylinderSegmentationHough : public CylinderSegmentation
 
 
 	// private methods
-	Eigen::Vector3f findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals);
+	Eigen::Vector3f findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_);
 	Eigen::Matrix<float,5,1> findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_);
 
 	public:

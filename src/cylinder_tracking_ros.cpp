@@ -50,9 +50,7 @@ CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) :
 	//odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &CylinderTrackingROS::odomCallback, this);	
 }
 
-
-
-void CylinderTrackingROS::callback (const active_semantic_mapping::Cylinders::ConstPtr & input_clusters)
+void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::ConstPtr & input_clusters)
 {
 
 	/*static int image_number=0;
@@ -158,19 +156,41 @@ Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & d
 {
 	if(tracker_manager.trackers.size()<1) return Eigen::Matrix4f();
 
+
+	int height_samples=3;
+	int angle_samples=5;
+
 	// Generate cylinders detections point cloud
 	pcl::PointCloud<pcl::PointXYZ>::Ptr detections_cloud (new pcl::PointCloud<pcl::PointXYZ>());
 	for(unsigned int d=0; d< detections_.size();++d)
 	{
 
-		int height_samples=3;
-		int angle_samples=5;
+		pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud (new pcl::PointCloud<pcl::PointXYZ>());
 
-		// Generate random radius
+		Eigen::VectorXf state_=detections_[d].cast<float>();
+		//Get rotation matrix
+		Eigen::Matrix4f transf;
+		transf=Eigen::Matrix4f::Identity();
 
+	   	Eigen::Vector3f up = Eigen::Vector3f::UnitZ();
+		Eigen::Vector3f cylinder_direction=state_.segment(3,3);
+		if(up.dot(cylinder_direction)<0)
+		{
+			cylinder_direction=-cylinder_direction;
+		}
+	       	//Eigen::Vector3f rot_axis = up.cross(cylinder_direction);
+		Eigen::Vector3f rot_axis = cylinder_direction.cross(up);
 
-		// Generate random height
+		rot_axis.normalize();
+		if(!std::isnan(rot_axis[0])&&!std::isnan(rot_axis[1])&&!std::isnan(rot_axis[2]))
+		{
+			Eigen::Matrix3f aux;
+			aux=Eigen::AngleAxisf(acos(cylinder_direction.dot(up)),rot_axis);
+			transf.block(0,0,3,3)=aux;
+		}
 
+		// Get translation
+		transf.block(0,3,3,1)=state_.segment(0,3);
 
 		// Generate cylinder according to parameters
 		float angle_step=2.0*M_PI/angle_samples;
@@ -188,6 +208,8 @@ Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & d
 				detections_cloud->push_back(point);
 			}
 		}
+
+    		*detections_cloud += *temp_cloud;
 	}
 
 	// Generate cylinders trackers point cloud
@@ -195,18 +217,45 @@ Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & d
 	for(unsigned int d=0; d< tracker_manager.trackers.size();++d)
 	{
 
-		int height_samples=3;
-		int angle_samples=5;
-
-		// Generate random radius
+		pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud (new pcl::PointCloud<pcl::PointXYZ>());
 
 
-		// Generate random height
+		Eigen::VectorXf state_=tracker_manager.trackers[d]->getState().cast<float>();
+
+		//Get rotation matrix
+		Eigen::Matrix4f transf;
+		transf=Eigen::Matrix4f::Identity();
+
+	   	Eigen::Vector3f up = Eigen::Vector3f::UnitZ();
+		Eigen::Vector3f cylinder_direction=state_.segment(3,3);
+		if(up.dot(cylinder_direction)<0)
+		{
+			cylinder_direction=-cylinder_direction;
+		}
+	       	//Eigen::Vector3f rot_axis = up.cross(cylinder_direction);
+		Eigen::Vector3f rot_axis = cylinder_direction.cross(up);
+
+		rot_axis.normalize();
+		if(!std::isnan(rot_axis[0])&&!std::isnan(rot_axis[1])&&!std::isnan(rot_axis[2]))
+		{
+			Eigen::Matrix3f aux;
+			aux=Eigen::AngleAxisf(acos(cylinder_direction.dot(up)),rot_axis);
+			transf.block(0,0,3,3)=aux;
+		}
+
+		// Get translation
+		transf.block(0,3,3,1)=state_.segment(0,3);
+
+
+
 
 
 		// Generate cylinder according to parameters
 		float angle_step=2.0*M_PI/angle_samples;
 		float height_step=fabs(tracker_manager.trackers[d]->getState()[7])/height_samples;
+
+
+
 
 		for(int a=0; a < angle_samples; ++a)
 		{
@@ -217,9 +266,15 @@ Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & d
 			{
 				z=(float)height_step*h;
 				pcl::PointXYZ point(x,y,z);
-				trackers_cloud->push_back(point);
+				temp_cloud->push_back(point);
 			}
 		}
+
+  		pcl::transformPointCloud (*temp_cloud, *temp_cloud, transf);
+
+    		*trackers_cloud += *temp_cloud;
+
+		// Transform according to parameters
 	}
 
 	// COMPUTE ICP
@@ -228,8 +283,8 @@ Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & d
 	icp.setInputTarget(trackers_cloud);
 	pcl::PointCloud<pcl::PointXYZ> Final;
 	icp.align(Final);
-	//std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
-  	//std::cout << icp.getFinalTransformation() << std::endl;
+	std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
+  	std::cout << icp.getFinalTransformation() << std::endl;
 	// Return ICP transform as relative odometry
 	return icp.getFinalTransformation();
 }

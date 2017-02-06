@@ -20,7 +20,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-
+#include <pcl/features/principal_curvatures.h>
 // DEFINE THE TYPES USED
 typedef pcl::PointXYZ PointT;
 typedef pcl::Normal NormalT;
