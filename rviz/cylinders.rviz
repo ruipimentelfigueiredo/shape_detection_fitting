@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1/Frames1
+        - /Cylinders Trackers1
       Splitter Ratio: 0.462209
     Tree Height: 324
   - Class: rviz/Selection
@@ -26,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: CylinderBoundingBoxes
 Visualization Manager:
   Class: ""
   Displays:
@@ -35,6 +36,12 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        camera_depth_frame:
+          Value: true
+        camera_depth_optical_frame:
+          Value: true
+        camera_link:
+          Value: true
         camera_rgb_frame:
           Value: false
         camera_rgb_optical_frame:
@@ -45,6 +52,10 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
+        camera_link:
+          camera_depth_frame:
+            camera_depth_optical_frame:
+              {}
         camera_rgb_frame:
           camera_rgb_optical_frame:
             {}
@@ -129,19 +140,19 @@ Visualization Manager:
       Unreliable: true
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /cylinder_detections_vis
       Name: Cylinders Detections
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /cylinders_tracking_vis
       Name: Cylinders Trackers
       Namespaces:
-        {}
+        trackers: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -180,10 +191,10 @@ Visualization Manager:
         Z: 0.00197916
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.1402
+      Pitch: 1.0952
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.748436
+      Yaw: 0.473436
     Saved: ~
 Window Geometry:
   CylinderBoundingBoxes:

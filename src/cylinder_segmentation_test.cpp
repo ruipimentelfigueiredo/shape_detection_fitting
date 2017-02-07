@@ -28,9 +28,9 @@ int main (int argc, char** argv)
 	cloud_pub=n.advertise<pcl::PointCloud<PointT> >( "cylinders_pcl", 0 );
 
 
+	unsigned int iterations=100;
 
-
-	while (ros::ok())
+	for(unsigned int=0; i<iterations;++i)
 	{
 
 
@@ -118,8 +118,8 @@ int main (int argc, char** argv)
 		float cylinder_size=(max_pt.block(0,0,3,1)-min_pt.block(0,0,3,1)).norm();
 
 		// End corrupt with noise
-		ros::spinOnce();
-		loop_rate.sleep();
+		//ros::spinOnce();
+		//loop_rate.sleep();
 		cloud_pub.publish(cloud_transf);
 	}
 

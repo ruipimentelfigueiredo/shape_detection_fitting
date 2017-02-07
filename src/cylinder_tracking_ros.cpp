@@ -1,11 +1,12 @@
 #include "cylinder_tracking_ros.h"
-
+#include <pcl/visualization/cloud_viewer.h>
+#include "tf_conversions/tf_eigen.h"
 CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) : 
 	n(n_), 
 	n_priv("~"),
     	listener(new tf::TransformListener(ros::Duration(3.0)))
 {
-
+	odom_last_stamp=ros::Time::now();
 	// INITIALIZE VISUALIZATION COLORS
 	id_colors_map.insert(std::pair<int,Color>(0,Color(0,   0.9  , 0.9, 0.2) ) );
 	id_colors_map.insert(std::pair<int,Color>(1,Color(0,   0.5, 0.7) ) );
@@ -130,12 +131,12 @@ void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::Con
 
 	// Compute object level odometry
 	clock_t begin_time_ = clock();
-	odom(detections_);
+	Eigen::Matrix4d relative_motion=odom(detections_).cast<double>();
 	ROS_INFO_STREAM("Cylinders odom time: "<<float( clock () - begin_time_ ) /  CLOCKS_PER_SEC<< " seconds");
 
 	// TRACK
 	begin_time_ = clock();
-	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers=tracker_manager.process(detections_);
+	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers=tracker_manager.process(detections_,relative_motion);
 	std::string trackers_frame_id=input_clusters->header.frame_id;
 	for(unsigned int i=0; i<trackers.size();++i)
 	{
@@ -154,17 +155,45 @@ void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::Con
 
 Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & detections_)
 {
-	if(tracker_manager.trackers.size()<1) return Eigen::Matrix4f();
+	
+	Eigen::Matrix4f final_transform=Eigen::Matrix4f::Identity();
+
+	std::string camera_link="camera_rgb_optical_frame";
 
 
-	int height_samples=3;
-	int angle_samples=5;
+        tf::StampedTransform baseDeltaTf;
+
+
+        // Get delta motion in cartesian coordinates with TF
+        ros::Time current_time;
+	
+        try
+        {
+            current_time = ros::Time::now();
+            listener->waitForTransform(camera_link,odom_last_stamp, camera_link, current_time, odom_link, ros::Duration(0.1) );
+            listener->lookupTransform(camera_link,odom_last_stamp, camera_link, current_time, odom_link, baseDeltaTf); // Velocity
+
+        }
+        catch (tf::TransformException &ex)
+        {
+            //ROS_WARN("%s",ex.what());
+            return final_transform;
+        }
+	odom_last_stamp=current_time;
+	Eigen::Affine3d transform_eigen;
+	tf::transformTFToEigen (baseDeltaTf,transform_eigen);
+	final_transform=transform_eigen.matrix().cast<float>();
+	ROS_ERROR_STREAM("YA:"<<final_transform);
+	if(tracker_manager.trackers.size()<2&&detections_.size()<2) return final_transform;
+
+return final_transform;
+	int height_samples=5;
+	int angle_samples=4;
 
 	// Generate cylinders detections point cloud
 	pcl::PointCloud<pcl::PointXYZ>::Ptr detections_cloud (new pcl::PointCloud<pcl::PointXYZ>());
 	for(unsigned int d=0; d< detections_.size();++d)
 	{
-
 		pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud (new pcl::PointCloud<pcl::PointXYZ>());
 
 		Eigen::VectorXf state_=detections_[d].cast<float>();
@@ -191,6 +220,7 @@ Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & d
 
 		// Get translation
 		transf.block(0,3,3,1)=state_.segment(0,3);
+		
 
 		// Generate cylinder according to parameters
 		float angle_step=2.0*M_PI/angle_samples;
@@ -205,9 +235,11 @@ Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & d
 			{
 				z=(float)height_step*h;
 				pcl::PointXYZ point(x,y,z);
-				detections_cloud->push_back(point);
+				temp_cloud->push_back(point);
 			}
 		}
+
+  		pcl::transformPointCloud (*temp_cloud, *temp_cloud, transf);
 
     		*detections_cloud += *temp_cloud;
 	}
@@ -279,14 +311,34 @@ Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & d
 
 	// COMPUTE ICP
  	pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-	icp.setInputSource(detections_cloud);
-	icp.setInputTarget(trackers_cloud);
+	icp.setInputSource(trackers_cloud);
+	icp.setInputTarget(detections_cloud);
 	pcl::PointCloud<pcl::PointXYZ> Final;
 	icp.align(Final);
-	std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
-  	std::cout << icp.getFinalTransformation() << std::endl;
+
+
+	ROS_ERROR("CHEGUEI");
+	if(icp.hasConverged()&&icp.getFitnessScore()<0.1)
+	{
+		final_transform=icp.getFinalTransformation();
+
+		std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
+  		//std::cout << icp.getFinalTransformation() << std::endl;
+	}
+
+
+	   //... populate cloud
+	   /*
+	  		pcl::transformPointCloud (*trackers_cloud, *trackers_cloud, icp.getFinalTransformation());
+	pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
+	   viewer.showCloud (detections_cloud,"detected");
+	   viewer.showCloud (trackers_cloud,"tracked");
+	   while (!viewer.wasStopped ())
+	   {
+	   }*/
+
 	// Return ICP transform as relative odometry
-	return icp.getFinalTransformation();
+	return final_transform;
 }
 
 

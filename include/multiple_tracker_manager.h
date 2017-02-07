@@ -188,7 +188,7 @@ class MultipleTrackerManager
 
 
 	// Process new measurements
-	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > & process(std::vector<Eigen::VectorXd> & detections_)
+	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > & process(std::vector<Eigen::VectorXd> & detections_, const Eigen::Matrix4d & relative_motion)
 	{
 		// KALMAN INIT COV
 		MatrixXd initial_cov(14,14);
@@ -228,6 +228,17 @@ class MultipleTrackerManager
 		{
 			VectorXd temp(6);
 			temp << 0, 0, 0, 0, 0, 0;
+			//temp.head(3) = relative_motion.block(0,3,3,1);
+               		//it_mmae->statePost(cv::Range(0,2),cv::Range(0,1)) = odom_trans + odom_rot*it_mmae->statePost(cv::Range(0,2),cv::Range(0,1));
+			//ROS_ERROR_STREAM("TEMP:"<< temp);
+			//VectorXd state_(6);
+			//state_.head(6)=unDetections[a]->getObjPTR()->getObservableStates().head(6);
+
+			// Apply transform to position
+			temp.head(3)=-trackers[t]->getObjPTR()->getObservableStates().segment(0,3);
+			temp.head(3)+=(relative_motion.block(0,3,3,1)+(relative_motion.block(0,0,3,3)*trackers[t]->getObjPTR()->getObservableStates().segment(0,3)));
+
+			//temp.segment(3,3)=relative_motion.block(0,0,3,3)*trackers[t]->getObjPTR()->getObservableStates().segment(3,3);
 
 			//VectorXd temp=VectorXd();
 			trackers[t]->predict(temp);
