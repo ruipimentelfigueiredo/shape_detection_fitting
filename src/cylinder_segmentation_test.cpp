@@ -16,21 +16,40 @@ int main (int argc, char** argv)
 
 	ros::NodeHandle n;
 	ros::Rate loop_rate(30);
+
+	// For visualization purposes
+	ros::Publisher cloud_pub;
+	cloud_pub=n.advertise<pcl::PointCloud<PointT> >( "cylinders_pcl", 0 );
+
+
+
+
 	unsigned int angle_bins=50;
 	unsigned int radius_bins=100;
  	unsigned int position_bins=50;
 
 	// TESTING PARAMS
- 	float min_radius=10.0;
- 	float max_radius=1000.0;
-	float noise_level=0.1; // percentage of object size (std_dev)
-	ros::Publisher cloud_pub;
-	cloud_pub=n.advertise<pcl::PointCloud<PointT> >( "cylinders_pcl", 0 );
+ 	float min_radius=0.01;
+ 	float max_radius=0.1;
+
+	int height_samples=30;
+	int angle_samples=30;
+
+
+	std::vector<float> noise_levels; // percentage of object size (std_dev)
+	noise_levels.push_back(0.1);
+	noise_levels.push_back(0.2);
+	noise_levels.push_back(0.3);
+	noise_levels.push_back(0.4);
+	noise_levels.push_back(0.5);
+	noise_levels.push_back(0.6);
+	noise_levels.push_back(0.7);
+	noise_levels.push_back(0.8);
 
 
 	unsigned int iterations=100;
 
-	for(unsigned int=0; i<iterations;++i)
+	for(unsigned int i=0; i<iterations; ++i)
 	{
 
 
@@ -43,8 +62,7 @@ int main (int argc, char** argv)
 		//reader.read (argv[1], *cloud);
 		cloud->header.frame_id="world";
 
-		int height_samples=30;
-		int angle_samples=30;
+
 
 		// Generate random radius
 		cv::Mat radius(1, 1, CV_32F);

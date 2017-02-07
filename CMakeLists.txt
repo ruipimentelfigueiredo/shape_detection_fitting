@@ -87,13 +87,13 @@ target_link_libraries (cylinder_tracking_ros ${catkin_LIBRARIES} HybridEstimator
 add_executable (cylinder_segmentation_ros_node src/cylinder_segmentation_ros_node.cpp)
 target_link_libraries (cylinder_segmentation_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough)
 
-add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
-target_link_libraries (cylinder_tracking_ros_node ${PCL_LIBRARIES} cylinder_tracking_ros)
+#add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
+#target_link_libraries (cylinder_tracking_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_tracking_ros)
 
 
 # TESTS
 add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
-target_link_libraries (cylinder_segmentation_test cylinder_segmentation_hough)
+target_link_libraries (cylinder_segmentation_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
 
 
