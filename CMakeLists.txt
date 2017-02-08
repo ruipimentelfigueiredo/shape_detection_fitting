@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   visualization_msgs
   tf_conversions
+   rosbag
 )
 
 find_package(OpenCV REQUIRED)
@@ -24,7 +25,8 @@ find_package(OpenCV REQUIRED)
 generate_messages(
    DEPENDENCIES
    std_msgs  # Or other packages containing msgs
-  visualization_msgs
+   visualization_msgs
+
 )
 catkin_package(
 #  INCLUDE_DIRS include

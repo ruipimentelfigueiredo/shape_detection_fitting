@@ -25,7 +25,7 @@ CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,un
 		random_point(1,0)=aux.at<float>(0,0);
 
 		cv::randn(aux, 0.0, 1.0);
-		random_point(2,0)=aux.at<float>(0,0);
+		random_point(2,0)=fabs(aux.at<float>(0,0)); // HALF SPHERE ONLY
 
 		random_point.normalize();
 

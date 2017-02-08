@@ -60,11 +60,11 @@ int main (int argc, char** argv)
 
 	std::vector<float> noise_levels; // percentage of object size (std_dev)
 	noise_levels.push_back(0);
-	noise_levels.push_back(0.1);
-	noise_levels.push_back(0.2);
-	noise_levels.push_back(0.3);
-	noise_levels.push_back(0.4);
-	noise_levels.push_back(0.5);
+	noise_levels.push_back(0.01);
+	noise_levels.push_back(0.02);
+	noise_levels.push_back(0.03);
+	noise_levels.push_back(0.04);
+	noise_levels.push_back(0.05);
 	
 	std::vector<pcl::PointCloud<pcl::PointXYZ> > point_clouds;
 	std::vector<active_semantic_mapping::Cylinders> ground_truths;
@@ -122,6 +122,7 @@ int main (int argc, char** argv)
 		Eigen::Matrix3f rot;
 		rot=Eigen::AngleAxisf(M_PI*angle.at<float>(0,0),rot_dir);
 
+		Eigen::Vector3f cyl_dir=rot*Eigen::Vector3f::UnitZ();
 		Eigen::Matrix4f transf;
 		transf.block(0,0,3,3)=rot;
 		transf.block(0,3,3,1)=Eigen::Vector3f(0,0,0);
@@ -144,9 +145,9 @@ int main (int argc, char** argv)
 		ground_truth.cylinders.data.push_back(0);
 		ground_truth.cylinders.data.push_back(0);
 		
-		ground_truth.cylinders.data.push_back(rot_dir[0]);
-		ground_truth.cylinders.data.push_back(rot_dir[1]);
-		ground_truth.cylinders.data.push_back(rot_dir[2]);
+		ground_truth.cylinders.data.push_back(cyl_dir[0]);
+		ground_truth.cylinders.data.push_back(cyl_dir[1]);
+		ground_truth.cylinders.data.push_back(cyl_dir[2]);
 
 		ground_truth.cylinders.data.push_back(radius);
 		ground_truth.cylinders.data.push_back(height);
