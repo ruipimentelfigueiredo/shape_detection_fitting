@@ -95,6 +95,9 @@ target_link_libraries (cylinder_segmentation_ros_node ${PCL_LIBRARIES} ${catkin_
 add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
 target_link_libraries (cylinder_segmentation_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
+add_executable (cylinder_segmentation_test2 src/cylinder_segmentation_test2.cpp)
+target_link_libraries (cylinder_segmentation_test2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+
 
 
 #add_executable (hough_lines_cuda src/hough_lines_cuda.cpp)
