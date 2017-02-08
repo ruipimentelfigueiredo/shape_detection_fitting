@@ -28,10 +28,11 @@ int main (int argc, char** argv)
 
 
 
-	unsigned int angle_bins=50;
-	unsigned int radius_bins=100;
- 	unsigned int position_bins=50;
+	unsigned int angle_bins=30;
+	unsigned int radius_bins=10;
+ 	unsigned int position_bins=10;
 
+	int gaussian_sphere_points_num=600;
 	std::ostringstream ss;
 	ss << "/home/rui/rosbags/";
     	boost::filesystem::create_directories(ss.str());
@@ -90,7 +91,7 @@ int main (int argc, char** argv)
 		active_semantic_mapping::Cylinders::ConstPtr s = m.instantiate<active_semantic_mapping::Cylinders>();
 		if (s == NULL)
 			continue;
-		ROS_INFO("YOH");
+
 		ground_truths.push_back(*s);
 	}
 	bag.close();
@@ -106,7 +107,7 @@ int main (int argc, char** argv)
 		pcl::PointCloud<pcl::PointXYZ>::ConstPtr s = m.instantiate<pcl::PointCloud<pcl::PointXYZ> >();
 		if (s == NULL)
 			continue;
-		ROS_INFO("YAH");
+
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
 		*cloud=*s;
 		point_clouds.push_back(cloud);
@@ -114,11 +115,20 @@ int main (int argc, char** argv)
 
 	bag.close();
 
-	// Segment cylinder
-	boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation;
+	// Segment cylinder and store results
+	std::vector<Eigen::VectorXf > detections;
+	std::vector<float> position_errors;
+	boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation(new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num));
 	for(int i=0;i<point_clouds.size();++i)
 	{
-			Eigen::VectorXf model_params=cylinder_segmentation->segment(clusters_point_clouds[i]);
+			ROS_INFO("YAH");
+			Eigen::VectorXf model_params=cylinder_segmentation->segment(point_clouds[i]);
+			detections.push_back(model_params);
+
+			// Compute errors
+			//float position_error=(model_params.head(3)-Eigen::Vector3f(ground_truths[i].cylinders.data[0],ground_truths[i].cylinders.data[1],ground_truths[i].cylinders.data[2])).norm();
+			
+			//float orientation_error=model_params.segment(3,3).dot(Eigen::Vector3f(ground_truths[i].cylinders.data[3],ground_truths[i].cylinders.data[4],ground_truths[i].cylinders.data[5]));
 	}
 
 

@@ -22,9 +22,9 @@ int main (int argc, char** argv)
 
 
 
-	unsigned int angle_bins=50;
-	unsigned int radius_bins=100;
- 	unsigned int position_bins=50;
+	unsigned int angle_bins=30;
+	unsigned int radius_bins=10;
+ 	unsigned int position_bins=10;
 
 	std::ostringstream ss;
 	ss << "/home/rui/rosbags/";
