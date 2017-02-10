@@ -58,7 +58,8 @@ int main (int argc, char** argv)
 
 	std::vector<float> noise_levels; // percentage of object size (std_dev)
 
-	for(unsigned int i=0; i<=20; ++i)
+	noise_levels.push_back(0.001);
+	for(unsigned int i=1; i<=20; ++i)
 	{
 		float noise_level=(float)0.05*i;
 		noise_levels.push_back(noise_level);
@@ -97,11 +98,12 @@ int main (int argc, char** argv)
 			}
 		}
 
-		unsigned int plane_samples=50;
+		// TAMPAS
+		/*unsigned int plane_samples=30;
 		float plane_size=0.3;
 		float plane_min=0.0-0.5*plane_size;
 		float plane_step=(float)plane_size/plane_samples;
-			float z=0.0;
+		float z=0.0;
 		for(int x_=0; x_<plane_samples;++x_)
 		{
 			float x=plane_min+x_*plane_step;
@@ -110,13 +112,13 @@ int main (int argc, char** argv)
 				
 				float y=plane_min+y_*plane_step;
 				if(sqrt(x*x+y*y)>0.15) continue;
+
 				pcl::PointXYZ point(x,y,z);
-				cloud.push_back(point);
+				//cloud.push_back(point);
+
+				cloud.push_back(pcl::PointXYZ(x,y,height));
 			}
-
-
-
-		}
+		}*/
 
 		// Generate random orientation
 		Eigen::Vector3f rot_dir;

@@ -58,8 +58,8 @@ visualization_msgs::Marker createMarker(const Eigen::VectorXf & model_params, in
 	marker.scale.y = 2*model_params[6];
 	marker.scale.z = height;
 	marker.color.a = 0.5;
-	marker.color.r = 0.0;
-	marker.color.g = 1.0;
+	marker.color.r = 1.0;
+	marker.color.g = 0.0;
 	marker.color.b = 0.0;
 	//marker.lifetime = ros::Duration(0.05);
 	return marker;
@@ -92,7 +92,7 @@ int main (int argc, char** argv)
 	unsigned int radius_bins=10;
  	unsigned int position_bins=10;
 
-	int gaussian_sphere_points_num=600;
+	int gaussian_sphere_points_num=225;
 	std::ostringstream ss;
 	ss << "/home/rui/rosbags/";
     	boost::filesystem::create_directories(ss.str());
@@ -187,9 +187,9 @@ position_bins=100;
 		std::fstream fs_orientation;
 		std::fstream fs_radius;
 		std::fstream fs_position;
-		fs_orientation.open (ss.str()+"_orientation.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_radius.open (ss.str()+"_radius.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_position.open (ss.str()+"_position.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_orientation.open (ss.str()+"_orientation_noise.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_radius.open (ss.str()+"_radius_noise.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_position.open (ss.str()+"_position_noise.txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
 
 		for(int i=0;i<point_clouds.size();++i)

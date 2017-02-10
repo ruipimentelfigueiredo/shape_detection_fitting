@@ -98,7 +98,7 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 			float curvature_weight=
 						(1.0-fabs(Eigen::Vector3f(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(gaussian_sphere_points[i])));
 			float normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().dot(gaussian_sphere_points[i])));
-			cyl_direction_accum[i]+=curvature_weight*normal_weight;
+			cyl_direction_accum[i]+=normal_weight;
 
 			//cyl_direction_accum[i]+=normal_weight;		
 		}

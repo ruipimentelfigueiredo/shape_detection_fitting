@@ -2,9 +2,9 @@ iterations=200;
 
 
 %% orientation
-orientation_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_tampas.txt';
-orientation_file_ours='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_tampas_ours.txt';
-orientation_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_tampas_hybrid.txt';
+orientation_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise.txt';
+orientation_file_ours='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_ours.txt';
+orientation_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_hybrid.txt';
 
 formatSpec = '%f';
 sizeA = [Inf 200];
@@ -76,7 +76,7 @@ plot([0:0.05:1.0],ori_rec_rate_hybrid,'--r')
 legend('Normals','Curvature','Hybrid')
 
 xlabel('$\sigma$','Interpreter','LaTex','FontSize',fontsize);
-ylabel('correct orientation rate (%)','Interpreter','LaTex','FontSize',fontsize);
+ylabel('orientation recognition rate (%)','Interpreter','LaTex','FontSize',fontsize);
 set(gca,'XTick',[0:0.1:1.0])
 
 axis ([-0.01 0.51 0 101]) 
@@ -84,9 +84,9 @@ set(gca,'fontsize',fontsize);
 
 export_fig orientation_rec -pdf
 %% radius
-radius_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_tampas.txt';
-radius_file_ours='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_tampas_ours.txt';
-radius_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_tampas_hybrid.txt';
+radius_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise.txt';
+radius_file_ours='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_ours.txt';
+radius_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_hybrid.txt';
 
 formatSpec = '%f';
 sizeA = [Inf 200];
@@ -152,8 +152,8 @@ legend('Normals','Curvature','Hybrid')
 
 %errorbar([0:0.05:1.0],orientations_mean,orientations_std_dev)
 
-xlabel('error standard deviation (% of cylinder height)','Interpreter','LaTex','FontSize',fontsize);
-ylabel('correct radius rate (%)','Interpreter','LaTex','FontSize',fontsize);
+xlabel('$\sigma$','Interpreter','LaTex','FontSize',fontsize);
+ylabel('radius recognition rate (%)','Interpreter','LaTex','FontSize',fontsize);
 set(gca,'XTick',[0:0.1:1.0])
 
 axis ([-0.01 0.51 0 101]) 
@@ -162,8 +162,8 @@ set(gca,'fontsize',fontsize);
 export_fig radii_rec -pdf
 
 %% position
-position_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_tampas.txt';
-%position_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_tampas_ours.txt';
+position_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise.txt';
+%position_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_ours.txt';
 
 formatSpec = '%f';
 sizeA = [Inf 200];
@@ -179,7 +179,7 @@ set(gcf, 'Color', [1,1,1]);
 %plot(positions_mean)
 errorbar([0:0.05:1.0],positions_mean,positions_std_dev)
 
-xlabel('error standard deviation (% of cylinder height)','Interpreter','LaTex','FontSize',fontsize);
+xlabel('$\sigma$','Interpreter','LaTex','FontSize',fontsize);
 ylabel('position error (m)','Interpreter','LaTex','FontSize',fontsize);
 set(gca,'XTick',[0:0.1:1.0])
 axis ([-0.01 0.5 0 0.1]) 
@@ -199,14 +199,7 @@ hold on
 plot([0:0.05:1.0],combined_rec_rate,'--b')
 plot([0:0.05:1.0],combined_rec_rate_ours,'k')
 plot([0:0.05:1.0],combined_rec_rate_hybrid,'--r')
-xlabel('error standard deviation (% of cylinder height)','Interpreter','LaTex','FontSize',fontsize);
-
 legend('Normals','Curvature','Hybrid')
-
-
-
-
-
 
 
 
