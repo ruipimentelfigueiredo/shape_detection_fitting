@@ -6,9 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1/Frames1
-        - /rgbd1
-        - /Cylinders Trackers1
-      Splitter Ratio: 0.462209
+      Splitter Ratio: 0.462199
     Tree Height: 324
   - Class: rviz/Selection
     Name: Selection
@@ -28,12 +26,12 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: rgbd
+    SyncSource: CylinderBoundingBoxes
 Visualization Manager:
   Class: ""
   Displays:
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Frame Timeout: 15
       Frames:
         All Enabled: false
@@ -45,12 +43,12 @@ Visualization Manager:
       Tree:
         {}
       Update Interval: 0
-      Value: true
+      Value: false
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.03
         Value: Lines
@@ -63,7 +61,7 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -74,7 +72,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: RGB8
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -88,8 +86,8 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.01
-      Style: Flat Squares
-      Topic: /cylinders_pcl
+      Style: Points
+      Topic: /camera/depth_registered/points
       Unreliable: true
       Use Fixed Frame: true
       Use rainbow: true
@@ -105,13 +103,13 @@ Visualization Manager:
       Unreliable: true
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /tabletop/clusters
       Name: OrkClusters
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Image
       Enabled: true
       Image Topic: /cylinders_image
@@ -125,25 +123,25 @@ Visualization Manager:
       Unreliable: true
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /cylinder_detections_vis
       Name: Cylinders Detections
       Namespaces:
-        {}
+        detections: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /cylinders_tracking_vis
       Name: Cylinders Trackers
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
-    Background Color: 0; 0; 0
-    Fixed Frame: world
+    Background Color: 255; 255; 255
+    Fixed Frame: camera_depth_optical_frame
     Frame Rate: 30
   Name: root
   Tools:
@@ -164,22 +162,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.88105
+      Distance: 0.781968
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.00326581
-        Y: 0.000539602
-        Z: 0.00197916
+        X: 0.13792
+        Y: -0.171838
+        Z: 0.386523
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.0052
+      Pitch: -1.5248
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.29344
+      Yaw: 4.57662
     Saved: ~
 Window Geometry:
   CylinderBoundingBoxes:

@@ -46,9 +46,9 @@ visualization_msgs::Marker createMarker(const Eigen::VectorXf & model_params, in
 	marker.id = id;
 	marker.type = model_type;
 	marker.action = visualization_msgs::Marker::ADD;
-	marker.pose.position.x = model_params[0]+0.5*height*axis_vector[0];
-	marker.pose.position.y = model_params[1]+0.5*height*axis_vector[1];
-	marker.pose.position.z = model_params[2]+0.5*height*axis_vector[2];
+	marker.pose.position.x = model_params[0];
+	marker.pose.position.y = model_params[1];
+	marker.pose.position.z = model_params[2];
 	marker.pose.orientation = cylinder_orientation;
 /*		marker.pose.orientation.x = Q.x();
 	marker.pose.orientation.y = Q.y();
@@ -57,7 +57,7 @@ visualization_msgs::Marker createMarker(const Eigen::VectorXf & model_params, in
 	marker.scale.x = 2*model_params[6];
 	marker.scale.y = 2*model_params[6];
 	marker.scale.z = height;
-	marker.color.a = 1.0;
+	marker.color.a = 0.5;
 	marker.color.r = 0.0;
 	marker.color.g = 1.0;
 	marker.color.b = 0.0;
@@ -108,9 +108,6 @@ int main (int argc, char** argv)
 	std::string rosbag_file;
 	rosbag_file = ss.str()+".bag";
 
-
-
-
 	rosbag::Bag bag;
 
 	bag.open(rosbag_file, rosbag::bagmode::Read);
@@ -118,8 +115,8 @@ int main (int argc, char** argv)
 
 
 	// TESTING PARAMS
- 	float min_radius=0.01;
- 	float max_radius=0.1;
+ 	float min_radius=0.1;
+ 	float max_radius=0.2;
 
 	int height_samples=30;
 	int angle_samples=30;
@@ -128,14 +125,15 @@ int main (int argc, char** argv)
 	float radius=0.05;
 
 	std::vector<float> noise_levels; // percentage of object size (std_dev)
-	noise_levels.push_back(0);
-	noise_levels.push_back(0.01);
-	noise_levels.push_back(0.02);
-	noise_levels.push_back(0.03);
-	noise_levels.push_back(0.04);
-	noise_levels.push_back(0.05);
-	
 
+	for(unsigned int i=0; i<=20; ++i)
+	{
+		float noise_level=(float)0.05*i;
+		noise_levels.push_back(noise_level);
+	}
+	
+	
+position_bins=100;
 
 	while(ros::ok())
 	{
@@ -186,17 +184,25 @@ int main (int argc, char** argv)
 		boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation(new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num));
 
 
-		std::fstream fs;
-		fs.open (ss.str()+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-
-
+		std::fstream fs_orientation;
+		std::fstream fs_radius;
+		std::fstream fs_position;
+		fs_orientation.open (ss.str()+"_orientation.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_radius.open (ss.str()+"_radius.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_position.open (ss.str()+"_position.txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
 
 		for(int i=0;i<point_clouds.size();++i)
 		{
 			unsigned int ground_truth_index=i%iterations;
 
-			if(ground_truth_index==0&&i>0) fs<< "\n";
+			if(ground_truth_index==0&&i>0)
+			{
+			 fs_orientation<< "\n";
+			 fs_radius<< "\n";
+			 fs_position<< "\n";
+			
+			}
 			//ROS_INFO_STREAM("i:"<<i<<" index:"<<ground_truth_index);
 			Eigen::VectorXf model_params=cylinder_segmentation->segment(point_clouds[i]);
 			detections.push_back(model_params);
@@ -204,16 +210,22 @@ int main (int argc, char** argv)
 			// Compute errors
 			//ROS_INFO_STREAM("model_params:" << model_params);
 			//ROS_INFO_STREAM("ground_truth_params:" << ground_truths[ground_truth_index].cylinders.data[3] << " " << ground_truths[ground_truth_index].cylinders.data[4] << " " << ground_truths[ground_truth_index].cylinders.data[5]);
-			float position_error=(model_params.head(3)-Eigen::Vector3f(
-											ground_truths[ground_truth_index].cylinders.data[0],
-											ground_truths[ground_truth_index].cylinders.data[1],
-											ground_truths[ground_truth_index].cylinders.data[2])).norm();
-		
+
 			float orientation_error=acos(model_params.segment(3,3).dot(Eigen::Vector3f(ground_truths[ground_truth_index].cylinders.data[3],ground_truths[ground_truth_index].cylinders.data[4],ground_truths[ground_truth_index].cylinders.data[5])));
 			if(orientation_error>M_PI/2.0)
 				orientation_error=M_PI-orientation_error;
+			fs_orientation << orientation_error << " ";
 
-			fs << orientation_error << " ";
+			float radius_error=fabs(model_params[6]-ground_truths[ground_truth_index].cylinders.data[6]);
+			fs_radius << radius_error << " ";
+
+
+			float position_error=(model_params.head(2)-Eigen::Vector2f(ground_truths[ground_truth_index].cylinders.data[0],
+										   ground_truths[ground_truth_index].cylinders.data[1])).norm();
+			fs_position << position_error << " ";
+
+
+
 
 			//ROS_INFO_STREAM("orientation_error:" << orientation_error*(180.0/M_PI));
 
@@ -222,14 +234,23 @@ int main (int argc, char** argv)
 			visualization_msgs::Marker marker_;
 			marker_.action = 3;
 			markers_.markers.push_back(marker_);
-			visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,detections_frame_id,  i, marker_detections_namespace_);
+			visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,detections_frame_id,  0, marker_detections_namespace_);
 			markers_.markers.push_back(marker);
-			detection_pub.publish( markers_ );
-			cloud_pub.publish(point_clouds[i]);
+
+			//if(i<0*200+200&&i>0*200)
+			{
+				detection_pub.publish( markers_ );
+				cloud_pub.publish(point_clouds[i]);
+
+
+			}
+
 		}
 		//fs << " more lorem ipsum";
 
-		fs.close();
+		fs_orientation.close();
+		fs_radius.close();
+		fs_position.close();
 		break;
 	}
 

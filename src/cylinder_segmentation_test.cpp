@@ -46,25 +46,23 @@ int main (int argc, char** argv)
 
 	bag.open(rosbag_file, rosbag::bagmode::Write);
 
-
-
 	// TESTING PARAMS
- 	float min_radius=0.01;
- 	float max_radius=0.1;
+ 	float min_radius=0.10;
+ 	float max_radius=0.20;
 
 	int height_samples=30;
 	int angle_samples=30;
 
 	float height=0.3;
-	float radius=0.05;
+	float radius=0.15;
 
 	std::vector<float> noise_levels; // percentage of object size (std_dev)
-	noise_levels.push_back(0);
-	noise_levels.push_back(0.01);
-	noise_levels.push_back(0.02);
-	noise_levels.push_back(0.03);
-	noise_levels.push_back(0.04);
-	noise_levels.push_back(0.05);
+
+	for(unsigned int i=0; i<=20; ++i)
+	{
+		float noise_level=(float)0.05*i;
+		noise_levels.push_back(noise_level);
+	}
 	
 	std::vector<pcl::PointCloud<pcl::PointXYZ> > point_clouds;
 	std::vector<active_semantic_mapping::Cylinders> ground_truths;
@@ -99,6 +97,27 @@ int main (int argc, char** argv)
 			}
 		}
 
+		unsigned int plane_samples=50;
+		float plane_size=0.3;
+		float plane_min=0.0-0.5*plane_size;
+		float plane_step=(float)plane_size/plane_samples;
+			float z=0.0;
+		for(int x_=0; x_<plane_samples;++x_)
+		{
+			float x=plane_min+x_*plane_step;
+			for(int y_=0; y_<plane_samples;++y_)
+			{
+				
+				float y=plane_min+y_*plane_step;
+				if(sqrt(x*x+y*y)>0.15) continue;
+				pcl::PointXYZ point(x,y,z);
+				cloud.push_back(point);
+			}
+
+
+
+		}
+
 		// Generate random orientation
 		Eigen::Vector3f rot_dir;
 		cv::Mat aux(1, 1, CV_32F);
@@ -119,14 +138,17 @@ int main (int argc, char** argv)
 		cv::randn(angle, 0.0, 1.0);
 		//Eigen::Vector3f rot_dir(1.0,0.0,0.0);
 		rot_dir.normalize();
+		rot_dir=Eigen::Vector3f::UnitZ();
 		Eigen::Matrix3f rot;
 		rot=Eigen::AngleAxisf(M_PI*angle.at<float>(0,0),rot_dir);
 
-		Eigen::Vector3f cyl_dir=rot*Eigen::Vector3f::UnitZ();
+		//Eigen::Vector3f cyl_dir=rot*Eigen::Vector3f::UnitZ();
+		Eigen::Vector3f cyl_dir=Eigen::Vector3f::UnitZ();
 		Eigen::Matrix4f transf;
 		transf.block(0,0,3,3)=rot;
 		transf.block(0,3,3,1)=Eigen::Vector3f(0,0,0);
 		pcl::PointCloud<PointT> cloud_transf;
+		transf=Eigen::Matrix4f::Identity();
 		pcl::transformPointCloud (cloud, cloud_transf, transf);
 
 		point_clouds.push_back(cloud_transf);
@@ -141,9 +163,9 @@ int main (int argc, char** argv)
 		ground_truth.cylinders.layout.dim[1].size   = 8;
 		ground_truth.cylinders.layout.dim[1].stride = 8;
 
-		ground_truth.cylinders.data.push_back(0);
-		ground_truth.cylinders.data.push_back(0);
-		ground_truth.cylinders.data.push_back(0);
+		ground_truth.cylinders.data.push_back(0.5*cyl_dir[0]*height);
+		ground_truth.cylinders.data.push_back(0.5*cyl_dir[1]*height);
+		ground_truth.cylinders.data.push_back(0.5*cyl_dir[2]*height);
 		
 		ground_truth.cylinders.data.push_back(cyl_dir[0]);
 		ground_truth.cylinders.data.push_back(cyl_dir[1]);
@@ -156,92 +178,35 @@ int main (int argc, char** argv)
 	}
 
 	// Then corrupt with diferent levels of noise
-	for(unsigned int i=0; i<iterations; ++i)
+	for(unsigned int n=0; n<noise_levels.size(); ++n)
 	{
+		for(unsigned int i=0; i<iterations; ++i)
+		{
 		
-		pcl::PointCloud<PointT> cloud=point_clouds[i];
+			pcl::PointCloud<PointT> cloud=point_clouds[i];
 		
-		Eigen::Vector4f min_pt,max_pt;
-		pcl::getMinMax3D(cloud,min_pt,max_pt);
-		float cylinder_size=(max_pt.block(0,0,3,1)-min_pt.block(0,0,3,1)).norm();
-		for(unsigned int n=0; n<noise_levels.size(); ++n)
-		{		
+			Eigen::Vector4f min_pt,max_pt;
+			pcl::getMinMax3D(cloud,min_pt,max_pt);
+			float cylinder_size=(max_pt.block(0,0,3,1)-min_pt.block(0,0,3,1)).norm();
+		
 			pcl::PointCloud<PointT> noisy_cloud;
 			noisy_cloud=cloud;
 			for(unsigned int p=0; p<cloud.size();++p)
 			{
-
-
 				cv::Mat aux(1, 1, CV_32F);
-				cv::randn(aux, 0.0, noise_levels[n]*cylinder_size);
+				cv::randn(aux, 0.0, noise_levels[n]*radius);
 				noisy_cloud.points[p].x+=aux.at<float>(0,0);
 
-				cv::randn(aux, 0.0, noise_levels[n]*cylinder_size);
+				cv::randn(aux, 0.0, noise_levels[n]*radius);
 				noisy_cloud.points[p].y+=aux.at<float>(0,0);
 
-				cv::randn(aux, 0.0, noise_levels[n]*cylinder_size);
+				cv::randn(aux, 0.0, noise_levels[n]*radius);
 				noisy_cloud.points[p].z+=aux.at<float>(0,0);
 			}
 
 			ROS_ERROR_STREAM(" iteration:" << i << " noise_level: "<< n << " "  << noise_levels[n]); 
-
-
     			bag.write("point_cloud",ros::Time::now(), noisy_cloud);
-
 		}
-
-		
-
-
-
-		//pcl::PCDReader reader;
- 		//reader.read (argv[1], *cloud);
-		// Read in the cloud data
-		//pcl::PCDReader reader;
-		//reader.read (argv[1], *cloud);
-
-		//std::cerr << "PointCloud has: " << cloud->points.size () << " data points." << std::endl;
-
-
-		/*Eigen::Vector4f min_pt,max_pt;
-		pcl::getMinMax3D(*cloud,min_pt,max_pt);
-
-
-		Eigen::Vector3f rot_dir;
-		cv::Mat aux(1, 1, CV_32F);
-
-		// Generate random orientation
-		cv::randn(aux, 0.0, 1.0);
-		rot_dir(0,0)=aux.at<float>(0,0);
-
-		cv::randn(aux, 0.0, 1.0);
-		rot_dir(1,0)=aux.at<float>(0,0);
-
-		cv::randn(aux, 0.0, 1.0);
-		rot_dir(2,0)=aux.at<float>(0,0);
-
-		rot_dir.normalize();
-
-		cv::Mat angle(1, 1, CV_32F);
-		cv::randn(angle, 0.0, 1.0);
-		//Eigen::Vector3f rot_dir(1.0,0.0,0.0);
-		rot_dir.normalize();
-		Eigen::Matrix3f rot;
-		rot=Eigen::AngleAxisf(M_PI*angle.at<float>(0,0),rot_dir);
-
-		Eigen::Matrix4f transf;
-		transf.block(0,0,3,3)=rot;
-		transf.block(0,3,3,1)=Eigen::Vector3f(0,0,0);
-		pcl::PointCloud<PointT>::Ptr cloud_transf (new pcl::PointCloud<PointT>);
-		pcl::transformPointCloud (*cloud, *cloud_transf, transf);
-		
-		// End generate random orientation
-
-
-		// End corrupt with noise
-		//ros::spinOnce();
-		//loop_rate.sleep();
-		cloud_pub.publish(cloud_transf);*/
 	}
 
 	bag.close();

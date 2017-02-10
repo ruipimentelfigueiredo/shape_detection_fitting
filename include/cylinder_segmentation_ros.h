@@ -268,9 +268,9 @@ class CylinderSegmentationROS {
 		marker.id = id;
 		marker.type = model_type;
 		marker.action = visualization_msgs::Marker::ADD;
-		marker.pose.position.x = model_params[0]+0.5*height*axis_vector[0];
-		marker.pose.position.y = model_params[1]+0.5*height*axis_vector[1];
-		marker.pose.position.z = model_params[2]+0.5*height*axis_vector[2];
+		marker.pose.position.x = model_params[0];
+		marker.pose.position.y = model_params[1];
+		marker.pose.position.z = model_params[2];
 		marker.pose.orientation = cylinder_orientation;
 	/*		marker.pose.orientation.x = Q.x();
 		marker.pose.orientation.y = Q.y();
@@ -279,7 +279,7 @@ class CylinderSegmentationROS {
 		marker.scale.x = 2*model_params[6];
 		marker.scale.y = 2*model_params[6];
 		marker.scale.z = height;
-		marker.color.a = color_.a;
+		marker.color.a = 1.0;
 		marker.color.r = color_.r;
 		marker.color.g = color_.g;
 		marker.color.b = color_.b;

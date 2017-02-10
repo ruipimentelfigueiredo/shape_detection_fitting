@@ -293,9 +293,9 @@ Eigen::VectorXf CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 
 	pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);
     	coefficients_cylinder->values.resize(7);
-    	coefficients_cylinder->values[0]=cylinder_position[0];
-    	coefficients_cylinder->values[1]=cylinder_position[1];
-    	coefficients_cylinder->values[2]=cylinder_position[2];
+    	coefficients_cylinder->values[0]=cylinder_position[0]+0.5*height*cylinder_direction[0];
+    	coefficients_cylinder->values[1]=cylinder_position[1]+0.5*height*cylinder_direction[1];
+    	coefficients_cylinder->values[2]=cylinder_position[2]+0.5*height*cylinder_direction[2];
     	coefficients_cylinder->values[3]=cylinder_direction[0];
     	coefficients_cylinder->values[4]=cylinder_direction[1];
     	coefficients_cylinder->values[5]=cylinder_direction[2];

@@ -8,7 +8,7 @@ CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) :
 {
 	odom_last_stamp=ros::Time::now();
 	// INITIALIZE VISUALIZATION COLORS
-	id_colors_map.insert(std::pair<int,Color>(0,Color(0,   0.9  , 0.9, 0.2) ) );
+	id_colors_map.insert(std::pair<int,Color>(0,Color(0,   0.9  , 0.9, 1.0) ) );
 	id_colors_map.insert(std::pair<int,Color>(1,Color(0,   0.5, 0.7) ) );
 	id_colors_map.insert(std::pair<int,Color>(2,Color(0.4, 0.1, 0.4) ) );
 	id_colors_map.insert(std::pair<int,Color>(3,Color(0.3, 0.1, 0.9) ) );
