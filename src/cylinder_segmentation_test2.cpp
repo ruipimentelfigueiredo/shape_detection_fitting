@@ -187,9 +187,9 @@ position_bins=100;
 		std::fstream fs_orientation;
 		std::fstream fs_radius;
 		std::fstream fs_position;
-		fs_orientation.open (ss.str()+"_orientation_noise.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_radius.open (ss.str()+"_radius_noise.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_position.open (ss.str()+"_position_noise.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_orientation.open (ss.str()+"_orientation_noise_hybrid.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_radius.open (ss.str()+"_radius_noise_hybrid.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_position.open (ss.str()+"_position_noise_hybrid.txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
 
 		for(int i=0;i<point_clouds.size();++i)
