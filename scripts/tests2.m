@@ -72,6 +72,8 @@ plot([0:0.05:1.0],ori_rec_rate,'--b')
 plot([0:0.05:1.0],ori_rec_rate_ours,'k')
 plot([0:0.05:1.0],ori_rec_rate_hybrid,'--r')
 
+
+
 %errorbar([0:0.05:1.0],orientations_mean,orientations_std_dev)
 legend('Normals','Curvature','Hybrid')
 

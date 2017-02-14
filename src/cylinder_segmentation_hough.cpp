@@ -83,6 +83,7 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 	//ROS_DEBUG_STREAM("  3.1. Reset accumulator");
 
 	std::fill(cyl_direction_accum.begin(),cyl_direction_accum.end(), 0);
+<<<<<<< HEAD
 
 	float threshold=0.05;
 	//ROS_DEBUG_STREAM("  3.2. Vote");
@@ -125,6 +126,31 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 				//	cyl_direction_accum[i]+=normal_weight;
 			}
 
+=======
+	
+	float threshold=0.0005;
+
+	//ROS_DEBUG_STREAM("  3.2. Vote");
+	for(unsigned int s = 0; s < cloud_normals->size(); ++s)
+	{
+	
+
+
+		for(unsigned int i=0; i<gaussian_sphere_points.size(); ++i)
+		{
+			//ROS_ERROR_STREAM("principal_curv all:" << principal_curvatures->points[s]);
+			//ROS_ERROR_STREAM("principal_curv:" << principal_curvatures->points[s].principal_curvature[0]);
+			//1 - fabs(dot.product)
+
+			float curvature_weight;
+
+			curvature_weight=(1.0-fabs(Eigen::Vector3f(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(gaussian_sphere_points[i])))*principal_curvatures->points[s].pc1;
+
+
+
+			float normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().dot(gaussian_sphere_points[i])));
+			cyl_direction_accum[i]+=normal_weight*principal_curvatures->points[s].pc1;
+>>>>>>> d13a2c1b43be57dad21351f8593f5bacd0a81c71
 
 			//cyl_direction_accum[i]+=normal_weight;		
 		}
