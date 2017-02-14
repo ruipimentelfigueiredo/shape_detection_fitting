@@ -2,9 +2,9 @@ iterations=1200;
 x_upper_limit=0.31;
 
 %% orientation
-orientation_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_0.txt';
-%orientation_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_1.txt';
-orientation_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_1.txt';
+orientation_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_clutter_0.txt';
+%orientation_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_clutter_1.txt';
+orientation_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_clutter_1.txt';
 
 formatSpec = '%f';
 sizeA = [Inf iterations];
@@ -33,17 +33,17 @@ fontsize=15;
 set(gcf, 'Color', [1,1,1]);
 %plot(orientations_mean)
 hold on
-errorbar(100*[0:0.05:0.5],orientations_mean,orientations_std_dev,'--b')
+errorbar(100*[0:0.5:2.0],orientations_mean,orientations_std_dev,'--b')
 %errorbar([0:0.05:0.5],orientations_1_mean,orientations_1_std_dev,'k')
-errorbar(100*[0:0.05:0.5],orientations_hybrid_mean,orientations_hybrid_std_dev,'k')
+errorbar(100*[0:0.5:2.0],orientations_hybrid_mean,orientations_hybrid_std_dev,'k')
 
 
 legend('Rabbani et al.','Ours')
-xlabel('noise standard deviation (% of cylinder radius)','Interpreter','LaTex','FontSize',fontsize);
+xlabel('clutter (% of cylinder surface points)','Interpreter','LaTex','FontSize',fontsize);
 ylabel('absolute orientation error (º)','Interpreter','LaTex','FontSize',fontsize);
-set(gca,'XTick',100*[0:0.1:1.0])
+set(gca,'XTick',100*[0:0.5:2.0])
 
-axis ([-1 50 0 70]) 
+axis ([-1 200 0 95]) 
 set(gca,'fontsize',fontsize);
 
 scale = 0.1;
@@ -52,7 +52,7 @@ pos(2) = pos(2)+scale*pos(4);
 pos(4) = (1-scale)*pos(4);
 set(gca, 'Position', pos)
 
-export_fig orientation_error -pdf
+export_fig clutter_orientation_error -pdf
 
 %% ORIENTATIONS REC
 % orientations_rec=orientations;
@@ -83,7 +83,7 @@ export_fig orientation_error -pdf
 % legend('Rabbani et al.','Ours')
 % 
 % xlabel('$\sigma$','Interpreter','LaTex','FontSize',fontsize);
-% ylabel('correct orientation rate (%)','Interpreter','LaTex','FontSize',fontsize);
+% ylabel('correct orientation rate (% of cylinder surface points)','Interpreter','LaTex','FontSize',fontsize);
 % set(gca,'XTick',[0:0.1:1.0])
 % 
 % axis ([-0.01 x_upper_limit 0 101]) 
@@ -91,9 +91,9 @@ export_fig orientation_error -pdf
 % 
 % export_fig orientation_rec -pdf
 %% radius
-radius_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_0.txt';
-%radius_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_1.txt';
-radius_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_1.txt';
+radius_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_clutter_0.txt';
+%radius_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_clutter_1.txt';
+radius_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_clutter_1.txt';
 
 formatSpec = '%f';
 sizeA = [Inf iterations];
@@ -116,17 +116,18 @@ fontsize=15;
 set(gcf, 'Color', [1,1,1]);
 %plot(radii_mean)
 hold on
-errorbar(100*[0:0.05:0.5],radii_mean,radii_std_dev,'--b')
+errorbar(100*[0:0.5:2.0],radii_mean,radii_std_dev,'--b')
 %errorbar([0:0.05:0.5],radii_mean_1,radii_std_dev_1,'k')
-errorbar(100*[0:0.05:0.5],radii_mean_hybrid, radii_std_dev_hybrid,'k')
+errorbar(100*[0:0.5:2.0],radii_mean_hybrid, radii_std_dev_hybrid,'k')
 
 legend('Rabbani et al.','Ours')
 
-xlabel('noise standard deviation (% of cylinder radius)','Interpreter','LaTex','FontSize',fontsize);
+xlabel('clutter (% of cylinder surface points)','Interpreter','LaTex','FontSize',fontsize);
 ylabel('absolute radius error (m)','Interpreter','LaTex','FontSize',fontsize);
-set(gca,'XTick',100*[0:0.1:1.0])
 
-axis ([-1 50 -0.001 0.05]) 
+set(gca,'XTick',100*[0:0.5:2.0])
+
+axis ([-1 200 -0.001 0.05]) 
 set(gca,'fontsize',fontsize);
 
 scale = 0.1;
@@ -135,7 +136,7 @@ pos(2) = pos(2)+scale*pos(4);
 pos(4) = (1-scale)*pos(4);
 set(gca, 'Position', pos)
 
-export_fig radii_error -pdf
+export_fig clutter_radii_error -pdf
 
 %% RADIUS REC
 % radius_rec=radii;
@@ -166,7 +167,7 @@ export_fig radii_error -pdf
 % %errorbar([0:0.05:0.5],orientations_mean,orientations_std_dev)
 % 
 % xlabel('error standard deviation (% of cylinder radius)','Interpreter','LaTex','FontSize',fontsize);
-% ylabel('correct radius rate (%)','Interpreter','LaTex','FontSize',fontsize);
+% ylabel('correct radius rate (% of cylinder surface points)','Interpreter','LaTex','FontSize',fontsize);
 % set(gca,'XTick',[0:0.1:1.0])
 % 
 % axis ([-0.01 x_upper_limit 0 101]) 
@@ -175,9 +176,9 @@ export_fig radii_error -pdf
 % export_fig radii_rec -pdf
 
 %% position
-position_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_0.txt';
-%position_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_1.txt';
-position_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_1.txt';
+position_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_clutter_0.txt';
+%position_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_clutter_1.txt';
+position_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_clutter_1.txt';
 
 formatSpec = '%f';
 sizeA = [Inf iterations];
@@ -200,18 +201,19 @@ fontsize=15;
 set(gcf, 'Color', [1,1,1]);
 %plot(radii_mean)
 hold on
-errorbar(100*[0:0.05:0.5],position_mean,position_std_dev,'--b')
+errorbar(100*[0:0.5:2.0],position_mean,position_std_dev,'--b')
 %errorbar([0:0.05:0.5],position_mean_1,position_std_dev_1,'k')
-errorbar(100*[0:0.05:0.5],position_mean_hybrid, position_std_dev_hybrid,'k')
+errorbar(100*[0:0.5:2.0],position_mean_hybrid, position_std_dev_hybrid,'k')
 
 legend('Rabbani et al.','Ours')
 
-xlabel('noise standard deviation (% of cylinder radius)','Interpreter','LaTex','FontSize',fontsize);
+xlabel('clutter (% of cylinder surface points)','Interpreter','LaTex','FontSize',fontsize);
 ylabel('absolute position error (m)','Interpreter','LaTex','FontSize',fontsize);
 
-axis ([-1 50 -0.001 0.25]) 
+set(gca,'XTick',100*[0:0.5:2.0])
 
-set(gca,'XTick',100*[0:0.1:1.0])
+axis ([-1 200 -0.001 2.0])
+
 set(gca,'fontsize',fontsize);
 
 scale = 0.1;
@@ -220,7 +222,7 @@ pos(2) = pos(2)+scale*pos(4);
 pos(4) = (1-scale)*pos(4);
 set(gca, 'Position', pos)
 
-export_fig position_error -pdf
+export_fig clutter_position_error -pdf
 
 
 

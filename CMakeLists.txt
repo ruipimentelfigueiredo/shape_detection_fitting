@@ -100,6 +100,11 @@ target_link_libraries (cylinder_segmentation_test ${PCL_LIBRARIES} ${catkin_LIBR
 add_executable (cylinder_segmentation_test2 src/cylinder_segmentation_test2.cpp)
 target_link_libraries (cylinder_segmentation_test2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
+add_executable (cylinder_segmentation_test_clutter src/cylinder_segmentation_test_clutter.cpp)
+target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+
+add_executable (cylinder_segmentation_test_clutter2 src/cylinder_segmentation_test_clutter2.cpp)
+target_link_libraries (cylinder_segmentation_test_clutter2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
 
 #add_executable (hough_lines_cuda src/hough_lines_cuda.cpp)

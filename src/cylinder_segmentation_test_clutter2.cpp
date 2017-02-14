@@ -58,8 +58,8 @@ visualization_msgs::Marker createMarker(const Eigen::VectorXf & model_params, in
 	marker.scale.y = 2*model_params[6];
 	marker.scale.z = height;
 	marker.color.a = 0.5;
-	marker.color.r = 0.0;
-	marker.color.g = 1.0;
+	marker.color.r = 1.0;
+	marker.color.g = 0.0;
 	marker.color.b = 0.0;
 	//marker.lifetime = ros::Duration(0.05);
 	return marker;
@@ -106,7 +106,7 @@ int main (int argc, char** argv)
 
 
 	std::string rosbag_file;
-	rosbag_file = ss.str()+".bag";
+	rosbag_file = ss.str()+"clutter.bag";
 
 	rosbag::Bag bag;
 
@@ -125,7 +125,8 @@ int main (int argc, char** argv)
 	float radius=0.05;
 
 	
-	position_bins=100;
+	
+position_bins=100;
 
 	while(ros::ok())
 	{
@@ -187,9 +188,9 @@ int main (int argc, char** argv)
 			std::fstream fs_orientation;
 			std::fstream fs_radius;
 			std::fstream fs_position;
-			fs_orientation.open (ss.str()+"_orientation_noise_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app );
-			fs_radius.open (ss.str()+"_radius_noise_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-			fs_position.open (ss.str()+"_position_noise_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+			fs_orientation.open (ss.str()+"_orientation_clutter_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app );
+			fs_radius.open (ss.str()+"_radius_clutter_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+			fs_position.open (ss.str()+"_position_clutter_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
 			ROS_ERROR_STREAM("OI:"<<ground_truths.size());
 			for(int i=0;i<point_clouds.size();++i)

@@ -1,13 +1,14 @@
 #include "cylinder_segmentation_hough.h"
 
-CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float min_radius_, float max_radius_,unsigned int gaussian_sphere_points_num_, bool do_refine_) : 
+CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float min_radius_, float max_radius_,unsigned int gaussian_sphere_points_num_, int mode_, bool do_refine_) : 
 	CylinderSegmentation(min_radius_,max_radius_,do_refine_),
 	gaussian_sphere_points_num(gaussian_sphere_points_num_),
 	angle_bins(angle_bins_),
 	angle_step(2*M_PI/angle_bins),
 	position_bins(position_bins_),
 	radius_bins(radius_bins_),
-	r_step((max_radius-min_radius)/radius_bins)
+	r_step((max_radius-min_radius)/radius_bins),
+	mode(mode_)
 {
 
 	// Create randomized structure
@@ -45,7 +46,6 @@ CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,un
 			cyl_circ_accum[i][j].resize(radius_bins);
 		}
 	}
-	
 };
 
 
@@ -72,7 +72,7 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 	pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr principal_curvatures (new pcl::PointCloud<pcl::PrincipalCurvatures> ());
 	principal_curvatures_estimation.compute (*principal_curvatures);
 
-	//ROS_ERROR_STREAM("all:"<<principal_curvatures->points[0]);
+
 	//ROS_ERROR_STREAM("principal curvature:"<<cloud_normals->points[0].curvature);
 
 
@@ -84,21 +84,47 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 
 	std::fill(cyl_direction_accum.begin(),cyl_direction_accum.end(), 0);
 
-
+	float threshold=0.05;
 	//ROS_DEBUG_STREAM("  3.2. Vote");
 	for(unsigned int s = 0; s < cloud_normals->size(); ++s)
 	{
 		//float threshold=0.05;
 		//if(principal_curvatures->points[s].pc1<threshold)
 		//	continue;
+		//ROS_ERROR_STREAM("all:"<<principal_curvatures->points[s]);
 		for(unsigned int i=0; i<gaussian_sphere_points.size(); ++i)
 		{
-			
-			//1 - fabs(dot.product)
-			float curvature_weight=
-						(1.0-fabs(Eigen::Vector3f(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(gaussian_sphere_points[i])));
-			float normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().dot(gaussian_sphere_points[i])));
-			cyl_direction_accum[i]+=normal_weight;
+			if(mode==0)
+			{
+				//1 - fabs(dot.product)
+				
+				float normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().dot(gaussian_sphere_points[i])));
+				cyl_direction_accum[i]+=normal_weight;
+			}
+			else if(mode==1)
+			{
+				float curvature_weight=(1.0-fabs(Eigen::Vector3f(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(gaussian_sphere_points[i])));
+
+				Eigen::Vector3f curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cross(gaussian_sphere_points[i]);
+				//float curvature_weight=principal_curvatures->points[s].pc1;
+				//float curvature_weight=fabs(curvature_dir.dot(gaussian_sphere_points[i]));
+				cyl_direction_accum[i]+=curvature_weight*principal_curvatures->points[s].pc1*10.0;
+			}
+			else if(mode==2)
+			{
+				float normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().dot(gaussian_sphere_points[i])));
+
+				float curvature_weight=(1.0-fabs(Eigen::Vector3f(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(gaussian_sphere_points[i])));
+				Eigen::Vector3f curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cross(gaussian_sphere_points[i]);
+				//float curvature_weight=principal_curvatures->points[s].pc1;
+				//float curvature_weight=fabs(curvature_dir.dot(gaussian_sphere_points[i]));
+
+				//if(principal_curvatures->points[s].pc1<threshold)
+					cyl_direction_accum[i]+=normal_weight*curvature_weight*principal_curvatures->points[s].pc1*10.0;
+				//else
+				//	cyl_direction_accum[i]+=normal_weight;
+			}
+
 
 			//cyl_direction_accum[i]+=normal_weight;		
 		}
@@ -209,6 +235,8 @@ Eigen::VectorXf CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 	ne.setSearchMethod (tree);
 	ne.setInputCloud (point_cloud_in_);
 	ne.setKSearch (50);
+  	//ne.setRadiusSearch (0.03);
+
 	ne.compute (*cloud_normals);
 
 
