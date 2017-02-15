@@ -176,19 +176,10 @@ int main (int argc, char** argv)
 
 		std::vector<boost::shared_ptr<CylinderSegmentationHough> > cylinder_segmentators;
 
-<<<<<<< HEAD
+
 		cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num,0)));
 		 //cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num,1)));
 		cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num,2)));
-=======
-		std::fstream fs_orientation;
-		std::fstream fs_radius;
-		std::fstream fs_position;
-		fs_orientation.open (ss.str()+"_orientation_noise_hybrid.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_radius.open (ss.str()+"_radius_noise_hybrid.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_position.open (ss.str()+"_position_noise_hybrid.txt", std::fstream::in | std::fstream::out | std::fstream::app);
->>>>>>> d13a2c1b43be57dad21351f8593f5bacd0a81c71
-
 
 		for (int d=0;d < cylinder_segmentators.size();++d)
 		{

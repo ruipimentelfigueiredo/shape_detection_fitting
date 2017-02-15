@@ -39,7 +39,7 @@ errorbar(100*[0:0.5:2.0],orientations_hybrid_mean,orientations_hybrid_std_dev,'k
 
 
 legend('Rabbani et al.','Ours')
-xlabel('clutter (% of cylinder surface points)','Interpreter','LaTex','FontSize',fontsize);
+xlabel('clutter (% of flat surface points)','Interpreter','LaTex','FontSize',fontsize);
 ylabel('absolute orientation error (º)','Interpreter','LaTex','FontSize',fontsize);
 set(gca,'XTick',100*[0:0.5:2.0])
 
@@ -122,7 +122,7 @@ errorbar(100*[0:0.5:2.0],radii_mean_hybrid, radii_std_dev_hybrid,'k')
 
 legend('Rabbani et al.','Ours')
 
-xlabel('clutter (% of cylinder surface points)','Interpreter','LaTex','FontSize',fontsize);
+xlabel('clutter (% of flat surface points)','Interpreter','LaTex','FontSize',fontsize);
 ylabel('absolute radius error (m)','Interpreter','LaTex','FontSize',fontsize);
 
 set(gca,'XTick',100*[0:0.5:2.0])
@@ -207,7 +207,7 @@ errorbar(100*[0:0.5:2.0],position_mean_hybrid, position_std_dev_hybrid,'k')
 
 legend('Rabbani et al.','Ours')
 
-xlabel('clutter (% of cylinder surface points)','Interpreter','LaTex','FontSize',fontsize);
+xlabel('clutter (% of flat surface points)','Interpreter','LaTex','FontSize',fontsize);
 ylabel('absolute position error (m)','Interpreter','LaTex','FontSize',fontsize);
 
 set(gca,'XTick',100*[0:0.5:2.0])
