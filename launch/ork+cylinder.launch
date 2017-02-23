@@ -9,7 +9,7 @@
 
 
 	<param name="use_sim_time" value="true" />
-  	<arg name="file_name" default="2017-02-01-18-45-50.bag"/>
+  	<arg name="file_name" default="2017-02-16-19-09-00.bag"/>
 	<node pkg="rosbag" type="play" name="player" output="log" args="--loop --clock $(find active_semantic_mapping)/data/$(arg file_name)"/>
 	<!-- RDBD camera -->
 	<!--<include file="$(find openni2_launch)/launch/openni2.launch">
@@ -18,15 +18,14 @@
 	<!--<include file="$(find zed_wrapper)/launch/zed.launch">
 
 	</include>-->
-<node pkg="tf" type="static_transform_publisher" name="base_link_broad" args="0 0 0 0 0 0 1 base_link camera_link  100" />
+<!--<node pkg="tf" type="static_transform_publisher" name="base_link_broad" args="0 0 0 0 0 0 1 base_link camera_link  100" />
   <node pkg="fovis_ros" type="fovis_mono_depth_odometer" name="stereo_odometer" output="screen">
     <remap from="/camera/rgb/image_rect" to="/camera/rgb/image_rect_color" />
     <remap from="/camera/depth_registered/image_rect" to="/camera/depth/image_rect" />
-    <!--<remap from="/stereo/left/camera_info" to="/cam1/camera_info" />
-    <remap from="/stereo/right/camera_info" to="/cam0/camera_info" />
-    <param name="approximate_sync" type="bool" value="True" />
-    <param name="queue_size" type="int" value="400" />-->
-  </node>
+
+  </node>-->
+
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-0.0198275689036 0.0198275689036 1.07700002193 0.90963613987 0.0105423424393 0.0231284610927 0.414627552032 camera_rgb_optical_frame table 100" />
 
 
 
@@ -117,10 +116,6 @@
 			<param name="queue_size"                  type="int" value="$(arg queue_size)"/>
 		</node>
 	</group>-->
-
-
-
-
 
 	<!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
 	<node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />

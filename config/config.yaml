@@ -1,8 +1,8 @@
 use_ransac: false
 
 # common
-min_radius: 0.01
-max_radius: 0.06
+min_radius: 0.03
+max_radius: 0.09
 
 # hough
 gaussian_sphere_points_num: 600

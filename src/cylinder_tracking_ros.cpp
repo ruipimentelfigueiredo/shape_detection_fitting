@@ -376,9 +376,9 @@ visualization_msgs::Marker CylinderTrackingROS::createMarker(const Eigen::Vector
 	marker.id = id;
 	marker.type = model_type;
 	marker.action = visualization_msgs::Marker::ADD;
-	marker.pose.position.x = model_params[0]+0.5*height*axis_vector[0];
-	marker.pose.position.y = model_params[1]+0.5*height*axis_vector[1];
-	marker.pose.position.z = model_params[2]+0.5*height*axis_vector[2];
+	marker.pose.position.x = model_params[0];
+	marker.pose.position.y = model_params[1];
+	marker.pose.position.z = model_params[2];
 	marker.pose.orientation = cylinder_orientation;
 /*		marker.pose.orientation.x = Q.x();
 	marker.pose.orientation.y = Q.y();

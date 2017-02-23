@@ -57,15 +57,15 @@ int main (int argc, char** argv)
 	std::vector<float> heights;
 
 	heights.push_back(1.00);
-	/*heights.push_back(2.00);
+	heights.push_back(2.00);
 	heights.push_back(3.00);
 	heights.push_back(4.00);
 	heights.push_back(5.00);
-	heights.push_back(6.00);*/
+	heights.push_back(6.00);
 	std::vector<float> noise_levels; // percentage of object size (std_dev)
 
-	//noise_levels.push_back(0.001);
-	for(unsigned int i=5; i<=10; ++i)
+	noise_levels.push_back(0.001);
+	for(unsigned int i=1; i<=10; ++i)
 	{
 		float noise_level=(float)0.05*i;
 		noise_levels.push_back(noise_level);

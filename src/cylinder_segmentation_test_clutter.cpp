@@ -41,14 +41,9 @@ int main (int argc, char** argv)
 	std::string rosbag_file;
 	rosbag_file = ss.str();
 
-
 	rosbag::Bag bag;
 
 	bag.open(rosbag_file, rosbag::bagmode::Write);
-
-	// TESTING PARAMS
- 	float min_radius=0.10;
- 	float max_radius=0.20;
 
 	int height_samples=30;
 	int angle_samples=30;

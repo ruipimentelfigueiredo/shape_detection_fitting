@@ -187,9 +187,9 @@ int main (int argc, char** argv)
 			std::fstream fs_orientation;
 			std::fstream fs_radius;
 			std::fstream fs_position;
-			fs_orientation.open (ss.str()+"_orientation_noise_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app );
-			fs_radius.open (ss.str()+"_radius_noise_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-			fs_position.open (ss.str()+"_position_noise_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+			fs_orientation.open (ss.str()+"_orientation_noise_biased2_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app );
+			fs_radius.open (ss.str()+"_radius_noise_biased2_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+			fs_position.open (ss.str()+"_position_noise_biased2_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
 			ROS_ERROR_STREAM("OI:"<<ground_truths.size());
 			for(int i=0;i<point_clouds.size();++i)

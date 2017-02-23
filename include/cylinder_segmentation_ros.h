@@ -15,6 +15,12 @@
 
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Int32MultiArray.h>
+
+
+#include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
+#include <pcl/point_types.h>
+
 class Color
 {
 
@@ -95,14 +101,21 @@ class CylinderSegmentationROS {
 						//pcl::PointCloudinput->markers[i].points
 			}
 
+			tf::TransformListener tf_listener;
+			tf_listener.waitForTransform( "/table",cloud_->header.frame_id,ros::Time(0), ros::Duration(5.0));
+			pcl_ros::transformPointCloud("/table", *cloud_, *cloud_, tf_listener);
+
+
 			PointCloudT::Ptr cloud_filtered (new PointCloudT);
 			// Create the filtering object
 			pcl::VoxelGrid<PointT> sor;
 			sor.setInputCloud(cloud_);
 			sor.setLeafSize(0.005f, 0.005f, 0.005f);
 			sor.filter(*cloud_filtered);
+			cloud_filtered->header.frame_id="table";
 			clusters_point_clouds.push_back(cloud_filtered);
 		
+
 			///////////////////////////
 			// Get 2d bounding boxes //
 			///////////////////////////
@@ -112,6 +125,7 @@ class CylinderSegmentationROS {
 			///////////////////////////
 
 			// Get XY max and min and construct image
+
 
 			PointCloudT::Ptr cloud_projected(new PointCloudT);
 	  		pcl::transformPointCloud (*cloud_filtered, *cloud_projected, cam_intrinsic);
@@ -175,11 +189,13 @@ class CylinderSegmentationROS {
 		visualization_msgs::Marker marker_;
 		marker_.action = 3;
 		markers_.markers.push_back(marker_);
+		
+
 
 		// DETECT
-
 		active_semantic_mapping::Cylinders cylinders_msg;
 		cylinders_msg.header=input_clusters->header;
+		cylinders_msg.header.frame_id=clusters_point_clouds[0]->header.frame_id;
 		cylinders_msg.cylinders.layout.dim.resize(2);
 		cylinders_msg.cylinders.layout.dim[0].label  = "cylinders";
 		cylinders_msg.cylinders.layout.dim[0].size   = 0;
@@ -190,7 +206,7 @@ class CylinderSegmentationROS {
 
 		const clock_t begin_time = clock();
 
-		std::string detections_frame_id=input_clusters->markers.markers[0].header.frame_id;
+		std::string detections_frame_id=clusters_point_clouds[0]->header.frame_id;
 
 		for(unsigned int i=0; i<clusters_point_clouds.size();++i)
 		{
@@ -279,10 +295,10 @@ class CylinderSegmentationROS {
 		marker.scale.x = 2*model_params[6];
 		marker.scale.y = 2*model_params[6];
 		marker.scale.z = height;
-		marker.color.a = 1.0;
-		marker.color.r = color_.r;
-		marker.color.g = color_.g;
-		marker.color.b = color_.b;
+			marker.color.a = 1.0;
+			marker.color.r = 0;
+			marker.color.g = 1;
+			marker.color.b = 0;
 		//marker.lifetime = ros::Duration(0.05);
 		return marker;
 	}

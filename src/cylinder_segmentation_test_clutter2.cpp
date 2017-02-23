@@ -92,7 +92,7 @@ int main (int argc, char** argv)
 	unsigned int radius_bins=10;
  	unsigned int position_bins=10;
 
-	int gaussian_sphere_points_num=225;
+	int gaussian_sphere_points_num=450;
 	std::ostringstream ss;
 	ss << "/home/rui/rosbags/";
     	boost::filesystem::create_directories(ss.str());
@@ -188,9 +188,9 @@ position_bins=100;
 			std::fstream fs_orientation;
 			std::fstream fs_radius;
 			std::fstream fs_position;
-			fs_orientation.open (ss.str()+"_orientation_clutter_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app );
-			fs_radius.open (ss.str()+"_radius_clutter_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-			fs_position.open (ss.str()+"_position_clutter_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+			fs_orientation.open (ss.str()+"_orientation_clutter_450_unbiased_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app );
+			fs_radius.open (ss.str()+"_radius_clutter_450_unbiased_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+			fs_position.open (ss.str()+"_position_clutter_450_unbiased_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
 			ROS_ERROR_STREAM("OI:"<<ground_truths.size());
 			for(int i=0;i<point_clouds.size();++i)

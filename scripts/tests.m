@@ -2,9 +2,11 @@ iterations=1200;
 x_upper_limit=0.31;
 
 %% orientation
-orientation_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_0.txt';
-%orientation_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_1.txt';
-orientation_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_1.txt';
+orientation_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_biased_0.txt';
+%orientation_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_biased_1.txt';
+orientation_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_biased_1.txt';
+orientation_file_hybrid_biased='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_orientation_noise_biased2_0.txt';
+
 
 formatSpec = '%f';
 sizeA = [Inf iterations];
@@ -24,7 +26,10 @@ orientations_hybrid = (180.0/pi)*orientations_hybrid;
 orientations_hybrid_mean = mean(orientations_hybrid,2);
 orientations_hybrid_std_dev=std(orientations_hybrid,0,2);
 
-
+orientations_hybrid_biased = importdata(orientation_file_hybrid_biased);
+orientations_hybrid_biased = (180.0/pi)*orientations_hybrid_biased;
+orientations_hybrid_biased_mean = mean(orientations_hybrid_biased,2);
+orientations_hybrid_biased_std_dev=std(orientations_hybrid_biased,0,2);
 % PLOTS
 close all
 
@@ -35,15 +40,16 @@ set(gcf, 'Color', [1,1,1]);
 hold on
 errorbar(100*[0:0.05:0.5],orientations_mean,orientations_std_dev,'--b')
 %errorbar([0:0.05:0.5],orientations_1_mean,orientations_1_std_dev,'k')
-errorbar(100*[0:0.05:0.5],orientations_hybrid_mean,orientations_hybrid_std_dev,'k')
+errorbar(100*[0:0.05:0.5],orientations_hybrid_mean,orientations_hybrid_std_dev,'r')
+errorbar(100*[0:0.05:0.5],orientations_hybrid_biased_mean,orientations_hybrid_biased_std_dev,'k')
 
 
-legend('Rabbani et al.','Ours')
+legend('Rabbani et al.','Ours (unbiased)','Ours (biased)')
 xlabel('noise standard deviation (% of cylinder radius)','Interpreter','LaTex','FontSize',fontsize);
 ylabel('absolute orientation error (º)','Interpreter','LaTex','FontSize',fontsize);
 set(gca,'XTick',100*[0:0.1:1.0])
 
-axis ([-1 50 0 70]) 
+axis ([-1 50 0 20]) 
 set(gca,'fontsize',fontsize);
 
 scale = 0.1;
@@ -91,9 +97,10 @@ export_fig orientation_error -pdf
 % 
 % export_fig orientation_rec -pdf
 %% radius
-radius_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_0.txt';
-%radius_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_1.txt';
-radius_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_1.txt';
+radius_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_biased_0.txt';
+%radius_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_biased_1.txt';
+radius_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_biased_1.txt';
+radius_file_hybrid_biased='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_radius_noise_biased2_0.txt';
 
 formatSpec = '%f';
 sizeA = [Inf iterations];
@@ -110,6 +117,10 @@ radii_hybrid = importdata(radius_file_hybrid);
 radii_mean_hybrid = mean(radii_hybrid,2);
 radii_std_dev_hybrid=std(radii_hybrid,0,2);
 
+radii_hybrid_biased = importdata(radius_file_hybrid_biased);
+radii_mean_hybrid_biased = mean(radii_hybrid_biased,2);
+radii_std_dev_hybrid_biased=std(radii_hybrid_biased,0,2);
+
 % PLOTS
 figure(3)
 fontsize=15;
@@ -118,9 +129,10 @@ set(gcf, 'Color', [1,1,1]);
 hold on
 errorbar(100*[0:0.05:0.5],radii_mean,radii_std_dev,'--b')
 %errorbar([0:0.05:0.5],radii_mean_1,radii_std_dev_1,'k')
-errorbar(100*[0:0.05:0.5],radii_mean_hybrid, radii_std_dev_hybrid,'k')
+errorbar(100*[0:0.05:0.5],radii_mean_hybrid, radii_std_dev_hybrid,'r')
+errorbar(100*[0:0.05:0.5],radii_mean_hybrid_biased, radii_std_dev_hybrid_biased,'k')
 
-legend('Rabbani et al.','Ours')
+legend('Rabbani et al.','Ours (unbiased)','Ours (biased)')
 
 xlabel('noise standard deviation (% of cylinder radius)','Interpreter','LaTex','FontSize',fontsize);
 ylabel('absolute radius error (m)','Interpreter','LaTex','FontSize',fontsize);
@@ -175,9 +187,10 @@ export_fig radii_error -pdf
 % export_fig radii_rec -pdf
 
 %% position
-position_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_0.txt';
-%position_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_1.txt';
-position_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_1.txt';
+position_file='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_biased_0.txt';
+%position_file_1='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_biased_1.txt';
+position_file_hybrid='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_biased_1.txt';
+position_file_hybrid_biased='/home/rui/rosbags/angle_bins_30_radius_bins_10_position_bins_10_position_noise_biased2_0.txt';
 
 formatSpec = '%f';
 sizeA = [Inf iterations];
@@ -190,9 +203,13 @@ position_std_dev=std(position,0,2);
 % position_mean_1 = mean(position_1,2);
 % position_std_dev_1=std(position_1,0,2);
 
-position_hybrid = importdata(position_file_hybrid);
-position_mean_hybrid = mean(position_hybrid,2);
-position_std_dev_hybrid=std(position_hybrid,0,2);
+position_hybrid_biased = importdata(position_file_hybrid_biased);
+position_mean_hybrid_biased = mean(position_hybrid_biased,2);
+position_std_dev_hybrid_biased=std(position_hybrid_biased,0,2);
+
+position_hybrid_biased = importdata(position_file_hybrid_biased);
+position_mean_hybrid_biased = mean(position_hybrid_biased,2);
+position_std_dev_hybrid_biased=std(position_hybrid_biased,0,2);
 
 % PLOTS
 figure(4)
@@ -202,9 +219,10 @@ set(gcf, 'Color', [1,1,1]);
 hold on
 errorbar(100*[0:0.05:0.5],position_mean,position_std_dev,'--b')
 %errorbar([0:0.05:0.5],position_mean_1,position_std_dev_1,'k')
-errorbar(100*[0:0.05:0.5],position_mean_hybrid, position_std_dev_hybrid,'k')
+errorbar(100*[0:0.05:0.5],position_mean_hybrid, position_std_dev_hybrid,'r')
+errorbar(100*[0:0.05:0.5],position_mean_hybrid_biased, position_std_dev_hybrid_biased,'k')
 
-legend('Rabbani et al.','Ours')
+legend('Rabbani et al.','Ours (unbiased)','Ours (biased)')
 
 xlabel('noise standard deviation (% of cylinder radius)','Interpreter','LaTex','FontSize',fontsize);
 ylabel('absolute position error (m)','Interpreter','LaTex','FontSize',fontsize);
