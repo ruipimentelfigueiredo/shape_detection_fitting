@@ -12,7 +12,7 @@ int main (int argc, char** argv)
 
 	ros::NodeHandle n;
 	ros::NodeHandle n_priv("~");
-	ros::Rate loop_rate(30);
+	ros::Rate loop_rate(300);
 
 	bool use_ransac;
 
@@ -45,7 +45,7 @@ int main (int argc, char** argv)
 		ROS_INFO_STREAM("distance_threshold: "<< distance_threshold);
 
 		boost::shared_ptr<CylinderSegmentationRansac> cylinder_segmentation(new CylinderSegmentationRansac((float)normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(float)min_radius, (float)max_radius));
-		CylinderSegmentationROS<CylinderSegmentationRansac> cylinder_segmentation_ros(n, cylinder_segmentation);
+		CylinderSegmentationROS<CylinderSegmentationRansac> cylinder_segmentation_ros(n, n_priv, cylinder_segmentation);
 
 		while (ros::ok())
 		{
@@ -72,7 +72,7 @@ int main (int argc, char** argv)
 		ROS_INFO_STREAM("gaussian_sphere_points_num: "<< gaussian_sphere_points_num);
 
 		boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation(new CylinderSegmentationHough((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num));
-		CylinderSegmentationROS<CylinderSegmentationHough> cylinder_segmentation_ros(n, cylinder_segmentation);
+		CylinderSegmentationROS<CylinderSegmentationHough> cylinder_segmentation_ros(n, n_priv, cylinder_segmentation);
 
 
 		while (ros::ok())

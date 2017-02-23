@@ -98,8 +98,22 @@ target_link_libraries (cylinder_segmentation_ros_node ${PCL_LIBRARIES} ${catkin_
 add_library(cylinder_segmentation_ros_nodelet src/nodelets/cylinder_segmentation_ros_nodelet.cpp)
 target_link_libraries (cylinder_segmentation_ros_nodelet ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough)
 
+add_dependencies(cylinder_segmentation_ros_nodelet cylinder_segmentation_ros_gencpp)
+
+install(TARGETS cylinder_segmentation_ros_nodelet
+        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+
+
+
 add_library(cylinder_tracking_ros_nodelet src/nodelets/cylinder_tracking_ros_nodelet.cpp)
 target_link_libraries (cylinder_tracking_ros_nodelet ${PCL_LIBRARIES} ${catkin_LIBRARIES}  cylinder_tracking_ros)
+
+add_dependencies(cylinder_tracking_ros_nodelet cylinder_segmentation_ros_gencpp)
+
+install(TARGETS cylinder_tracking_ros_nodelet
+        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
 
 
 # TESTS

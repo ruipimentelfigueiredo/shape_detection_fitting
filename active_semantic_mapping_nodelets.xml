@@ -8,7 +8,7 @@
 </library>
 
 
-<library path="lib/libperipheral_foveal_stereo_ros_nodelet">
+<library path="lib/libcylinder_tracking_ros_nodelet">
   <class name="active_semantic_mapping/CylinderTrackingRosNodelet" type="active_semantic_mapping::CylinderTrackingRosNodelet" base_class_type="nodelet::Nodelet">
     <description>
       foveated stereo nodelet.

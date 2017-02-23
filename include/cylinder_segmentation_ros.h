@@ -98,27 +98,22 @@ class CylinderSegmentationROS {
 				double y_=input_clusters->markers.markers[i].points[p].y;
 				double z_=input_clusters->markers.markers[i].points[p].z;
 				cloud_->points.push_back (pcl::PointXYZ(x_, y_, z_));
-						//pcl::PointCloudinput->markers[i].points
+				//pcl::PointCloudinput->markers[i].points
 			}
 
-			tf::TransformListener tf_listener;
+			/*tf::TransformListener tf_listener;
 			tf_listener.waitForTransform( "/table",cloud_->header.frame_id,ros::Time(0), ros::Duration(5.0));
-			pcl_ros::transformPointCloud("/table", *cloud_, *cloud_, tf_listener);
-
+			pcl_ros::transformPointCloud("/table", *cloud_, *cloud_, tf_listener);*/
 
 			PointCloudT::Ptr cloud_filtered (new PointCloudT);
+
 			// Create the filtering object
 			pcl::VoxelGrid<PointT> sor;
 			sor.setInputCloud(cloud_);
 			sor.setLeafSize(0.005f, 0.005f, 0.005f);
 			sor.filter(*cloud_filtered);
-			cloud_filtered->header.frame_id="table";
+			//cloud_filtered->header.frame_id="table";
 			clusters_point_clouds.push_back(cloud_filtered);
-		
-
-			///////////////////////////
-			// Get 2d bounding boxes //
-			///////////////////////////
 
 			///////////////////////////
 			// Get 2d bounding boxes //
@@ -306,9 +301,9 @@ class CylinderSegmentationROS {
 
 public:
 
-	CylinderSegmentationROS(ros::NodeHandle & n_, boost::shared_ptr<detector_type> & cylinder_segmentation_) : 
+	CylinderSegmentationROS(ros::NodeHandle & n_, ros::NodeHandle & n_priv_, boost::shared_ptr<detector_type> & cylinder_segmentation_) : 
 		n(n_), 
-		n_priv("~"),
+		n_priv(n_priv_),
 	    	listener(new tf::TransformListener(ros::Duration(3.0))),
 		cylinder_segmentation(cylinder_segmentation_)
 	{
@@ -326,9 +321,10 @@ public:
 		id_colors_map.insert(std::pair<int,Color>(9,Color(0.8, 0.0, 0.9) ) );
 		//odom_link="/odom";
 
-		ROS_INFO("Getting cameras' parameters");
+		ROS_INFO("Getting cameras' parameterssss");
 		std::string camera_info_topic;
 		n_priv.param<std::string>("camera_info_topic", camera_info_topic, "camera_info_topic");
+		ROS_INFO_STREAM("camera_info_topic:"<< camera_info_topic);
 		sensor_msgs::CameraInfoConstPtr camera_info=ros::topic::waitForMessage<sensor_msgs::CameraInfo>(camera_info_topic, ros::Duration(3.0));
 
 		//set the cameras intrinsic parameters
