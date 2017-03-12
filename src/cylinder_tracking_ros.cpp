@@ -46,9 +46,8 @@ CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) :
         sync->registerCallback(boost::bind(&CylinderTrackingROS::callback, this, _1));*/
 
 
-
 	// Odom subscriber
-	//odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &CylinderTrackingROS::odomCallback, this);	
+	odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &CylinderTrackingROS::odomCallback, this);	
 }
 
 void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::ConstPtr & input_clusters)
@@ -130,12 +129,13 @@ void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::Con
 	markers_.markers.push_back(marker_);
 
 	// Compute object level odometry
-	clock_t begin_time_ = clock();
-	Eigen::Matrix4d relative_motion=odom(detections_).cast<double>();
-	ROS_INFO_STREAM("Cylinders odom time: "<<float( clock () - begin_time_ ) /  CLOCKS_PER_SEC<< " seconds");
+	//clock_t begin_time_ = clock();
+	//Eigen::Matrix4d relative_motion=odom(detections_).cast<double>();
+	//ROS_INFO_STREAM("Cylinders odom time: "<<float( clock () - begin_time_ ) /  CLOCKS_PER_SEC<< " seconds");
 
 	// TRACK
-	begin_time_ = clock();
+	clock_t begin_time_ = clock();
+Eigen::Matrix4d relative_motion;
 	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers=tracker_manager.process(detections_,relative_motion);
 	std::string trackers_frame_id=input_clusters->header.frame_id;
 	for(unsigned int i=0; i<trackers.size();++i)
@@ -152,8 +152,18 @@ void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::Con
 	vis_pub.publish( markers_ );
 }
 
+void CylinderTrackingROS::odomCallback (const nav_msgs::Odometry::ConstPtr & msg)
+{
+	Eigen::Matrix4f final_transform=Eigen::Matrix4f::Identity();
 
-Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & detections_)
+	ROS_INFO("Seq: [%d]", msg->header.seq);
+	ROS_INFO("Position-> x: [%f], y: [%f], z: [%f]", msg->pose.pose.position.x,msg->pose.pose.position.y, msg->pose.pose.position.z);
+	ROS_INFO("Orientation-> x: [%f], y: [%f], z: [%f], w: [%f]", msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+	ROS_INFO("Vel-> Linear: [%f], Angular: [%f]", msg->twist.twist.linear.x,msg->twist.twist.angular.z);
+
+}
+
+/*Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & detections_)
 {
 	
 	Eigen::Matrix4f final_transform=Eigen::Matrix4f::Identity();
@@ -327,21 +337,13 @@ return final_transform;
 	}
 
 
-	   //... populate cloud
-	   /*
-	  		pcl::transformPointCloud (*trackers_cloud, *trackers_cloud, icp.getFinalTransformation());
-	pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
-	   viewer.showCloud (detections_cloud,"detected");
-	   viewer.showCloud (trackers_cloud,"tracked");
-	   while (!viewer.wasStopped ())
-	   {
-	   }*/
+
 
 	// Return ICP transform as relative odometry
 	return final_transform;
 }
 
-
+*/
 
 
 

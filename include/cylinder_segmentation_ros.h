@@ -72,7 +72,6 @@ class CylinderSegmentationROS {
 
 	void callback (const sensor_msgs::Image::ConstPtr& input_image, const active_semantic_mapping::Clusters::ConstPtr & input_clusters)
 	{
-
 		cv::Mat image_cv;
 		image_cv =cv_bridge::toCvCopy(input_image, "bgr8")->image;
 

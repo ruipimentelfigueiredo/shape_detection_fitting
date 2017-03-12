@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1/Frames1
+        - /OrkTable1
       Splitter Ratio: 0.462199003
     Tree Height: 775
   - Class: rviz/Selection
@@ -31,19 +32,38 @@ Visualization Manager:
   Class: ""
   Displays:
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        camera_depth_frame:
+          Value: true
+        camera_depth_optical_frame:
+          Value: true
+        camera_link:
+          Value: true
+        camera_rgb_frame:
+          Value: true
+        camera_rgb_optical_frame:
+          Value: true
+        odom:
+          Value: true
       Marker Scale: 2.9000001
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        odom:
+          camera_link:
+            camera_depth_frame:
+              camera_depth_optical_frame:
+                {}
+            camera_rgb_frame:
+              camera_rgb_optical_frame:
+                {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz/Grid
@@ -95,19 +115,19 @@ Visualization Manager:
     - Bounding Box: false
       Class: object_recognition_ros/OrkTable
       Color: 0; 255; 255
-      Enabled: false
+      Enabled: true
       Hull: true
       Name: OrkTable
       Top: true
       Topic: /table_array
       Unreliable: true
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /tabletop/clusters
       Name: OrkClusters
       Namespaces:
-        tabletop_node: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Image
@@ -127,21 +147,21 @@ Visualization Manager:
       Marker Topic: /cylinder_detections_vis
       Name: Cylinders Detections
       Namespaces:
-        detections: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /cylinders_tracking_vis
       Name: Cylinders Trackers
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
-    Fixed Frame: camera_rgb_optical_frame
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -162,7 +182,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.9297272
+      Distance: 3.04639387
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -176,10 +196,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -1.22479689
+      Pitch: 0.155203402
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.60663223
+      Yaw: 3.69663286
     Saved: ~
 Window Geometry:
   CylinderBoundingBoxes:

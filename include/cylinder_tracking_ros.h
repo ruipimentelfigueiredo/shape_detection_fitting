@@ -54,8 +54,8 @@ class CylinderTrackingROS {
     	boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> >sync;*/
 
   	void callback (const active_semantic_mapping::Cylinders::ConstPtr & input_clusters);
-
-	Eigen::Matrix4f  odom(const std::vector<Eigen::VectorXd> & detections_);
+  	void odomCallback (const nav_msgs::Odometry::ConstPtr & odom);
+	//Eigen::Matrix4f  odom(const std::vector<Eigen::VectorXd> & detections_);
 public:
 
 	CylinderTrackingROS(ros::NodeHandle & n_);

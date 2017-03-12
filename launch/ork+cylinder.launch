@@ -25,7 +25,7 @@
 
   </node>-->
 
-<!--<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-0.0198275689036 0.0198275689036 1.07700002193 0.90963613987 0.0105423424393 0.0231284610927 0.414627552032 camera_rgb_optical_frame table 100" />-->
+
 
 
 
@@ -81,11 +81,11 @@
 
 
 	<!-- RGB-D Odometry -->
-	<!--<group unless="$(arg stereo)">
+	<group unless="$(arg stereo)">
 		<node if="$(arg compressed)" name="republish_rgb" type="republish" pkg="image_transport" args="$(arg rgb_image_transport) in:=$(arg rgb_topic) raw out:=$(arg rgb_topic_relay)" />
 		<node if="$(arg compressed)" name="republish_depth" type="republish" pkg="image_transport" args="compressedDepth in:=$(arg depth_topic) raw out:=$(arg depth_topic_relay)" />
 
-		<node if="$(arg visual_odometry)" pkg="rtabmap_ros" type="rgbd_odometry" name="rgbd_odometry" output="screen" args="$(arg odom_args)" launch-prefix="$(arg launch_prefix)">
+		<node if="$(arg visual_odometry)" pkg="rtabmap_ros" type="rgbd_odometry" name="rgbd_odometry" output="log" args="$(arg odom_args)" launch-prefix="$(arg launch_prefix)">
 			<remap from="rgb/image"       to="$(arg rgb_topic_relay)"/>
 			<remap from="depth/image"     to="$(arg depth_topic_relay)"/>
 			<remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
@@ -96,7 +96,7 @@
 			<param name="config_path"                 type="string" value="$(arg cfg)"/>
 			<param name="queue_size"                  type="int" value="$(arg queue_size)"/>
 		</node>
-	</group>-->
+	</group>
 
 	<!-- Stereo Odometry -->
 	<!--<group if="$(arg stereo)">
@@ -125,9 +125,6 @@
 	</node>
 
 
-
-	<!-- nodelet manager -->
-	<node pkg="nodelet" type="nodelet" name="active_semantic_mapping" args="manager" respawn="true" output="screen"/>
 
 
 

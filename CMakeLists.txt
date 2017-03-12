@@ -10,8 +10,9 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   visualization_msgs
   tf_conversions
-   rosbag
+  rosbag
   pcl_ros
+  nav_msgs
 )
 
 find_package(OpenCV REQUIRED)
@@ -90,8 +91,8 @@ target_link_libraries (cylinder_tracking_ros ${catkin_LIBRARIES} HybridEstimator
 add_executable (cylinder_segmentation_ros_node src/cylinder_segmentation_ros_node.cpp)
 target_link_libraries (cylinder_segmentation_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough)
 
-#add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
-#target_link_libraries (cylinder_tracking_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_tracking_ros)
+add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
+target_link_libraries (cylinder_tracking_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_tracking_ros)
 
 #ROS NODELETS
 # Nodelet library
