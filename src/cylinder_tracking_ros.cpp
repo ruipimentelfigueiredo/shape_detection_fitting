@@ -4,6 +4,7 @@
 CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) : 
 	n(n_), 
 	n_priv("~"),
+	vo_initialized_(false),
     	listener(new tf::TransformListener(ros::Duration(3.0)))
 {
 	odom_last_stamp=ros::Time::now();
@@ -19,6 +20,7 @@ CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) :
 	id_colors_map.insert(std::pair<int,Color>(8,Color(0.9, 0.6, 0.3) ) );
 	id_colors_map.insert(std::pair<int,Color>(9,Color(0.8, 0.0, 0.9) ) );
 	odom_link="/odom";
+	tracking_frame="camera_rgb_optical_frame";
 
         ROS_INFO("Getting cameras' parameters");
         std::string camera_info_topic;
@@ -27,11 +29,14 @@ CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) :
 
         //set the cameras intrinsic parameters
         /*cam_intrinsic = Eigen::Matrix4f::Identity();
-        cam_intrinsic(0,0) = (float)camera_info->K.at(0);
-        cam_intrinsic(0,2) = (float)camera_info->K.at(2);
-        cam_intrinsic(1,1) = (float)camera_info->K.at(4);
-        cam_intrinsic(1,2) = (float)camera_info->K.at(5);
+        cam_intrinsic(0,0) = (double)camera_info->K.at(0);
+        cam_intrinsic(0,2) = (double)camera_info->K.at(2);
+        cam_intrinsic(1,1) = (double)camera_info->K.at(4);
+        cam_intrinsic(1,2) = (double)camera_info->K.at(5);
         cam_intrinsic(3,3) = 0.0;*/
+
+
+
 
 
 	// Advertise cylinders
@@ -50,61 +55,36 @@ CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) :
 	odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &CylinderTrackingROS::odomCallback, this);	
 }
 
+  // initialize prior density of filter 
+void CylinderTrackingROS::initialize(const tf::Transform& prior, const ros::Time& time)
+{
+	// set prior of filter
+	Eigen::Matrix<double,6,1> prior_Mu; 
+	decomposeTransform(prior, prior_Mu(1), prior_Mu(2), prior_Mu(3), prior_Mu(4), prior_Mu(5), prior_Mu(6));
+	Eigen::Matrix<double,6,6> prior_Cov; 
+	for (unsigned int i=0; i<6; i++) {
+		for (unsigned int j=0; j<6; j++){
+			if (i==j)  
+				prior_Cov(i,j) = pow(0.001,2);
+			else 
+				prior_Cov(i,j) = 0;
+		}
+	}
+	/*prior_  = new Gaussian(prior_Mu,prior_Cov);
+	filter_ = new ExtendedKalmanFilter(prior_);
+
+	// remember prior
+	addMeasurement(StampedTransform(prior, time, output_frame_, base_footprint_frame_));
+	filter_estimate_old_vec_ = prior_Mu;
+	filter_estimate_old_ = prior;
+	filter_time_old_     = time;
+
+	// filter initialized
+	filter_initialized_ = true;*/
+}
+
 void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::ConstPtr & input_clusters)
 {
-
-	/*static int image_number=0;
-
-	ros::Time odom_time=ros::Time::now();
-
-	tf::StampedTransform deltaTf;
-
-
-	// Get odom delta motion in cartesian coordinates with TF
-	try
-	{
-		listener->waitForTransform(input_clusters->header.frame_id, odom_last_stamp, input_clusters->header.frame_id, odom_time , odom_link, ros::Duration(0.5) );
-		listener->lookupTransform(input_clusters->header.frame_id, odom_last_stamp, input_clusters->header.frame_id, odom_time, odom_link, deltaTf); // delta position
-	}
-	catch (tf::TransformException &ex)
-	{
-		//odom_initialized_=false;
-		ROS_WARN("%s",ex.what());
-		return;
-	}
-
-
-	// Get relative transformation
-	Eigen::Matrix3f rotation;
-	rotation=Eigen::AngleAxisf(deltaTf.getRotation().getAngle(),
-				   Eigen::Vector3f(deltaTf.getRotation().getAxis()[0],
-				    		   deltaTf.getRotation().getAxis()[1],
-				   		   deltaTf.getRotation().getAxis()[2])); 
-
-	Eigen::Vector4f translation(deltaTf.getOrigin().getX(),deltaTf.getOrigin().getY(), deltaTf.getOrigin().getZ(),1.0);
-    	double dx=deltaTf.getOrigin().getX();
-    	double dy=deltaTf.getOrigin().getY();
-    	double dz=deltaTf.getOrigin().getZ();
-    	double d_theta=deltaTf.getRotation().getAxis()[2]*deltaTf.getRotation().getAngle();
-
-	Eigen::Matrix4f transform;
-	transform.block(0,0,3,3)=rotation;
-	transform.block(0,3,4,1)=translation;
-
-	ROS_ERROR_STREAM("dx:"<<dx<<" dy:"<<dy<<" dz:"<<dz);
-	ROS_ERROR_STREAM("transform:"<<transform);*/
-    	// See if we should update the filter
-    	/*if(!(fabs(dx) > d_thresh_ || fabs(dy) > d_thresh_ || fabs(d_theta) > a_thresh_))
-    	{
-        	return;
-    	}*/
-
-
-	//odom_last_stamp=odom_time;
-
-
-
-
 	unsigned int detections_num=input_clusters->cylinders.layout.dim[0].size;
 	std::vector<Eigen::VectorXd> detections_;
 	for(unsigned int i=0; i<detections_num;++i)
@@ -128,39 +108,87 @@ void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::Con
 	marker_.action = 3;
 	markers_.markers.push_back(marker_);
 
-	// Compute object level odometry
-	//clock_t begin_time_ = clock();
-	//Eigen::Matrix4d relative_motion=odom(detections_).cast<double>();
-	//ROS_INFO_STREAM("Cylinders odom time: "<<float( clock () - begin_time_ ) /  CLOCKS_PER_SEC<< " seconds");
-
 	// TRACK
 	clock_t begin_time_ = clock();
-Eigen::Matrix4d relative_motion;
+	Eigen::Matrix4d relative_motion;
 	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers=tracker_manager.process(detections_,relative_motion);
 	std::string trackers_frame_id=input_clusters->header.frame_id;
 	for(unsigned int i=0; i<trackers.size();++i)
 	{
-		Eigen::VectorXf tracker_=trackers[i]->getObjPTR()->getObservableStates().cast<float>();
+		Eigen::VectorXd tracker_=trackers[i]->getObjPTR()->getObservableStates().cast<double>();
 		Color color_=id_colors_map.find(trackers[i]->getTrackerId() + 1)->second;
 		visualization_msgs::Marker marker=createMarker(tracker_,visualization_msgs::Marker::CYLINDER,trackers_frame_id, color_, i, marker_trackers_namespace_);
 		markers_.markers.push_back(marker);
 	}
 
-	ROS_INFO_STREAM("Cylinders tracking time: "<<float( clock () - begin_time_ ) /  CLOCKS_PER_SEC<< " seconds");
+	ROS_INFO_STREAM("Cylinders tracking time: "<<( clock () - begin_time_ ) /  CLOCKS_PER_SEC<< " seconds");
 
 	// Publish the data.
 	vis_pub.publish( markers_ );
 }
 
+// decompose Transform into x,y,z,Rx,Ry,Rz
+void CylinderTrackingROS::decomposeTransform(const tf::Transform& trans, double& x, double& y, double&z, double&Rx, double& Ry, double& Rz){
+	x = trans.getOrigin().x();   
+	y = trans.getOrigin().y(); 
+	z = trans.getOrigin().z(); 
+	trans.getBasis().getEulerYPR(Rz,Ry,Rz);
+};
+
+// correct for angle overflow
+void CylinderTrackingROS::angleOverflowCorrect(double& a, double ref)
+{
+	while ((a-ref) >  M_PI) a -= 2*M_PI;
+	while ((a-ref) < -M_PI) a += 2*M_PI;
+};
+
+bool CylinderTrackingROS::addMeasurement(const tf::StampedTransform& meas, const Eigen::Matrix<double, 6, 6> & covar)
+{
+	// process vo measurement
+	// ----------------------
+	tf::StampedTransform vo_meas_=meas;
+	if (!listener->canTransform(tracking_frame,"vo", filter_time)){
+		ROS_ERROR("filter time older than vo message buffer");
+		return false;
+	}
+	listener->lookupTransform("vo", tracking_frame, filter_time, vo_meas_);
+	if (vo_initialized_){
+		// convert absolute vo measurements to relative vo measurements
+		tf::Transform vo_rel_frame =  filter_estimate_old_ * meas_old_.inverse() * meas;
+		Eigen::Matrix<double,6,1> vo_rel;
+		decomposeTransform(vo_rel_frame, vo_rel(0),  vo_rel(1), vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5));
+		angleOverflowCorrect(vo_rel(6), filter_estimate_old_vec_(6));
+		// update filter
+		//vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * pow(dt,2));
+		tracker_manager.updateFilter(vo_rel,  covar);
+	}
+	else vo_initialized_ = true;
+	meas_old_ = meas;
+
+        // remember last estimate
+        //filter_estimate_old_vec_ = filter_->PostGet()->ExpectedValueGet();
+
+	return true;
+
+};
 void CylinderTrackingROS::odomCallback (const nav_msgs::Odometry::ConstPtr & msg)
 {
-	Eigen::Matrix4f final_transform=Eigen::Matrix4f::Identity();
 
 	ROS_INFO("Seq: [%d]", msg->header.seq);
 	ROS_INFO("Position-> x: [%f], y: [%f], z: [%f]", msg->pose.pose.position.x,msg->pose.pose.position.y, msg->pose.pose.position.z);
 	ROS_INFO("Orientation-> x: [%f], y: [%f], z: [%f], w: [%f]", msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
 	ROS_INFO("Vel-> Linear: [%f], Angular: [%f]", msg->twist.twist.linear.x,msg->twist.twist.angular.z);
 
+ 	tf::Transform vo_meas_;
+    	// get data
+        ros::Time vo_stamp_ = msg->header.stamp;
+	Eigen::Matrix<double, 6, 6> vo_covariance_;
+	poseMsgToTF(msg->pose.pose, vo_meas_);
+	for (unsigned int i=0; i<6; i++)
+		for (unsigned int j=0; j<6; j++)
+			vo_covariance_(i, j) = msg->pose.covariance[6*i+j];
+	addMeasurement(tf::StampedTransform(vo_meas_.inverse(), vo_stamp_, tracking_frame, "vo"), vo_covariance_);
+	
 }
 
 /*Eigen::Matrix4f CylinderTrackingROS::odom(const std::vector<Eigen::VectorXd> & detections_)
@@ -192,7 +220,7 @@ void CylinderTrackingROS::odomCallback (const nav_msgs::Odometry::ConstPtr & msg
 	odom_last_stamp=current_time;
 	Eigen::Affine3d transform_eigen;
 	tf::transformTFToEigen (baseDeltaTf,transform_eigen);
-	final_transform=transform_eigen.matrix().cast<float>();
+	final_transform=transform_eigen.matrix().cast<double>();
 	ROS_ERROR_STREAM("YA:"<<final_transform);
 	if(tracker_manager.trackers.size()<2&&detections_.size()<2) return final_transform;
 
@@ -206,7 +234,7 @@ return final_transform;
 	{
 		pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud (new pcl::PointCloud<pcl::PointXYZ>());
 
-		Eigen::VectorXf state_=detections_[d].cast<float>();
+		Eigen::VectorXf state_=detections_[d].cast<double>();
 		//Get rotation matrix
 		Eigen::Matrix4f transf;
 		transf=Eigen::Matrix4f::Identity();
@@ -233,17 +261,17 @@ return final_transform;
 		
 
 		// Generate cylinder according to parameters
-		float angle_step=2.0*M_PI/angle_samples;
-		float height_step=fabs(detections_[d][7])/height_samples;
+		double angle_step=2.0*M_PI/angle_samples;
+		double height_step=fabs(detections_[d][7])/height_samples;
 
 		for(int a=0; a < angle_samples; ++a)
 		{
-			float x,y,z;
+			double x,y,z;
 			x=cos(angle_step*a)*fabs(detections_[d][6]);
 			y=sin(angle_step*a)*fabs(detections_[d][6]);
 			for(int h=0; h < height_samples; ++h)
 			{
-				z=(float)height_step*h;
+				z=(double)height_step*h;
 				pcl::PointXYZ point(x,y,z);
 				temp_cloud->push_back(point);
 			}
@@ -262,7 +290,7 @@ return final_transform;
 		pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud (new pcl::PointCloud<pcl::PointXYZ>());
 
 
-		Eigen::VectorXf state_=tracker_manager.trackers[d]->getState().cast<float>();
+		Eigen::VectorXf state_=tracker_manager.trackers[d]->getState().cast<double>();
 
 		//Get rotation matrix
 		Eigen::Matrix4f transf;
@@ -293,20 +321,20 @@ return final_transform;
 
 
 		// Generate cylinder according to parameters
-		float angle_step=2.0*M_PI/angle_samples;
-		float height_step=fabs(tracker_manager.trackers[d]->getState()[7])/height_samples;
+		double angle_step=2.0*M_PI/angle_samples;
+		double height_step=fabs(tracker_manager.trackers[d]->getState()[7])/height_samples;
 
 
 
 
 		for(int a=0; a < angle_samples; ++a)
 		{
-			float x,y,z;
+			double x,y,z;
 			x=cos(angle_step*a)*fabs(tracker_manager.trackers[d]->getState()[6]);
 			y=sin(angle_step*a)*fabs(tracker_manager.trackers[d]->getState()[6]);
 			for(int h=0; h < height_samples; ++h)
 			{
-				z=(float)height_step*h;
+				z=(double)height_step*h;
 				pcl::PointXYZ point(x,y,z);
 				temp_cloud->push_back(point);
 			}
@@ -347,7 +375,7 @@ return final_transform;
 
 
 
-visualization_msgs::Marker CylinderTrackingROS::createMarker(const Eigen::VectorXf & model_params, int model_type, const std::string & frame, Color & color_, int id, const std::string & marker_namespace_)
+visualization_msgs::Marker CylinderTrackingROS::createMarker(const Eigen::VectorXd & model_params, int model_type, const std::string & frame, Color & color_, int id, const std::string & marker_namespace_)
 {
 
 	// Convert direction vector to quaternion
@@ -369,7 +397,7 @@ visualization_msgs::Marker CylinderTrackingROS::createMarker(const Eigen::Vector
 	q.normalize();
 	geometry_msgs::Quaternion cylinder_orientation;
 	tf::quaternionTFToMsg(q, cylinder_orientation);
-	float height=model_params[7];
+	double height=model_params[7];
 
 	visualization_msgs::Marker marker;
 	marker.header.frame_id =frame;

@@ -1,2 +1,3 @@
 data/*
 scripts/export_fig/*.pdf
+*.user

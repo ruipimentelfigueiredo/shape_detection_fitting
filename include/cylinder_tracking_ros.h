@@ -29,11 +29,16 @@ class CylinderTrackingROS {
 
 	ros::Time odom_last_stamp;
 	std::string odom_link;
-
+	std::string tracking_frame;
+	ros::Time filter_time;
+	tf::StampedTransform meas_old_;
+	bool vo_initialized_;
+	tf::Transform filter_estimate_old_;
+	Eigen::Matrix <double,6,1> filter_estimate_old_vec_;
 	const std::string marker_detections_namespace_ ="detections";
 	const std::string marker_trackers_namespace_ ="trackers";
 
-	 Eigen::Matrix4f cam_intrinsic;
+	 Eigen::Matrix4d cam_intrinsic;
 
 	std::map<int, Color> id_colors_map;
 	MultipleTrackerManager tracker_manager;
@@ -55,10 +60,14 @@ class CylinderTrackingROS {
 
   	void callback (const active_semantic_mapping::Cylinders::ConstPtr & input_clusters);
   	void odomCallback (const nav_msgs::Odometry::ConstPtr & odom);
+	bool addMeasurement(const tf::StampedTransform& meas, const Eigen::Matrix<double, 6, 6> & covar);
+	void decomposeTransform(const tf::Transform& trans, double& x, double& y, double&z, double&Rx, double& Ry, double& Rz);
+	void angleOverflowCorrect(double& a, double ref);
+	void initialize(const tf::Transform& prior, const ros::Time& time);
 	//Eigen::Matrix4f  odom(const std::vector<Eigen::VectorXd> & detections_);
 public:
 
 	CylinderTrackingROS(ros::NodeHandle & n_);
-	visualization_msgs::Marker createMarker(const Eigen::VectorXf & model_params, int model_type, const std::string & frame, Color & color_, int id, const std::string & marker_namespace_);
+	visualization_msgs::Marker createMarker(const Eigen::VectorXd & model_params, int model_type, const std::string & frame, Color & color_, int id, const std::string & marker_namespace_);
 };
 
