@@ -4,6 +4,10 @@ project(active_semantic_mapping)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
+
+find_package(Caffe REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   find_object_2d
   roscpp
@@ -14,8 +18,13 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   nav_msgs
 )
-
-find_package(OpenCV REQUIRED)
+find_package(TinyXML REQUIRED)
+find_package(CUDA REQUIRED)
+find_package(OpenCV 3.1 REQUIRED)
+find_package(Boost COMPONENTS system filesystem regex REQUIRED)
+add_definitions(${Caffe_DEFINITIONS})    # ex. -DCPU_ONLY
+message("Caffe_INCLUDE_DIRS is ${Caffe_INCLUDE_DIRS}")	
+option(-std "std" c++11)
 
 ## Generate messages in the 'msg' folder
  add_message_files(
@@ -49,6 +58,8 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${Caffe_INCLUDE_DIRS}
+  ${CUDA_INCLUDE_DIRS}
 )
 
 
@@ -117,18 +128,22 @@ install(TARGETS cylinder_tracking_ros_nodelet
 )
 
 
+set(GLOG_LIB glog)
+add_executable(cylinder_classifier src/cylinder_classifier.cpp)
+target_link_libraries(cylinder_classifier ${Boost_LIBRARIES} ${Caffe_LIBRARIES} ${GLOG_LIB}  ${OpenCV_LIBS})
+
 # TESTS
-add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
-target_link_libraries (cylinder_segmentation_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+#add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
+#target_link_libraries (cylinder_segmentation_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
-add_executable (cylinder_segmentation_test2 src/cylinder_segmentation_test2.cpp)
-target_link_libraries (cylinder_segmentation_test2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+#add_executable (cylinder_segmentation_test2 src/cylinder_segmentation_test2.cpp)
+#target_link_libraries (cylinder_segmentation_test2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
-add_executable (cylinder_segmentation_test_clutter src/cylinder_segmentation_test_clutter.cpp)
-target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+#add_executable (cylinder_segmentation_test_clutter src/cylinder_segmentation_test_clutter.cpp)
+#target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
-add_executable (cylinder_segmentation_test_clutter2 src/cylinder_segmentation_test_clutter2.cpp)
-target_link_libraries (cylinder_segmentation_test_clutter2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+#add_executable (cylinder_segmentation_test_clutter2 src/cylinder_segmentation_test_clutter2.cpp)
+#target_link_libraries (cylinder_segmentation_test_clutter2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
 
 #add_executable (hough_lines_cuda src/hough_lines_cuda.cpp)
