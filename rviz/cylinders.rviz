@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1/Frames1
-        - /OrkTable1
+        - /CylinderBoundingBoxes1
       Splitter Ratio: 0.462199003
     Tree Height: 775
   - Class: rviz/Selection
@@ -127,12 +127,12 @@ Visualization Manager:
       Marker Topic: /tabletop/clusters
       Name: OrkClusters
       Namespaces:
-        {}
+        tabletop_node: true
       Queue Size: 100
       Value: true
     - Class: rviz/Image
       Enabled: false
-      Image Topic: /camera/rgb/image_rect_color
+      Image Topic: /cylinders_image
       Max Value: 1
       Median window: 5
       Min Value: 0
@@ -147,17 +147,17 @@ Visualization Manager:
       Marker Topic: /cylinder_detections_vis
       Name: Cylinders Detections
       Namespaces:
-        {}
+        detections: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /cylinders_tracking_vis
       Name: Cylinders Trackers
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -196,10 +196,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.155203402
+      Pitch: 0.630203843
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.69663286
+      Yaw: 2.21163154
     Saved: ~
 Window Geometry:
   CylinderBoundingBoxes:

@@ -17,7 +17,7 @@ source1:
     y_min: -1.0
     y_max: 1.0
     z_min: 0.3
-    z_max: 1.0
+    z_max: 3.0
 
 sink1:
   type: TablePublisher
@@ -31,8 +31,8 @@ pipeline1:
   outputs: [sink1]
   parameters:
     table_detector:
-      min_table_size: 4000
+      min_table_size: 8000
       plane_threshold: 0.01
     clusterer:
-      table_z_filter_max: 0.35
+      table_z_filter_max: 1.0
       table_z_filter_min: 0.015

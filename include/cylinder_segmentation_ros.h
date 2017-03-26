@@ -15,7 +15,7 @@
 
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Int32MultiArray.h>
-
+#include "cylinder_classifier.h"
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
@@ -62,6 +62,7 @@ class CylinderSegmentationROS {
 	ros::Publisher vis_pub;
 
 	boost::shared_ptr<detector_type> cylinder_segmentation;
+	boost::shared_ptr<CylinderClassifier> cylinder_classifier;
 
 	typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, active_semantic_mapping::Clusters> MySyncPolicy;
 	boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > image_sub;
@@ -72,6 +73,7 @@ class CylinderSegmentationROS {
 
 	void callback (const sensor_msgs::Image::ConstPtr& input_image, const active_semantic_mapping::Clusters::ConstPtr & input_clusters)
 	{
+		static int image_number=0;
 		cv::Mat image_cv;
 		image_cv =cv_bridge::toCvCopy(input_image, "bgr8")->image;
 
@@ -80,6 +82,12 @@ class CylinderSegmentationROS {
 		clusters_point_clouds.reserve(input_clusters->markers.markers.size());
 		std::vector<cv::Rect> clusters_bboxes;
 		clusters_bboxes.reserve(input_clusters->markers.markers.size());
+		std::vector<int> cylinder_indices;
+		cylinder_indices.reserve(input_clusters->markers.markers.size());
+
+
+		const clock_t classification_begin_time = clock();
+
 		for(unsigned int i=0; i<input_clusters->markers.markers.size();++i)
 		{
 			//////////////////////
@@ -159,20 +167,38 @@ class CylinderSegmentationROS {
 			cv::Rect rect(min_pt[0], min_pt[1], width, height);
 			clusters_bboxes.push_back(rect);
 
-			// Visualize
-			cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0), 4);
 
-			//cv::Mat roi = image_cv(rect);
 
+
+
+			// Classify
+			cv::Mat roi = image_cv(rect);
+			int is_cylinder=1-cylinder_classifier->classify(roi);
+			if(is_cylinder)
+			{
+				cylinder_indices.push_back(i);
+
+				// Visualization
+				//cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,255,0), 4);
+			}
+			else
+			{
+				// Visualization
+				//cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(255,0,0), 4);
+			}
+				
+
+			// dataset creation
 			/*cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
 			cv::imshow( "Display window", roi );                   // Show our image inside it.
 			cv::waitKey(0);*/ 
 
-	 		//imwrite("/home/rui/cylinders/image_"+std::to_string(image_number++)+".jpg", image_cv(rect) );
+	 		imwrite("/home/rui/other/other."+std::to_string(image_number++)+".jpg", image_cv(rect) );
 
 
 		}
 
+		ROS_INFO_STREAM("Cylinders classification time: "<<float( clock () - classification_begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
 		sensor_msgs::ImagePtr image_out = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image_cv).toImageMsg();
 		image_pub.publish(image_out);
@@ -202,9 +228,9 @@ class CylinderSegmentationROS {
 
 		std::string detections_frame_id=clusters_point_clouds[0]->header.frame_id;
 
-		for(unsigned int i=0; i<clusters_point_clouds.size();++i)
+		for(unsigned int ind=0; ind<cylinder_indices.size();++ind)
 		{
-
+			unsigned int i=cylinder_indices[ind];
 			Eigen::VectorXf model_params=cylinder_segmentation->segment(clusters_point_clouds[i]);
 			model_params.cast <double> ();
 
@@ -221,7 +247,7 @@ class CylinderSegmentationROS {
 			cylinders_msg.cylinders.layout.dim[0].stride+= 8;
 		}
 
-		ROS_INFO_STREAM("Cylinders detection time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
+		ROS_INFO_STREAM("Cylinders fitting time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
 		vis_pub.publish( markers_ );
 		cylinders_pub.publish(cylinders_msg);
@@ -334,7 +360,29 @@ public:
 		cam_intrinsic(1,2) = (float)camera_info->K.at(5);
 		cam_intrinsic(3,3) = 0.0;
 
+		std::string absolute_path_folder;
+		std::string model_file;
+		std::string weight_file;
+		std::string mean_file;
+		std::string device;
+		int device_id;
 
+		ROS_INFO("Getting classifier parameters");
+		n_priv.param<std::string>("absolute_path_folder", absolute_path_folder, "absolute_path_folder");
+		n_priv.param<std::string>("model_file", model_file, "model_file");
+		n_priv.param<std::string>("weight_file", weight_file, "weight_file");
+		n_priv.param<std::string>("mean_file", mean_file, "mean_file");
+		n_priv.param<std::string>("device", device, "device");
+		n_priv.param<int>("device_id", device_id, 0);
+
+		ROS_INFO_STREAM("absolute_path_folder:"<< absolute_path_folder);
+		ROS_INFO_STREAM("model_file:"<< model_file);
+		ROS_INFO_STREAM("weight_file:"<< weight_file);
+		ROS_INFO_STREAM("mean_file:"<< mean_file);
+		ROS_INFO_STREAM("device:"<< device);
+		ROS_INFO_STREAM("device_id:"<< device_id);
+
+		cylinder_classifier=boost::shared_ptr<CylinderClassifier>(new CylinderClassifier(absolute_path_folder,model_file,weight_file,mean_file,device,(unsigned int)device_id));
 		// Advertise cylinders
 		cylinders_pub = n.advertise<active_semantic_mapping::Cylinders>( "cylinders_detections", 1);
 		image_pub=n.advertise<sensor_msgs::Image >("cylinders_image", 1);

@@ -93,6 +93,10 @@ target_link_libraries (cylinder_segmentation_hough ${PCL_LIBRARIES} ${catkin_LIB
 add_library (cylinder_segmentation_ransac src/cylinder_segmentation.cpp src/cylinder_segmentation_ransac.cpp)
 target_link_libraries (cylinder_segmentation_ransac ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
+set(GLOG_LIB glog)
+add_library(cylinder_classifier src/cylinder_classifier.cpp)
+target_link_libraries(cylinder_classifier ${Boost_LIBRARIES} ${Caffe_LIBRARIES} ${GLOG_LIB}  ${OpenCV_LIBS})
+
 
 # ROS WRAPPERS
 add_library (cylinder_tracking_ros src/cylinder_tracking_ros.cpp)
@@ -100,7 +104,7 @@ target_link_libraries (cylinder_tracking_ros ${catkin_LIBRARIES} HybridEstimator
 
 # ROS NODES
 add_executable (cylinder_segmentation_ros_node src/cylinder_segmentation_ros_node.cpp)
-target_link_libraries (cylinder_segmentation_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough)
+target_link_libraries (cylinder_segmentation_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
 
 add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
 target_link_libraries (cylinder_tracking_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_tracking_ros)
@@ -108,7 +112,7 @@ target_link_libraries (cylinder_tracking_ros_node ${PCL_LIBRARIES} ${catkin_LIBR
 #ROS NODELETS
 # Nodelet library
 add_library(cylinder_segmentation_ros_nodelet src/nodelets/cylinder_segmentation_ros_nodelet.cpp)
-target_link_libraries (cylinder_segmentation_ros_nodelet ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough)
+target_link_libraries (cylinder_segmentation_ros_nodelet ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
 
 add_dependencies(cylinder_segmentation_ros_nodelet cylinder_segmentation_ros_gencpp)
 
@@ -128,9 +132,6 @@ install(TARGETS cylinder_tracking_ros_nodelet
 )
 
 
-set(GLOG_LIB glog)
-add_executable(cylinder_classifier src/cylinder_classifier.cpp)
-target_link_libraries(cylinder_classifier ${Boost_LIBRARIES} ${Caffe_LIBRARIES} ${GLOG_LIB}  ${OpenCV_LIBS})
 
 # TESTS
 #add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)

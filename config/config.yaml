@@ -23,5 +23,11 @@ filter_limit_max: 3.0
 filter_limit_negative: False
 leaf_size: 0.03
 
-
 camera_info_topic: /camera/rgb/camera_info
+
+# CLASSIFIER PARAMS
+model_file: train_val.prototxt
+weight_file: train_iter_100.caffemodel
+mean_file: mean.binaryproto
+device: GPU
+device_id: 1
