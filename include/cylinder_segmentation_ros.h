@@ -166,7 +166,7 @@ class CylinderSegmentationROS {
 			// Classify
 			cv::Mat roi = image_cv(rect);
 			float confidence=cylinder_classifier->classify(roi);
-			ROS_ERROR_STREAM("CONFIDENCE:"<<confidence);
+			//ROS_ERROR_STREAM("CONFIDENCE:"<<confidence);
 			if(confidence>classification_threshold)
 			{
 				cylinder_indices.push_back(i);

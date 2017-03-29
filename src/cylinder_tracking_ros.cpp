@@ -20,23 +20,7 @@ CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) :
 	id_colors_map.insert(std::pair<int,Color>(8,Color(0.9, 0.6, 0.3) ) );
 	id_colors_map.insert(std::pair<int,Color>(9,Color(0.8, 0.0, 0.9) ) );
 	odom_link="/odom";
-	tracking_frame="camera_rgb_optical_frame";
-
-        ROS_INFO("Getting cameras' parameters");
-        std::string camera_info_topic;
-        n_priv.param<std::string>("camera_info_topic", camera_info_topic, "camera_info_topic");
-        sensor_msgs::CameraInfoConstPtr camera_info=ros::topic::waitForMessage<sensor_msgs::CameraInfo>(camera_info_topic, ros::Duration(10.0));
-
-        //set the cameras intrinsic parameters
-        /*cam_intrinsic = Eigen::Matrix4f::Identity();
-        cam_intrinsic(0,0) = (double)camera_info->K.at(0);
-        cam_intrinsic(0,2) = (double)camera_info->K.at(2);
-        cam_intrinsic(1,1) = (double)camera_info->K.at(4);
-        cam_intrinsic(1,2) = (double)camera_info->K.at(5);
-        cam_intrinsic(3,3) = 0.0;*/
-
-
-
+	tracking_frame="odom_filtered";
 
 
 	// Advertise cylinders
@@ -81,6 +65,7 @@ void CylinderTrackingROS::initialize(const tf::Transform& prior, const ros::Time
 
 	// filter initialized
 	filter_initialized_ = true;*/
+	filter_time=time;
 }
 
 void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::ConstPtr & input_clusters)
@@ -138,31 +123,92 @@ void CylinderTrackingROS::decomposeTransform(const tf::Transform& trans, double&
 // correct for angle overflow
 void CylinderTrackingROS::angleOverflowCorrect(double& a, double ref)
 {
+
 	while ((a-ref) >  M_PI) a -= 2*M_PI;
 	while ((a-ref) < -M_PI) a += 2*M_PI;
 };
+Eigen::Affine3d CylinderTrackingROS::stateToMatrix(const Eigen::Matrix<double,6,1> & state)
+{
+	Eigen::AngleAxisd rollAngle(state(3), Eigen::Vector3d::UnitZ());
+	Eigen::AngleAxisd yawAngle(state(4), Eigen::Vector3d::UnitY());
+	Eigen::AngleAxisd pitchAngle(state(5), Eigen::Vector3d::UnitX());
+
+	Eigen::Quaternion<double> q = rollAngle * yawAngle * pitchAngle;
+
+	Eigen::Matrix3d rotationMatrix = q.matrix();
+
+	Eigen::Translation<double, 3> translation(state(0),state(1),state(2));
+	return Eigen::Affine3d(translation*rotationMatrix);
+}
 
 bool CylinderTrackingROS::addMeasurement(const tf::StampedTransform& meas, const Eigen::Matrix<double, 6, 6> & covar)
 {
+
+	ROS_ERROR("AddMeasurement from %s to %s:  (%f, %f, %f)  (%f, %f, %f, %f)",
+	      meas.frame_id_.c_str(),  meas.child_frame_id_.c_str(),
+	      meas.getOrigin().x(),    meas.getOrigin().y(), meas.getOrigin().z(),
+	      meas.getRotation().x(),  meas.getRotation().y(), 
+	      meas.getRotation().z(),  meas.getRotation().w());
+	listener->setTransform( meas );
+
+
 	// process vo measurement
 	// ----------------------
+	filter_time=meas.stamp_;
 	tf::StampedTransform vo_meas_=meas;
 	if (!listener->canTransform(tracking_frame,"vo", filter_time)){
 		ROS_ERROR("filter time older than vo message buffer");
 		return false;
 	}
-	listener->lookupTransform("vo", tracking_frame, filter_time, vo_meas_);
+
+	//listener->lookupTransform("vo", tracking_frame, filter_time, vo_meas_);
+
+
 	if (vo_initialized_){
+
 		// convert absolute vo measurements to relative vo measurements
 		tf::Transform vo_rel_frame =  filter_estimate_old_ * meas_old_.inverse() * meas;
+
 		Eigen::Matrix<double,6,1> vo_rel;
+
 		decomposeTransform(vo_rel_frame, vo_rel(0),  vo_rel(1), vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5));
-		angleOverflowCorrect(vo_rel(6), filter_estimate_old_vec_(6));
+
+		Eigen::MatrixXd state=tracker_manager.pose->getState();
+
+		angleOverflowCorrect(vo_rel(5), state(5) );
+
 		// update filter
 		//vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * pow(dt,2));
 		tracker_manager.updateFilter(vo_rel,  covar);
+
+
+		tf::transformEigenToTF(stateToMatrix(tracker_manager.pose->getState()),filter_estimate_old_);
+
+		static tf::TransformBroadcaster br;
+   		 br.sendTransform(tf::StampedTransform(filter_estimate_old_.inverse(), filter_time, tracking_frame,vo_meas_.frame_id_));
+
 	}
-	else vo_initialized_ = true;
+	else 
+	{
+		// Initialize
+		// remember prior
+		//addMeasurement(StampedTransform(prior, time, tracking_frame, base_footprint_frame_));
+		//filter_estimate_old_vec_ = prior_Mu;
+		filter_time_old_     = filter_time;
+		meas_old_=meas;
+
+		Eigen::Matrix<double,6,1> vo_rel;
+
+		decomposeTransform(meas, vo_rel(0),  vo_rel(1), vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5));
+
+		tracker_manager.initFilter(vo_rel, covar);
+
+
+
+		// filter initialized
+		vo_initialized_ = true;
+
+	}
 	meas_old_ = meas;
 
         // remember last estimate

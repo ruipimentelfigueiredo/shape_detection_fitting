@@ -15,6 +15,9 @@
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
 
+#include <tf/transform_broadcaster.h>
+
+
 class Color
 {
 
@@ -31,6 +34,7 @@ class CylinderTrackingROS {
 	std::string odom_link;
 	std::string tracking_frame;
 	ros::Time filter_time;
+	ros::Time filter_time_old_;
 	tf::StampedTransform meas_old_;
 	bool vo_initialized_;
 	tf::Transform filter_estimate_old_;
@@ -64,6 +68,7 @@ class CylinderTrackingROS {
 	void decomposeTransform(const tf::Transform& trans, double& x, double& y, double&z, double&Rx, double& Ry, double& Rz);
 	void angleOverflowCorrect(double& a, double ref);
 	void initialize(const tf::Transform& prior, const ros::Time& time);
+	Eigen::Affine3d stateToMatrix(const Eigen::Matrix<double,6,1> & state);
 	//Eigen::Matrix4f  odom(const std::vector<Eigen::VectorXd> & detections_);
 public:
 

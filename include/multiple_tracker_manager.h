@@ -302,18 +302,15 @@ class MultipleTrackerManager
 		processNoiseCovariance=processNoiseCovariance*1.0;
 
 		MatrixXd observationNoiseCov(6,6);
-		observationNoiseCov << 1, 0, 0, 0, 0, 0, 0, 0,
-				       0, 1, 0, 0, 0, 0, 0, 0,
-				       0, 0, 1, 0, 0, 0, 0, 0,
-				       0, 0, 0, 1, 0, 0, 0, 0,
-				       0, 0, 0, 0, 1, 0, 0, 0,
-				       0, 0, 0, 0, 0, 1, 0, 0,
-				       0, 0, 0, 0, 0, 0, 1, 0,
-				       0, 0, 0, 0, 0, 0, 0, 1;
+		observationNoiseCov << 1, 0, 0, 0, 0, 0,
+				       0, 1, 0, 0, 0, 0,
+				       0, 0, 1, 0, 0, 0,
+				       0, 0, 0, 1, 0, 0,
+				       0, 0, 0, 0, 1, 0,
+				       0, 0, 0, 0, 0, 1;
+
 
 		observationNoiseCov=observationNoiseCov*10000.0;
-
-
 
 		MatrixXd controlModel(6,6);
 
@@ -323,7 +320,6 @@ class MultipleTrackerManager
 				0, 0, 0, 1, 0, 0,
 				0, 0, 0, 0, 1, 0,
 				0, 0, 0, 0, 0, 1;
-
 
 		return std::shared_ptr<KalmanFilter>(new KalmanFilter(stateTransitionModel, controlModel, observationModel, processNoiseCovariance, observationNoiseCov, initial_state, initial_cov));
 	}
@@ -338,6 +334,7 @@ class MultipleTrackerManager
 	// Init robot pose
 	void initFilter(const Eigen::Matrix<double,6,1> & mu_, const Eigen::Matrix<double,6,6> & cov_)
 	{
+
 		std::shared_ptr<Robot> init_state(new Robot(mu_, cov_));
 		pose=std::shared_ptr<Tracker<Robot,KalmanFilter> > (new Tracker<Robot,KalmanFilter>(init_state,poseTrackerInit(mu_,cov_)));
 	}

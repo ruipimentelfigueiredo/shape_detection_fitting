@@ -147,7 +147,7 @@ Visualization Manager:
       Marker Topic: /cylinder_detections_vis
       Name: Cylinders Detections
       Namespaces:
-        {}
+        detections: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -161,7 +161,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
-    Fixed Frame: odom
+    Fixed Frame: camera_rgb_frame
     Frame Rate: 30
   Name: root
   Tools:
@@ -182,7 +182,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.04639387
+      Distance: 3.23349166
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -196,10 +196,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.565203667
+      Pitch: 0.230203211
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.53663754
+      Yaw: 3.40163374
     Saved: ~
 Window Geometry:
   CylinderBoundingBoxes:
