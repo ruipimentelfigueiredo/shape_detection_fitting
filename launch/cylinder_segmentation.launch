@@ -25,11 +25,19 @@
 		<param name="absolute_path_folder" type="str" value="$(find active_semantic_mapping)/files/" />
     		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
 	</node>
-
 	<node pkg="active_semantic_mapping" type="cylinder_tracking_ros_node" name="cylinder_tracker" respawn="true" output="log">
 	        <remap from="image_in" to="$(arg image_in)"/>
 	        <remap from="clusters_in" to="$(arg clusters_in)"/>
     		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
 	</node>
+	
+	<!--<node pkg="active_semantic_mapping" type="cylinder_test" name="cylinder_test" respawn="false" output="screen">
+	        <remap from="image_in" to="$(arg image_in)"/>
+	        <remap from="clusters_in" to="$(arg clusters_in)"/>
+		<param name="absolute_path_folder" type="str" value="$(find active_semantic_mapping)/files/" />
+    		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
+	</node>-->
+
+
 
 </launch>

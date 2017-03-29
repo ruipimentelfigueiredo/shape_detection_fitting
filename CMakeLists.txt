@@ -131,6 +131,8 @@ install(TARGETS cylinder_tracking_ros_nodelet
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
+add_executable (cylinder_test src/cylinder_segmentation_ya.cpp)
+target_link_libraries (cylinder_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
 
 
 # TESTS

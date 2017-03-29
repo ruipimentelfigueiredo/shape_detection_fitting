@@ -123,13 +123,13 @@ Visualization Manager:
       Unreliable: true
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /tabletop/clusters
       Name: OrkClusters
       Namespaces:
-        tabletop_node: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Image
       Enabled: false
       Image Topic: /cylinders_image
@@ -147,7 +147,7 @@ Visualization Manager:
       Marker Topic: /cylinder_detections_vis
       Name: Cylinders Detections
       Namespaces:
-        detections: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -196,10 +196,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.630203843
+      Pitch: 0.565203667
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.21163154
+      Yaw: 2.53663754
     Saved: ~
 Window Geometry:
   CylinderBoundingBoxes:

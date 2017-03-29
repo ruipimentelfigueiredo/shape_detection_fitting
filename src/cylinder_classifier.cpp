@@ -34,12 +34,31 @@ CylinderClassifier::CylinderClassifier(const std::string & absolute_path_folder_
 	network=boost::shared_ptr<Network> (new Network(absolute_path_folder+model_file, absolute_path_folder+weight_file, absolute_path_folder+mean_file));
 }		
 
-
-
-int CylinderClassifier::classify(const cv::Mat& img)
+int CylinderClassifier::classifyBest(const cv::Mat& img)
 {
-	int id=network->Classify(img);
 
-	return id;
+    return network->ClassifyBest(img);
 }
+
+float CylinderClassifier::classify(const cv::Mat& img)
+{
+	std::vector<ClassificationData> classifications=network->Classify(img);
+	int best_index=0;
+	float confidence=0;
+	float sum=0.0;
+	/*for(unsigned int i=0; i<classifications.size();++i)
+	{
+		sum+=classifications[i].confidence;
+	}
+
+	// Normalize
+	for(unsigned int i=0; i<classifications.size();++i)
+	{
+		classifications[i].confidence/=sum;
+	}*/
+	
+	return classifications[0].confidence;
+}
+
+
 	

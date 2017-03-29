@@ -39,9 +39,7 @@ typedef std::pair<string, float> Prediction;
 
 
 
-/*****************************************/
-/*		CLASSES
-/*****************************************/
+
 
 class ClassData{
 public:
@@ -65,8 +63,26 @@ public:
     }
 };
 
+class ClassificationData 
+{
 
-/*****************************************/
+	public:
+		unsigned int id;
+		float confidence;
+
+	ClassificationData(const unsigned int id_, const float confidence_) : id(id_), confidence(confidence_)
+	{};
+
+    friend ostream &operator<<( ostream &output,const ClassificationData &class_data ) {
+
+            output << " index: " << class_data.id << "\n"
+                   << " confidence: " << class_data.confidence << "\n" << endl;
+
+        return output;
+    }
+};
+
+
 
 class Network{
 public:
@@ -75,11 +91,11 @@ public:
             const string& mean_file); //construtor
 
     // Return prediction
-    int Classify(const cv::Mat& img);
+    std::vector<ClassificationData> Classify(const cv::Mat& img);
 
     float* Limit_values(float* bottom_data); // NEW
     float find_max(Mat gradient_values);
-
+    int ClassifyBest(const cv::Mat& img);
 private:
     void SetMean(const string& mean_file);
     void WrapInputLayer(std::vector<cv::Mat>* input_channels);
@@ -197,14 +213,35 @@ static std::vector<int> Argmax(const std::vector<float>& v, int N) {
 // Function Classify
 // Return the top N predictions
 /************************************************************************/
-int Network::Classify(const cv::Mat& img) {
+std::vector<ClassificationData> Network::Classify(const cv::Mat& img) {
     std::vector<float> output = Predict(img);  // output is a float vector
+   
+    std::vector<ClassificationData> classification_data;
+    for(unsigned int i=0; i<output.size(); ++i)
+    {
 
+        classification_data.push_back(ClassificationData(i,output[i]));
+	//std::cout << classification_data << std::endl;
+    }
+
+    return classification_data;
+}
+
+/************************************************************************/
+// Function Classify
+// Return the top N predictions
+/************************************************************************/
+int Network::ClassifyBest(const cv::Mat& img) {
+    std::vector<float> output = Predict(img);  // output is a float vector
+    for(int i=0; i<output.size();++i)
+    {
+	std::cout << output[i] << std::endl;
+    }
+    std::cout << std::endl;
     //ClassData mydata(N); // objecto
     std::vector<int> maxN = Argmax(output, 1); // tem o top
     int idx = maxN[0];
-
-    return idx;
+    return idx; 
 }
 
 /************************************************************************/
@@ -263,24 +300,46 @@ void Network::WrapInputLayer(std::vector<cv::Mat>* input_channels){
 /************************************************************************/
 void Network::Preprocess(const cv::Mat& img, std::vector<cv::Mat>* input_channels){
 
+	cv::Mat img_=img.clone(); 
     // Convert the input image to the input image format of the network
     // swap channels from RGB to BGR
     cv::Mat sample;
-    if (img.channels() == 3 && num_channels == 1)
-        cv::cvtColor(img, sample, cv::COLOR_BGR2GRAY);
-    else if (img.channels() == 4 && num_channels == 1)
+    //std::cout << "num_channels:"<< num_channels <<  "  img.channels():" << img.channels() << std::endl;
+    if (img_.channels() == 3 && num_channels == 1)
+        cv::cvtColor(img_, sample, cv::COLOR_BGR2GRAY);
+    else if (img_.channels() == 4 && num_channels == 1)
         cv::cvtColor(img, sample, cv::COLOR_BGRA2GRAY);
-    else if (img.channels() == 4 && num_channels == 3)
+    else if (img_.channels() == 4 && num_channels == 3)
         cv::cvtColor(img, sample, cv::COLOR_BGRA2BGR);
-    else if (img.channels() == 1 && num_channels == 3)
-        cv::cvtColor(img, sample, cv::COLOR_GRAY2BGR);
+    else if (img_.channels() == 1 && num_channels == 3)
+        cv::cvtColor(img_, sample, cv::COLOR_GRAY2BGR);
     else
-        sample = img;
+        sample = img_;
+
+   // EQUALIZE
+   {
+	std::vector<cv::Mat> channels;
+        cv::split(sample,channels);
+        cv::Mat B,G,R;
+
+        cv::equalizeHist( channels[0], B );
+        cv::equalizeHist( channels[1], G );
+        cv::equalizeHist( channels[2], R );
+        std::vector<cv::Mat> combined;
+
+        combined.push_back(R);
+        combined.push_back(G);
+        combined.push_back(B);
+        cv::merge(combined,sample);
+
+
+   }
+
 
     // Resize if geometry of image != input geometry of the network
     cv::Mat sample_resized;
     if (sample.size() != input_geometry)
-        cv::resize(sample, sample_resized, input_geometry);
+        cv::resize(sample, sample_resized, input_geometry, cv::INTER_CUBIC);
     else
         sample_resized = sample;
 

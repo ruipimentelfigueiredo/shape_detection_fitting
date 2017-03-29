@@ -7,30 +7,9 @@
 # }
 layer {
   name: "data"
-  type: "Data"
-  top: "data"
-  top: "label"
-  include {
-    phase: TRAIN
-  }
-  transform_param {
-    crop_size: 227
-#    mean_value: 104
-#    mean_value: 117
-#    mean_value: 123
-    mean_file: "/home/atabak/Cylinders/mean.binaryproto"
-  }
-  data_param {
-    source: "/home/atabak/Cylinders/train_lmdb"
-    batch_size: 32
-    backend: LMDB
-  }
-}
-layer {
-  name: "data"
   type: "Input"
   top: "data"
-  input_param { shape: { dim: 10 dim: 3 dim: 227 dim: 227 } }
+  input_param { shape: { dim: 1 dim: 3 dim: 227 dim: 227 } }
 }
 layer {
   name: "conv1"

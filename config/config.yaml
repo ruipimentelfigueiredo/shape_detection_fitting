@@ -31,3 +31,4 @@ weight_file: train_iter_100.caffemodel
 mean_file: mean.binaryproto
 device: GPU
 device_id: 1
+classification_threshold: 0.5

@@ -51,7 +51,7 @@ class CylinderSegmentationROS {
 	boost::shared_ptr<tf::TransformListener> listener;
 	ros::Subscriber point_cloud_sub;
 
-
+	float classification_threshold;
 
 	ros::Publisher cylinders_pub;
 	ros::Publisher image_pub;
@@ -90,6 +90,7 @@ class CylinderSegmentationROS {
 
 		for(unsigned int i=0; i<input_clusters->markers.markers.size();++i)
 		{
+			//if(i>0) break;
 			//////////////////////
 			// Get pcl clusters //
 			//////////////////////
@@ -127,8 +128,6 @@ class CylinderSegmentationROS {
 			///////////////////////////
 
 			// Get XY max and min and construct image
-
-
 			PointCloudT::Ptr cloud_projected(new PointCloudT);
 	  		pcl::transformPointCloud (*cloud_filtered, *cloud_projected, cam_intrinsic);
 
@@ -139,12 +138,9 @@ class CylinderSegmentationROS {
 				cloud_projected->points[p].z=1.0;
 			}
 
-
 			// Get minmax
 			Eigen::Vector4f min_pt,max_pt;
 			pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
-
-
 
 			float padding =0.5;
 			float width=max_pt[0]-min_pt[0];
@@ -167,24 +163,21 @@ class CylinderSegmentationROS {
 			cv::Rect rect(min_pt[0], min_pt[1], width, height);
 			clusters_bboxes.push_back(rect);
 
-
-
-
-
 			// Classify
 			cv::Mat roi = image_cv(rect);
-			int is_cylinder=1-cylinder_classifier->classify(roi);
-			if(is_cylinder)
+			float confidence=cylinder_classifier->classify(roi);
+			ROS_ERROR_STREAM("CONFIDENCE:"<<confidence);
+			if(confidence>classification_threshold)
 			{
 				cylinder_indices.push_back(i);
 
 				// Visualization
-				//cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,255,0), 4);
+				cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,255,0), 4);
 			}
 			else
 			{
 				// Visualization
-				//cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(255,0,0), 4);
+				cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(255,0,0), 4);
 			}
 				
 
@@ -193,9 +186,10 @@ class CylinderSegmentationROS {
 			cv::imshow( "Display window", roi );                   // Show our image inside it.
 			cv::waitKey(0);*/ 
 
-	 		imwrite("/home/rui/other/other."+std::to_string(image_number++)+".jpg", image_cv(rect) );
+			//if((image_number%5)==0)
+			//imwrite("/home/rui/other/other."+std::to_string(image_number)+".jpg", image_cv(rect) );
 
-
+			//image_number++;
 		}
 
 		ROS_INFO_STREAM("Cylinders classification time: "<<float( clock () - classification_begin_time ) /  CLOCKS_PER_SEC<< " seconds");
@@ -375,13 +369,15 @@ public:
 		n_priv.param<std::string>("device", device, "device");
 		n_priv.param<int>("device_id", device_id, 0);
 
+		n_priv.param<float>("classification_threshold", classification_threshold, 0.9);
+
 		ROS_INFO_STREAM("absolute_path_folder:"<< absolute_path_folder);
 		ROS_INFO_STREAM("model_file:"<< model_file);
 		ROS_INFO_STREAM("weight_file:"<< weight_file);
 		ROS_INFO_STREAM("mean_file:"<< mean_file);
 		ROS_INFO_STREAM("device:"<< device);
 		ROS_INFO_STREAM("device_id:"<< device_id);
-
+		ROS_INFO_STREAM("classification_threshold:"<< classification_threshold);
 		cylinder_classifier=boost::shared_ptr<CylinderClassifier>(new CylinderClassifier(absolute_path_folder,model_file,weight_file,mean_file,device,(unsigned int)device_id));
 		// Advertise cylinders
 		cylinders_pub = n.advertise<active_semantic_mapping::Cylinders>( "cylinders_detections", 1);

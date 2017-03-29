@@ -50,7 +50,8 @@ public:
 		           const std::string & device_,
 			   const unsigned int & device_id_=0);
 
-	int classify(const cv::Mat& img);
+	float classify(const cv::Mat& img);
+	int classifyBest(const cv::Mat& img);
 };
 
 
