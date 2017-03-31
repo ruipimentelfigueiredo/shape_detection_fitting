@@ -6,8 +6,10 @@ import caffe
 import lmdb
 import numpy as np
 from caffe.proto import caffe_pb2
+from os.path import expanduser
 
 caffe.set_mode_gpu()
+home = expanduser('~')
 
 #Size of images
 IMAGE_WIDTH = 227
@@ -35,15 +37,15 @@ Reading mean image, caffe model and its weights
 '''
 #Read mean image
 mean_blob = caffe_pb2.BlobProto()
-with open('/home/atabak/Cylinders/mean.binaryproto') as f:
+with open(home+'/Cylinders/dataset_v3/mean.binaryproto') as f:
     mean_blob.ParseFromString(f.read())
 mean_array = np.asarray(mean_blob.data, dtype=np.float32).reshape(
     (mean_blob.channels, mean_blob.height, mean_blob.width))
 
 
 #Read model architecture and trained model's weights
-net = caffe.Net('/home/atabak/Cylinders/SqueezeNet/SqueezeNet_v1.1/train_val.prototxt',
-                '/home/atabak/Cylinders/train_iter_100.caffemodel',
+net = caffe.Net(home+'/Cylinders/camera_ready/train_val.prototxt',
+                home+'/Cylinders/dataset_v3/train_iter_200.caffemodel',
                 caffe.TEST)
 
 #Define image transformers
@@ -55,11 +57,14 @@ transformer.set_transpose('data', (2,0,1))
 Making predicitions
 '''
 #Reading image paths
-test_img_paths = [img_path for img_path in glob.glob("./test/*jpg")]
+test_img_paths = [img_path for img_path in glob.glob("./dataset_v3/test/*jpg")]
 
 #Making predictions
 test_ids = []
 preds = []
+error = 0
+counter = 0
+error_list = list()
 for img_path in test_img_paths:
     img = cv2.imread(img_path, cv2.IMREAD_COLOR)
     img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
@@ -72,6 +77,11 @@ for img_path in test_img_paths:
 
     test_ids = test_ids + [img_path.split('/')[-1][:-4]]
     preds = preds + [pred_probas.argmax()]
+    counter+=1
+    if ('cylinder.' in img_path.split('/')[-1][:-4]) and (pred_probas.argmax()==1) or \
+    ('other.' in img_path.split('/')[-1][:-4]) and (pred_probas.argmax()==0):
+      error+=1
+      error_list.append(img_path)
 
     print img_path
     print pred_probas.argmax()
@@ -80,7 +90,7 @@ for img_path in test_img_paths:
 '''
 Making submission file
 '''
-with open("./submission_model_1.csv","w") as f:
+with open("./dataset_v3/submission_model_1.csv","w") as f:
     f.write("id,label\n")
     for i in range(len(test_ids)):
         f.write(str(test_ids[i])+","+str(preds[i])+"\n")
