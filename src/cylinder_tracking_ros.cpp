@@ -1,6 +1,7 @@
 #include "cylinder_tracking_ros.h"
 #include <pcl/visualization/cloud_viewer.h>
 #include "tf_conversions/tf_eigen.h"
+#include "helpers.h"
 CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) : 
 	n(n_), 
 	n_priv("~"),
@@ -27,20 +28,15 @@ CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) :
 	vis_pub = n.advertise<visualization_msgs::MarkerArray>( "cylinders_tracking_vis", 10);
 
 
-	cylinders_sub=n.subscribe<active_semantic_mapping::Cylinders> ("cylinders_detections", 10, &CylinderTrackingROS::callback, this);
-	// Subscribe to point cloud and planar segmentation
-        /*cylinders_sub=boost::shared_ptr<message_filters::Subscriber<std_msgs::Int32MultiArray> > (new message_filters::Subscriber<std_msgs::Int32MultiArray>(n, "clusters_out_aux", 10));
-
-	sync=boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > (new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10),*cylinders_sub));
-        sync->registerCallback(boost::bind(&CylinderTrackingROS::callback, this, _1));*/
-
+	// Detector subscriber
+	cylinders_sub=n.subscribe<active_semantic_mapping::Cylinders> ("cylinders_detections", 10, &CylinderTrackingROS::detectionsCallback, this);
 
 	// Odom subscriber
 	odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &CylinderTrackingROS::odomCallback, this);	
 }
 
   // initialize prior density of filter 
-void CylinderTrackingROS::initialize(const tf::Transform& prior, const ros::Time& time)
+/*void CylinderTrackingROS::initialize(const tf::Transform& prior, const ros::Time& time)
 {
 	// set prior of filter
 	Eigen::Matrix<double,6,1> prior_Mu; 
@@ -64,11 +60,11 @@ void CylinderTrackingROS::initialize(const tf::Transform& prior, const ros::Time
 	filter_time_old_     = time;
 
 	// filter initialized
-	filter_initialized_ = true;*/
+	filter_initialized_ = true;
 	filter_time=time;
-}
+}*/
 
-void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::ConstPtr & input_clusters)
+void CylinderTrackingROS::detectionsCallback(const active_semantic_mapping::Cylinders::ConstPtr & input_clusters)
 {
 	unsigned int detections_num=input_clusters->cylinders.layout.dim[0].size;
 	std::vector<Eigen::VectorXd> detections_;
@@ -96,7 +92,7 @@ void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::Con
 	// TRACK
 	clock_t begin_time_ = clock();
 	Eigen::Matrix4d relative_motion;
-	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers=tracker_manager.process(detections_,relative_motion);
+	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > trackers=tracker_manager.update(detections_,relative_motion);
 	std::string trackers_frame_id=input_clusters->header.frame_id;
 	for(unsigned int i=0; i<trackers.size();++i)
 	{
@@ -112,33 +108,38 @@ void CylinderTrackingROS::callback(const active_semantic_mapping::Cylinders::Con
 	vis_pub.publish( markers_ );
 }
 
-// decompose Transform into x,y,z,Rx,Ry,Rz
-void CylinderTrackingROS::decomposeTransform(const tf::Transform& trans, double& x, double& y, double&z, double&Rx, double& Ry, double& Rz){
-	x = trans.getOrigin().x();   
-	y = trans.getOrigin().y(); 
-	z = trans.getOrigin().z(); 
-	trans.getBasis().getEulerYPR(Rz,Ry,Rz);
+// decompose Transform into x,y,z,dx,dy,dz
+void CylinderTrackingROS::decomposeTransform(const tf::Transform & trans_tf, Eigen::Matrix<double,6,1> & state_){
+
+	Eigen::Affine3d trans_eigen;
+	tf::transformTFToEigen(trans_tf, trans_eigen);
+	Eigen::Vector3d init(1,1,1);
+	//trans_eigen.matrix().block(0,3,3,1)=init;
+
+	// Position part
+	state_.head(3)=trans_eigen.matrix().block(0,3,3,1);
+
+	// Orientation part
+        state_.segment(3,3)=rotationToDirection(trans_eigen.matrix().block(0,0,3,3));
+	std::cout << state_ << std::endl;
+	//trans.getBasis().getEulerYPR(Rz,Ry,Rz);
 };
 
 // correct for angle overflow
 void CylinderTrackingROS::angleOverflowCorrect(double& a, double ref)
 {
-
 	while ((a-ref) >  M_PI) a -= 2*M_PI;
 	while ((a-ref) < -M_PI) a += 2*M_PI;
 };
+
+
+// Convert direction vector to transformation matrix
 Eigen::Affine3d CylinderTrackingROS::stateToMatrix(const Eigen::Matrix<double,6,1> & state)
 {
-	Eigen::AngleAxisd rollAngle(state(3), Eigen::Vector3d::UnitZ());
-	Eigen::AngleAxisd yawAngle(state(4), Eigen::Vector3d::UnitY());
-	Eigen::AngleAxisd pitchAngle(state(5), Eigen::Vector3d::UnitX());
-
-	Eigen::Quaternion<double> q = rollAngle * yawAngle * pitchAngle;
-
-	Eigen::Matrix3d rotationMatrix = q.matrix();
-
+	Eigen::Vector3d direction_vector=state.segment(3,3);
+	Eigen::Matrix3d rotationMatrix=directionToRotation(direction_vector);
 	Eigen::Translation<double, 3> translation(state(0),state(1),state(2));
-	return Eigen::Affine3d(translation*rotationMatrix);
+	return Eigen::Affine3d(rotationMatrix*translation);
 }
 
 bool CylinderTrackingROS::addMeasurement(const tf::StampedTransform& meas, const Eigen::Matrix<double, 6, 6> & covar)
@@ -149,8 +150,8 @@ bool CylinderTrackingROS::addMeasurement(const tf::StampedTransform& meas, const
 	      meas.getOrigin().x(),    meas.getOrigin().y(), meas.getOrigin().z(),
 	      meas.getRotation().x(),  meas.getRotation().y(), 
 	      meas.getRotation().z(),  meas.getRotation().w());
+	
 	listener->setTransform( meas );
-
 
 	// process vo measurement
 	// ----------------------
@@ -163,67 +164,50 @@ bool CylinderTrackingROS::addMeasurement(const tf::StampedTransform& meas, const
 
 	//listener->lookupTransform("vo", tracking_frame, filter_time, vo_meas_);
 
-
-	if (vo_initialized_){
-
+	if (vo_initialized_)
+	{
 		// convert absolute vo measurements to relative vo measurements
-		tf::Transform vo_rel_frame =  filter_estimate_old_ * meas_old_.inverse() * meas;
+		tf::Transform vo_rel_frame =  meas_old_.inverse() * meas;
 
+		// x y z direction_x direction_y direction_z
 		Eigen::Matrix<double,6,1> vo_rel;
 
-		decomposeTransform(vo_rel_frame, vo_rel(0),  vo_rel(1), vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5));
+		Eigen::Affine3d trans_eigen;
+		tf::transformTFToEigen(vo_rel_frame, trans_eigen);
 
-		Eigen::MatrixXd state=tracker_manager.pose->getState();
-
-		angleOverflowCorrect(vo_rel(5), state(5) );
+		//Eigen::MatrixXd state=tracker_manager.pose->getState();
+		//angleOverflowCorrect(vo_rel(5), state(5));
 
 		// update filter
-		//vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * pow(dt,2));
-		tracker_manager.updateFilter(vo_rel,  covar);
-
-
-		tf::transformEigenToTF(stateToMatrix(tracker_manager.pose->getState()),filter_estimate_old_);
-
-		static tf::TransformBroadcaster br;
-   		 br.sendTransform(tf::StampedTransform(filter_estimate_old_.inverse(), filter_time, tracking_frame,vo_meas_.frame_id_));
-
+		//tracker_manager.updateFilter(vo_rel,  covar);
+		tracker_manager.predict(trans_eigen.matrix(),  covar);
+		//tf::transformEigenToTF(stateToMatrix(tracker_manager.pose->getState()),filter_estimate_old_);
 	}
 	else 
 	{
 		// Initialize
-		// remember prior
-		//addMeasurement(StampedTransform(prior, time, tracking_frame, base_footprint_frame_));
-		//filter_estimate_old_vec_ = prior_Mu;
 		filter_time_old_     = filter_time;
-		meas_old_=meas;
 
 		Eigen::Matrix<double,6,1> vo_rel;
-
-		decomposeTransform(meas, vo_rel(0),  vo_rel(1), vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5));
+		decomposeTransform(meas,vo_rel);
 
 		tracker_manager.initFilter(vo_rel, covar);
-
-
-
+		//tf::transformEigenToTF(stateToMatrix(tracker_manager.pose->getState()),filter_estimate_old_);
 		// filter initialized
 		vo_initialized_ = true;
-
 	}
+
 	meas_old_ = meas;
 
-        // remember last estimate
-        //filter_estimate_old_vec_ = filter_->PostGet()->ExpectedValueGet();
-
 	return true;
-
 };
+
 void CylinderTrackingROS::odomCallback (const nav_msgs::Odometry::ConstPtr & msg)
 {
-
-	ROS_INFO("Seq: [%d]", msg->header.seq);
-	ROS_INFO("Position-> x: [%f], y: [%f], z: [%f]", msg->pose.pose.position.x,msg->pose.pose.position.y, msg->pose.pose.position.z);
-	ROS_INFO("Orientation-> x: [%f], y: [%f], z: [%f], w: [%f]", msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
-	ROS_INFO("Vel-> Linear: [%f], Angular: [%f]", msg->twist.twist.linear.x,msg->twist.twist.angular.z);
+	//ROS_INFO("Seq: [%d]", msg->header.seq);
+	//ROS_INFO("Position-> x: [%f], y: [%f], z: [%f]", msg->pose.pose.position.x,msg->pose.pose.position.y, msg->pose.pose.position.z);
+	//ROS_INFO("Orientation-> x: [%f], y: [%f], z: [%f], w: [%f]", msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+	//ROS_INFO("Vel-> Linear: [%f], Angular: [%f]", msg->twist.twist.linear.x,msg->twist.twist.angular.z);
 
  	tf::Transform vo_meas_;
     	// get data

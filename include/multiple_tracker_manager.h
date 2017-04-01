@@ -349,8 +349,47 @@ class MultipleTrackerManager
 			//std::shared_ptr<Tracker<Robot,KalmanFilter> > aux(new Tracker<Robot,KalmanFilter>(unDetections[a]->getObjPTR(),trackerInit(initial_state,initial_cov)));
 	}
 
+	// predict using odometry
+	void predict(const Eigen::Matrix4d & transf, const Eigen::Matrix<double,6,6> & cov_)
+	{
+		//VectorXd temp(6);
+		//temp=mu_;
+		// 0. Predict
+		for(unsigned int t=0; t<trackers.size();++t)
+		{
+
+			VectorXd temp(6);
+			temp << 0, 0, 0, 0, 0, 0;
+
+
+			// Apply transform to position
+			temp.head(3) =transf.block(0,3,3,1) - trackers[t]->getObjPTR()->getObservableStates().segment(0,3);
+			temp.head(3)+=transf.block(0,0,3,3) * trackers[t]->getObjPTR()->getObservableStates().segment(0,3);
+
+			// Direction part
+			//temp.segment(3,3)=transf.block(0,0,3,3).inverse()*trackers[t]->getObjPTR()->getObservableStates().segment(3,3);
+
+               		//it_mmae->statePost(cv::Range(0,2),cv::Range(0,1)) = odom_trans + odom_rot*it_mmae->statePost(cv::Range(0,2),cv::Range(0,1));
+			//ROS_ERROR_STREAM("TEMP:"<< temp);
+			//VectorXd state_(6);
+			//state_.head(6)=unDetections[a]->getObjPTR()->getObservableStates().head(6);
+
+			// Apply transform to position
+			//temp.head(3)=-trackers[t]->getObjPTR()->getObservableStates().segment(0,3);
+			//temp.head(3)+=(relative_motion.block(0,3,3,1)+(relative_motion.block(0,0,3,3)*trackers[t]->getObjPTR()->getObservableStates().segment(0,3)));
+
+			//temp.segment(3,3)=relative_motion.block(0,0,3,3)*trackers[t]->getObjPTR()->getObservableStates().segment(3,3);
+
+			//VectorXd temp=VectorXd();
+
+               		//it_mmae->statePost(cv::Range(0,2),cv::Range(0,1)) = odom_trans + odom_rot*it_mmae->statePost(cv::Range(0,2),cv::Range(0,1));
+			trackers[t]->predict(temp);
+		}
+
+	}
+
 	// Process new measurements
-	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > & process(std::vector<Eigen::VectorXd> & detections_, const Eigen::Matrix4d & relative_motion)
+	const std::vector<std::shared_ptr<Tracker<Cylinder, KalmanFilter> > > & update(std::vector<Eigen::VectorXd> & detections_, const Eigen::Matrix4d & relative_motion)
 	{
 
 		// KALMAN INIT COV

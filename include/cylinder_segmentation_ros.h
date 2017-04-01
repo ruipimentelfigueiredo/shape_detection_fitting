@@ -142,7 +142,7 @@ class CylinderSegmentationROS {
 			Eigen::Vector4f min_pt,max_pt;
 			pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
 
-			float padding =0.5;
+			float padding =0.1;
 			float width=max_pt[0]-min_pt[0];
 			float height=max_pt[1]-min_pt[1];
 	
@@ -177,7 +177,7 @@ class CylinderSegmentationROS {
 			else
 			{
 				// Visualization
-				cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(255,0,0), 4);
+				cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,0,255), 4);
 			}
 				
 

@@ -62,12 +62,12 @@ class CylinderTrackingROS {
 	boost::shared_ptr<message_filters::Subscriber<std_msgs::Int32MultiArray> > cylinders_sub;
     	boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> >sync;*/
 
-  	void callback (const active_semantic_mapping::Cylinders::ConstPtr & input_clusters);
+  	void detectionsCallback (const active_semantic_mapping::Cylinders::ConstPtr & input_clusters);
   	void odomCallback (const nav_msgs::Odometry::ConstPtr & odom);
 	bool addMeasurement(const tf::StampedTransform& meas, const Eigen::Matrix<double, 6, 6> & covar);
-	void decomposeTransform(const tf::Transform& trans, double& x, double& y, double&z, double&Rx, double& Ry, double& Rz);
+	void decomposeTransform(const tf::Transform & trans_tf, Eigen::Matrix<double,6,1> & state_);
 	void angleOverflowCorrect(double& a, double ref);
-	void initialize(const tf::Transform& prior, const ros::Time& time);
+	//void initialize(const tf::Transform& prior, const ros::Time& time);
 	Eigen::Affine3d stateToMatrix(const Eigen::Matrix<double,6,1> & state);
 	//Eigen::Matrix4f  odom(const std::vector<Eigen::VectorXd> & detections_);
 public:
