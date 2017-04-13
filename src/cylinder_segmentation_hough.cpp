@@ -247,7 +247,7 @@ Eigen::Matrix<float,5,1> CylinderSegmentationHough::findCylinderPositionRadius(c
 
 }
 
-Eigen::VectorXf CylinderSegmentationHough::segment(const PointCloudT::ConstPtr & point_cloud_in_)
+CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	//1.  Estimate point normals
 	//ROS_DEBUG_STREAM(" 2. Estimate normals");
@@ -338,37 +338,37 @@ Eigen::VectorXf CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 	// Convert back to original coordinates
 	Eigen::Vector3f cylinder_position=R2.block(0,0,3,3).transpose()*position_and_radius.block(0,0,3,1);
 
-	pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);
-    	coefficients_cylinder->values.resize(7);
-    	coefficients_cylinder->values[0]=cylinder_position[0]+0.5*height*cylinder_direction[0];
-    	coefficients_cylinder->values[1]=cylinder_position[1]+0.5*height*cylinder_direction[1];
-    	coefficients_cylinder->values[2]=cylinder_position[2]+0.5*height*cylinder_direction[2];
-    	coefficients_cylinder->values[3]=cylinder_direction[0];
-    	coefficients_cylinder->values[4]=cylinder_direction[1];
-    	coefficients_cylinder->values[5]=cylinder_direction[2];
-    	coefficients_cylinder->values[6]=radius;
+
+	Eigen::VectorXf coeffs(7,1);
+	coeffs << 
+		cylinder_position[0]+0.5*height*cylinder_direction[0],
+		cylinder_position[1]+0.5*height*cylinder_direction[1],
+		cylinder_position[2]+0.5*height*cylinder_direction[2],
+		cylinder_direction[0],
+		cylinder_direction[1],
+		cylinder_direction[2],
+		radius;
+		//height;
 
 
-	coefficients_cylinder->values[7]=height;
 
-	/*if(do_refine)
-	{
 
-	}*/
-	// EXTRACT HEIGHT AND MID POINT FOR INLIERS ONLY!!!
 	// Create the filtering object
-	/*PointCloudT::Ptr cloud_projected(new PointCloudT);
-	pcl::ProjectInliers<PointT> proj;
-	proj.setModelType (pcl::SACMODEL_CYLINDER);
-	proj.setInputCloud (transformed_cloud);
-	proj.setModelCoefficients (coefficients_cylinder);
-	proj.filter (*cloud_projected);
+	PointCloudT::Ptr cloud_projected(new PointCloudT);
+	pcl::SampleConsensusModelCylinder<PointT, NormalT>::Ptr dit (new pcl::SampleConsensusModelCylinder<PointT,NormalT> (point_cloud_in_)); 
+    	dit->setInputNormals(cloud_normals); 
 
-	// Get MinMax
-	pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);*/
-	//float height=max_pt[2]-min_pt[2];
-	//coefficients_cylinder->values[7]=height;
+	std::vector<int> inliers; 
+	dit -> selectWithinDistance (coeffs, 0.01, inliers); 
+	pcl::copyPointCloud<PointT>(*point_cloud_in_, inliers, *cloud_projected); 
 
+
+	double inlier_ratio_=((double)cloud_projected->size()/(double)point_cloud_in_->size());
+	ROS_ERROR_STREAM("inlier_ratio:"<<inlier_ratio_);
+	// Refine height
+	Eigen::Vector4f min_pt,max_pt;
+	pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
+	height=max_pt[2]-min_pt[2];
 
 	// Redefine cylinder position (base);
 	//Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[2],0.0);
@@ -388,16 +388,10 @@ Eigen::VectorXf CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 	}//*/
 
-	Eigen::VectorXf coeffs(8,1);
-	coeffs << 
-		coefficients_cylinder->values[0],
-		coefficients_cylinder->values[1],
-		coefficients_cylinder->values[2],
-		coefficients_cylinder->values[3],
-		coefficients_cylinder->values[4],
-		coefficients_cylinder->values[5],
-		coefficients_cylinder->values[6],
-		coefficients_cylinder->values[7];
+	//Eigen::VectorXf coeffs(8,1);
+
+
+
 	/*viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
 
 
@@ -407,7 +401,14 @@ Eigen::VectorXf CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 	}//*/
 
-	return coeffs;
+
+	Eigen::VectorXf final_coeffs(8,1);
+	final_coeffs << coeffs,
+			height;
+
+	CylinderFitting cylinder_fitting(final_coeffs,inlier_ratio_);
+
+	return cylinder_fitting;
 
 }
 

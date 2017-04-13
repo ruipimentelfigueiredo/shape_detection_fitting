@@ -11,10 +11,10 @@ import cv2
 import numpy as np
 #from random import shuffle
 
-
-base = os.path.dirname(os.path.realpath(__file__))
+base = '/run/user/1000/gvfs/smb-share:server=blackhole,share=users/ruifigueiredo'
+#base = os.path.dirname(os.path.realpath(__file__))
 objs = os.listdir(os.path.join(base,'new_data'))
-imgs = {'cylinder':list(), 'other':list()}
+imgs = {'cylinder':list(), 'sphere':list(), 'other':list()}
 for obj in objs:
   idxs_path = os.path.join(base, 'new_data', obj)
   idxs = os.listdir(idxs_path)
@@ -24,6 +24,8 @@ for obj in objs:
     for img in os.listdir(imgs_path):
       if obj=='cylinder':
         imgs['cylinder'].append(cv2.imread(os.path.join(imgs_path, img)))
+      elif obj=='sphere':
+        imgs['sphere'].append(cv2.imread(os.path.join(imgs_path, img)))
       else:
         imgs['other'].append(cv2.imread(os.path.join(imgs_path, img)))
       
@@ -76,7 +78,8 @@ def write_imgs(label='cylinder'):
 #    cv2.imwrite(os.path.join(base, 'train', label+'.'+str(counter_train)+'.jpg'), img)
 #    counter_train+=1
 #    
-write_imgs()
+write_imgs('cylinder')
+write_imgs('sphere')
 write_imgs('other')
       
       

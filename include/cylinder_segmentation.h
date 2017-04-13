@@ -27,6 +27,19 @@ typedef pcl::Normal NormalT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef pcl::PointCloud<NormalT> NormalCloudT;
 
+class CylinderFitting
+{
+
+	public:
+		CylinderFitting(const Eigen::VectorXf & parameters_, const double & confidence_): confidence(confidence_), parameters(parameters_)
+		{
+
+		}
+
+	 Eigen::VectorXf parameters;
+	double confidence;
+};
+
 class CylinderSegmentation
 {
 	protected:

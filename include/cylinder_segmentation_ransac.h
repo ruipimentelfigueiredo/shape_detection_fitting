@@ -18,7 +18,7 @@ class CylinderSegmentationRansac : public CylinderSegmentation
 
 	public:
 		CylinderSegmentationRansac(float normal_distance_weight_=0.1, unsigned int max_iterations_=1000, float distance_threshold_=0.1, float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false);
-		Eigen::VectorXf segment(const PointCloudT::ConstPtr & point_cloud_in_);
+		CylinderFitting segment(const PointCloudT::ConstPtr & point_cloud_in_);
 };
 
 #endif // CYLINDERSEGMENTATIONRANSAC_H

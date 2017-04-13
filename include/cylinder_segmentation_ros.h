@@ -73,7 +73,7 @@ class CylinderSegmentationROS {
 
 	void callback (const sensor_msgs::Image::ConstPtr& input_image, const active_semantic_mapping::Clusters::ConstPtr & input_clusters)
 	{
-		static int image_number=0;
+		static int scene_number=0;
 		cv::Mat image_cv;
 		image_cv =cv_bridge::toCvCopy(input_image, "bgr8")->image;
 
@@ -90,6 +90,7 @@ class CylinderSegmentationROS {
 
 		for(unsigned int i=0; i<input_clusters->markers.markers.size();++i)
 		{
+
 			//if(i>0) break;
 			//////////////////////
 			// Get pcl clusters //
@@ -172,12 +173,12 @@ class CylinderSegmentationROS {
 				cylinder_indices.push_back(i);
 
 				// Visualization
-				cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,255,0), 4);
+				//cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,255,0), 4);
 			}
 			else
 			{
 				// Visualization
-				cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,0,255), 4);
+				//cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,0,255), 4);
 			}
 				
 
@@ -187,10 +188,18 @@ class CylinderSegmentationROS {
 			cv::waitKey(0);*/ 
 
 			//if((image_number%5)==0)
-			//imwrite("/home/rui/other/other."+std::to_string(image_number)+".jpg", image_cv(rect) );
+			imwrite("/home/rui/sphere/sphere.scene."+std::to_string(scene_number)+".cluster."+std::to_string(i)+".jpg", image_cv(rect) );
 
-			//image_number++;
+
 		}
+		const clock_t classification_end_time = clock();
+		scene_number++;
+		std::ofstream outputFile;
+outputFile.open("/home/rui/classification_time.txt", fstream::out | std::ofstream::app);
+
+		outputFile <<  std::fixed << std::setprecision(8)<< (double)(classification_end_time-classification_begin_time ) /  CLOCKS_PER_SEC << " "<< input_clusters->markers.markers.size() << std::endl;
+outputFile.close(); // clear flags
+outputFile.clear(); // clear flags
 
 		ROS_INFO_STREAM("Cylinders classification time: "<<float( clock () - classification_begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
@@ -221,14 +230,21 @@ class CylinderSegmentationROS {
 		const clock_t begin_time = clock();
 
 		std::string detections_frame_id=clusters_point_clouds[0]->header.frame_id;
-
+outputFile.open("/home/rui/fitting_quality_cylinders.txt", fstream::out | std::ofstream::app);
 		for(unsigned int ind=0; ind<cylinder_indices.size();++ind)
 		{
 			unsigned int i=cylinder_indices[ind];
-			Eigen::VectorXf model_params=cylinder_segmentation->segment(clusters_point_clouds[i]);
-			model_params.cast <double> ();
+			CylinderFitting cylinder_fitting=cylinder_segmentation->segment(clusters_point_clouds[i]);
+			Eigen::VectorXf model_params=cylinder_fitting.parameters;
+			double confidence=cylinder_fitting.confidence;
 
-			Color color_=id_colors_map.find(0)->second;
+			model_params.cast <double> ();
+			Color color_;
+			if(confidence<0.5)
+				color_=id_colors_map.find(0)->second;
+			else
+				color_=id_colors_map.find(1)->second;
+			outputFile <<  std::fixed << std::setprecision(4)<< confidence<< std::endl;
 			visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_detections_namespace_);
 			markers_.markers.push_back(marker);
 
@@ -240,7 +256,15 @@ class CylinderSegmentationROS {
 			cylinders_msg.cylinders.layout.dim[0].size+=1;
 			cylinders_msg.cylinders.layout.dim[0].stride+= 8;
 		}
+outputFile.close(); // clear flags
+outputFile.clear(); // clear flags
+		const clock_t fitting_end_time = clock();
 
+outputFile.open("/home/rui/fitting_time.txt", fstream::out | std::ofstream::app);
+
+		outputFile <<  std::fixed << std::setprecision(8)<< (double)(fitting_end_time-begin_time ) /  CLOCKS_PER_SEC << " "<< cylinder_indices.size() << std::endl;
+outputFile.close(); // clear flags
+outputFile.clear(); // clear flags
 		ROS_INFO_STREAM("Cylinders fitting time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
 		vis_pub.publish( markers_ );
@@ -309,10 +333,15 @@ class CylinderSegmentationROS {
 		marker.scale.x = 2*model_params[6];
 		marker.scale.y = 2*model_params[6];
 		marker.scale.z = height;
-			marker.color.a = 1.0;
-			marker.color.r = 0;
-			marker.color.g = 1;
-			marker.color.b = 0;
+
+
+		marker.color.a = color_.a;
+		marker.color.r = color_.r;
+		marker.color.g = color_.g;
+		marker.color.b = color_.b;
+
+
+			
 		//marker.lifetime = ros::Duration(0.05);
 		return marker;
 	}
@@ -328,16 +357,9 @@ public:
 	{
 
 		// INITIALIZE VISUALIZATION COLORS
-		id_colors_map.insert(std::pair<int,Color>(0,Color(0,   0.9  , 0.9, 0.2) ) );
-		id_colors_map.insert(std::pair<int,Color>(1,Color(0,   0.5, 0.7) ) );
+		id_colors_map.insert(std::pair<int,Color>(0,Color(0,   0  , 1, 1.0) ) );
+		id_colors_map.insert(std::pair<int,Color>(1,Color(0,   1  , 0, 1.0) ) );
 		id_colors_map.insert(std::pair<int,Color>(2,Color(0.4, 0.1, 0.4) ) );
-		id_colors_map.insert(std::pair<int,Color>(3,Color(0.3, 0.1, 0.9) ) );
-		id_colors_map.insert(std::pair<int,Color>(4,Color(0.1, 0.4, 0.8) ) );
-		id_colors_map.insert(std::pair<int,Color>(5,Color(0.5, 0.5, 0.9) ) );
-		id_colors_map.insert(std::pair<int,Color>(6,Color(0.3, 0.7, 0.3) ) );
-		id_colors_map.insert(std::pair<int,Color>(7,Color(0.9, 0.4, 0.5) ) );
-		id_colors_map.insert(std::pair<int,Color>(8,Color(0.9, 0.6, 0.3) ) );
-		id_colors_map.insert(std::pair<int,Color>(9,Color(0.8, 0.0, 0.9) ) );
 		//odom_link="/odom";
 
 		ROS_INFO("Getting cameras' parameterssss");

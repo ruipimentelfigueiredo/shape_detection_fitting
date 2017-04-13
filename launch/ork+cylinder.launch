@@ -6,15 +6,15 @@
 	<!-- Choose between RGB-D and stereo -->      
 	<arg name="stereo"          default="false"/>
 
-
+<include file="$(find openni2_launch)/launch/openni2.launch">
+  	<arg name="depth_registration" value="true"/>
+  </include>
 
 	<!--<param name="use_sim_time" value="true" />
   	<arg name="file_name" default="2017-02-01-18-45-50.bag"/>
 	<node pkg="rosbag" type="play" name="player" output="log" args="$(find active_semantic_mapping)/data/$(arg file_name)"/>-->
 	<!-- RDBD camera -->
-	<include file="$(find openni2_launch)/launch/openni2.launch">
-		<arg name="depth_registration" value="true"/>
-	</include>
+
 	<!--<include file="$(find zed_wrapper)/launch/zed.launch">
 
 	</include>-->
@@ -120,13 +120,8 @@
 		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
 	</node>
 
-
-
-
-
-
-  	<!-- ORK Tabletop segmentation -->
-  	<node pkg="object_recognition_core" type="detection" name="object_detector" args="-c $(find active_semantic_mapping)/config/detection.table.ros.ork" respawn="true"/>
+	<!-- ORK Tabletop segmentation -->
+       <node pkg="object_recognition_core" type="detection" name="object_detector" args="-c $(find active_semantic_mapping)/config/detection.table.ros.ork" respawn="true"/>
 
 	<!-- Cylinder segmentation -->
 	<include file="$(find active_semantic_mapping)/launch/cylinder_segmentation.launch">

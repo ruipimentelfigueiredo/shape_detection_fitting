@@ -6,7 +6,7 @@ CylinderSegmentationRansac::CylinderSegmentationRansac(float normal_distance_wei
 	distance_threshold(distance_threshold_)
 {};
 
-Eigen::VectorXf CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr & point_cloud_in_)
+CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	// Estimate point normals
 	ne.setSearchMethod (tree);
@@ -81,25 +81,62 @@ Eigen::VectorXf CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr 
 	// First get cylinder posibilion in transformed coordinates
 	Eigen::Vector3f cylinder_position=R2.block(0,0,3,3)*Eigen::Vector3f(coefficients_cylinder->values[0],coefficients_cylinder->values[1],coefficients_cylinder->values[2]);
 	// Then change the height for the correct value and convert back to original coordinates;
-	cylinder_position[2]=min_pt[2];
-	Eigen::Vector3f cylinder_position_final=R2.block(0,0,3,3).transpose()*cylinder_position;
+	//cylinder_position[2]=min_pt[2];
+	//Eigen::Vector3f cylinder_position_final=R2.block(0,0,3,3).transpose()*cylinder_position;
+	double height=max_pt[2]-min_pt[2];
 
-
-    	coefficients_cylinder->values[0]=cylinder_position_final[0];
-    	coefficients_cylinder->values[1]=cylinder_position_final[1];
-    	coefficients_cylinder->values[2]=cylinder_position_final[2];
-	coefficients_cylinder->values[7]=fabs(max_pt[2]-min_pt[2]);
-
-	Eigen::VectorXf coeffs(8,1);
+	Eigen::VectorXf coeffs(7,1);
 	coeffs << 
-		coefficients_cylinder->values[0],
-		coefficients_cylinder->values[1],
-		coefficients_cylinder->values[2],
-		coefficients_cylinder->values[3],
-		coefficients_cylinder->values[4],
-		coefficients_cylinder->values[5],
-		coefficients_cylinder->values[6],
-		coefficients_cylinder->values[7];
+		cylinder_position[0]+0.5*height*cylinder_direction[0],
+		cylinder_position[1]+0.5*height*cylinder_direction[1],
+		cylinder_position[2]+0.5*height*cylinder_direction[2],
+		cylinder_direction[0],
+		cylinder_direction[1],
+		cylinder_direction[2],
+		coefficients_cylinder->values[6];
+		//height;
+
+
+
+
+	// Create the filtering object
+	PointCloudT::Ptr cloud_projected(new PointCloudT);
+	pcl::SampleConsensusModelCylinder<PointT, NormalT>::Ptr dit (new pcl::SampleConsensusModelCylinder<PointT,NormalT> (point_cloud_in_)); 
+    	dit->setInputNormals(cloud_normals); 
+	std::vector<int> inliers; 
+	dit -> selectWithinDistance (coeffs, 0.01, inliers); 
+	pcl::copyPointCloud<PointT>(*point_cloud_in_, inliers, *cloud_projected); 
+
+
+	double inlier_ratio_=((double)cloud_projected->size()/(double)point_cloud_in_->size());
+	ROS_ERROR_STREAM("inlier_ratio:"<<inlier_ratio_);
+	// Refine height
+
+	pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
+	height=max_pt[2]-min_pt[2];
+
+	// Redefine cylinder position (base);
+	//Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[2],0.0);
+    	//coefficients_cylinder->values[0]=refined_cylinder_position[0];
+    	//coefficients_cylinder->values[1]=refined_cylinder_position[1];
+    	//coefficients_cylinder->values[2]=refined_cylinder_position[2];
+
+	//std::cout << "height:" << height << std::endl;
+	// VISUALIZE
+
+    	/*viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
+
+   
+	while (!viewer->wasStopped ())
+	{
+		viewer->spinOnce (100);
+		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+	}//*/
+
+	//Eigen::VectorXf coeffs(8,1);
+
+
+
 	/*viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
 
 
@@ -109,7 +146,14 @@ Eigen::VectorXf CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr 
 		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 	}//*/
 
-	return coeffs;
+
+	Eigen::VectorXf final_coeffs(8,1);
+	final_coeffs << coeffs,
+			height;
+
+	CylinderFitting cylinder_fitting(final_coeffs,inlier_ratio_);
+
+	return cylinder_fitting;
 }
 
 
