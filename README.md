@@ -10,6 +10,7 @@
 
 4. TRAIN
 
-train --solver /home/rui/ws/src/active_semantic_mapping/squeezenet/solver.prototxt 2>&1 | tee /home/rui/Cylinders/dataset_v3/model_1_train.log
+
+/home/rui/mot/lib/caffe/build/tools/caffe train --solver=/home/rui/ws/src/active_semantic_mapping/squeezenet/solver.prototxt --weights /home/rui/ws/src/active_semantic_mapping/squeezenet/squeezenet_v1.1.caffemodel 2>&1 | tee /home/rui/Cylinders/dataset_v3/model_1_train.log
 
 the .log file contains train and test error (very important for papers!!)
