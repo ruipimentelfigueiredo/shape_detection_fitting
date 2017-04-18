@@ -24,13 +24,15 @@ import lmdb
 IMAGE_WIDTH = 227
 IMAGE_HEIGHT = 227
 
-<<<<<<< HEAD
 
-base_dataset = '/run/user/1000/gvfs/smb-share:server=blackhole,share=users/ruifigueiredo'
 
-=======
->>>>>>> 0d7805bc4a83e76e03250a8b6c2ad956ae7444a6
-home = os.path.expanduser('~')
+
+
+
+base_dataset = sys.argv[1:][0]
+base = sys.argv[1:][1]
+print 'base dataset folder: '+sys.argv[1:][0]
+print 'base folder: '+sys.argv[1:][1]
 
 def transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT):
 
@@ -54,19 +56,17 @@ def make_datum(img, label):
         label=label,
         data=np.rollaxis(img, 2).tostring())
 
-train_lmdb = home + '/Cylinders/dataset_v3/train_lmdb'
-validation_lmdb = home + '/Cylinders/dataset_v3/validation_lmdb'
+train_lmdb = base + '/Cylinders/dataset_v3/train_lmdb'
+validation_lmdb = base + '/Cylinders/dataset_v3/validation_lmdb'
 
 #os.system('rm -rf  ' + train_lmdb)
 #os.system('rm -rf  ' + validation_lmdb)
 
 
-<<<<<<< HEAD
+
 #train_data = [img for img in glob.glob("../../dataset_v3/train/*jpg")]
 train_data = [img for img in glob.glob(base_dataset + '/train/*jpg')]
-=======
-train_data = [img for img in glob.glob("../../dataset_v3/train/*jpg")]
->>>>>>> 0d7805bc4a83e76e03250a8b6c2ad956ae7444a6
+
 #test_data = [img for img in glob.glob("../input/test1/*jpg")]
 
 #Shuffle train_data
@@ -83,20 +83,17 @@ with in_db.begin(write=True) as in_txn:
         img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
         if 'cylinder.' in img_path:
             label = 0
-<<<<<<< HEAD
         elif 'sphere.':
             label = 1
         else:
             label = 2
-=======
-        else:
-            label = 1
->>>>>>> 0d7805bc4a83e76e03250a8b6c2ad956ae7444a6
+
+
         datum = make_datum(img, label)
         in_txn.put('{:0>5d}'.format(in_idx), datum.SerializeToString())
         print '{:0>5d}'.format(in_idx) + ':' + img_path
 in_db.close()
-
+print 'Done'
 
 print '\nCreating validation_lmdb'
 
@@ -109,15 +106,11 @@ with in_db.begin(write=True) as in_txn:
         img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
         if 'cylinder.' in img_path:
             label = 0
-<<<<<<< HEAD
         elif 'sphere.':
             label = 1
         else:
             label = 2
-=======
-        else:
-            label = 1
->>>>>>> 0d7805bc4a83e76e03250a8b6c2ad956ae7444a6
+
         datum = make_datum(img, label)
         in_txn.put('{:0>5d}'.format(in_idx), datum.SerializeToString())
         print '{:0>5d}'.format(in_idx) + ':' + img_path

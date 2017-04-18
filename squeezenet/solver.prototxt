@@ -20,10 +20,6 @@ snapshot: 1000
 snapshot_prefix: "train"
 solver_mode: GPU
 random_seed: 42
-<<<<<<< HEAD
 net: "/home/rui/ws/src/active_semantic_mapping/squeezenet/train_val.prototxt" #we typically do `cd SqueezeNet_v1.0; caffe train <args>` 
-=======
-net: "/home/atabak/Cylinders/SqueezeNet/SqueezeNet_v1.1/train_val.prototxt" #we typically do `cd SqueezeNet_v1.0; caffe train <args>` 
->>>>>>> 0d7805bc4a83e76e03250a8b6c2ad956ae7444a6
 test_initialization: false
 average_loss: 40

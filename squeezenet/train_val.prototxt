@@ -18,17 +18,10 @@ layer {
 #    mean_value: 104
 #    mean_value: 117
 #    mean_value: 123
-<<<<<<< HEAD
     mean_file: "/home/rui/Cylinders/dataset_v3/mean.binaryproto"
   }
   data_param {
     source: "/home/rui/Cylinders/dataset_v3/train_lmdb"
-=======
-    mean_file: "/home/atabak/Cylinders/dataset_v3/mean.binaryproto"
-  }
-  data_param {
-    source: "/home/atabak/Cylinders/dataset_v3/train_lmdb"
->>>>>>> 0d7805bc4a83e76e03250a8b6c2ad956ae7444a6
     batch_size: 32
     backend: LMDB
   }
@@ -46,17 +39,10 @@ layer {
 #   mean_value: 104
 #    mean_value: 117
 #    mean_value: 123
-<<<<<<< HEAD
     mean_file: "/home/rui/Cylinders/dataset_v3/mean.binaryproto"
   }
   data_param {
     source: "/home/rui/Cylinders/dataset_v3/validation_lmdb"
-=======
-    mean_file: "/home/atabak/Cylinders/dataset_v3/mean.binaryproto"
-  }
-  data_param {
-    source: "/home/atabak/Cylinders/dataset_v3/validation_lmdb"
->>>>>>> 0d7805bc4a83e76e03250a8b6c2ad956ae7444a6
     batch_size: 25 #not *iter_size
     backend: LMDB
   }
@@ -670,11 +656,7 @@ layer {
   bottom: "fire9/concat"
   top: "conv10-cylinders"
   convolution_param {
-<<<<<<< HEAD
     num_output: 3
-=======
-    num_output: 2
->>>>>>> 0d7805bc4a83e76e03250a8b6c2ad956ae7444a6
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -729,11 +711,7 @@ layer {
   #  phase: TEST
   #}
   accuracy_param {
-<<<<<<< HEAD
     top_k: 3
-=======
-    top_k: 2
->>>>>>> 0d7805bc4a83e76e03250a8b6c2ad956ae7444a6
   }
 }
 #layer {
