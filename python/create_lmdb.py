@@ -19,6 +19,7 @@ import cv2
 import caffe
 from caffe.proto import caffe_pb2
 import lmdb
+import sys
 
 #Size of images
 IMAGE_WIDTH = 227
