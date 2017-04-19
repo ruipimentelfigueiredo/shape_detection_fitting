@@ -37,8 +37,8 @@ layer {
   transform_param {
     crop_size: 227
 #   mean_value: 104
-#    mean_value: 117
-#    mean_value: 123
+#   mean_value: 117
+#   mean_value: 123
     mean_file: "/home/rui/Cylinders/dataset_v3/mean.binaryproto"
   }
   data_param {
