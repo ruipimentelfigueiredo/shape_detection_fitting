@@ -151,7 +151,9 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 
 	//ROS_DEBUG_STREAM("  3.3. Get max peak");
 
-
+	double accumulatorPeakThreshold=0.5;
+	std::vector<Eigen::Vector3f> best_orientations;
+	// Get best orientation
 	float most_votes=0.0;
 	unsigned int best_direction_index=0;
 	for (unsigned int i=0; i<gaussian_sphere_points.size(); ++i)
@@ -162,7 +164,22 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 			most_votes=cyl_direction_accum[i];
 		}
 	}
-	
+
+	best_orientations.push_back(gaussian_sphere_points[best_direction_index]);
+
+	// Choose orientation whose votes are a percentage above a given threshold of the best orientation
+	cyl_direction_accum[best_direction_index]=0; 	// This is more efficient than having an if condition to verify if we are considering the best pose again
+	for (unsigned int i=0; i<gaussian_sphere_points.size(); ++i)
+	{
+		if(cyl_direction_accum[i]>=accumulatorPeakThreshold*most_votes)
+		{
+                        best_orientations.push_back(gaussian_sphere_points[i]);
+		}
+	}
+
+
+
+	// HERE WE SHOULD CLUSTER
 
 	//ROS_DEBUG_STREAM("  3.4. Convert back to continuous");
 
