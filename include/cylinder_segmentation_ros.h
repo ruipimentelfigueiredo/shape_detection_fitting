@@ -173,12 +173,12 @@ class CylinderSegmentationROS {
 				cylinder_indices.push_back(i);
 
 				// Visualization
-				//cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,255,0), 4);
+				cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,255,0), 4);
 			}
 			else
 			{
 				// Visualization
-				//cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,0,255), 4);
+				cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,0,255), 4);
 			}
 				
 
@@ -188,18 +188,18 @@ class CylinderSegmentationROS {
 			cv::waitKey(0);*/ 
 
 			//if((image_number%5)==0)
-			imwrite("/home/rui/sphere/sphere.scene."+std::to_string(scene_number)+".cluster."+std::to_string(i)+".jpg", image_cv(rect) );
+			//imwrite("/home/rui/sphere/sphere.scene."+std::to_string(scene_number)+".cluster."+std::to_string(i)+".jpg", image_cv(rect) );
 
 
 		}
 		const clock_t classification_end_time = clock();
 		scene_number++;
-		std::ofstream outputFile;
-outputFile.open("/home/rui/classification_time.txt", fstream::out | std::ofstream::app);
+		//std::ofstream outputFile;
+		//outputFile.open("/home/rui/classification_time.txt", fstream::out | std::ofstream::app);
 
-		outputFile <<  std::fixed << std::setprecision(8)<< (double)(classification_end_time-classification_begin_time ) /  CLOCKS_PER_SEC << " "<< input_clusters->markers.markers.size() << std::endl;
-outputFile.close(); // clear flags
-outputFile.clear(); // clear flags
+		//outputFile <<  std::fixed << std::setprecision(8)<< (double)(classification_end_time-classification_begin_time ) /  CLOCKS_PER_SEC << " "<< input_clusters->markers.markers.size() << std::endl;
+		//outputFile.close(); // clear flags
+		//outputFile.clear(); // clear flags
 
 		ROS_INFO_STREAM("Cylinders classification time: "<<float( clock () - classification_begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
@@ -230,7 +230,7 @@ outputFile.clear(); // clear flags
 		const clock_t begin_time = clock();
 
 		std::string detections_frame_id=clusters_point_clouds[0]->header.frame_id;
-outputFile.open("/home/rui/fitting_quality_cylinders.txt", fstream::out | std::ofstream::app);
+		//outputFile.open("/home/rui/fitting_quality_cylinders.txt", fstream::out | std::ofstream::app);
 		for(unsigned int ind=0; ind<cylinder_indices.size();++ind)
 		{
 			unsigned int i=cylinder_indices[ind];
@@ -240,11 +240,11 @@ outputFile.open("/home/rui/fitting_quality_cylinders.txt", fstream::out | std::o
 
 			model_params.cast <double> ();
 			Color color_;
-			if(confidence<0.5)
+			if(confidence<classification_threshold)
 				color_=id_colors_map.find(0)->second;
 			else
 				color_=id_colors_map.find(1)->second;
-			outputFile <<  std::fixed << std::setprecision(4)<< confidence<< std::endl;
+			//outputFile <<  std::fixed << std::setprecision(4)<< confidence<< std::endl;
 			visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_detections_namespace_);
 			markers_.markers.push_back(marker);
 
@@ -256,15 +256,15 @@ outputFile.open("/home/rui/fitting_quality_cylinders.txt", fstream::out | std::o
 			cylinders_msg.cylinders.layout.dim[0].size+=1;
 			cylinders_msg.cylinders.layout.dim[0].stride+= 8;
 		}
-outputFile.close(); // clear flags
-outputFile.clear(); // clear flags
+		//outputFile.close(); // clear flags
+		//outputFile.clear(); // clear flags
 		const clock_t fitting_end_time = clock();
 
-outputFile.open("/home/rui/fitting_time.txt", fstream::out | std::ofstream::app);
+		//outputFile.open("/home/rui/fitting_time.txt", fstream::out | std::ofstream::app);
 
-		outputFile <<  std::fixed << std::setprecision(8)<< (double)(fitting_end_time-begin_time ) /  CLOCKS_PER_SEC << " "<< cylinder_indices.size() << std::endl;
-outputFile.close(); // clear flags
-outputFile.clear(); // clear flags
+		//outputFile <<  std::fixed << std::setprecision(8)<< (double)(fitting_end_time-begin_time ) /  CLOCKS_PER_SEC << " "<< cylinder_indices.size() << std::endl;
+		//outputFile.close(); // clear flags
+		//outputFile.clear(); // clear flags
 		ROS_INFO_STREAM("Cylinders fitting time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
 		vis_pub.publish( markers_ );
@@ -326,10 +326,7 @@ outputFile.clear(); // clear flags
 		marker.pose.position.y = model_params[1];
 		marker.pose.position.z = model_params[2];
 		marker.pose.orientation = cylinder_orientation;
-	/*		marker.pose.orientation.x = Q.x();
-		marker.pose.orientation.y = Q.y();
-		marker.pose.orientation.z = Q.z();
-		marker.pose.orientation.w = Q.w();*/
+
 		marker.scale.x = 2*model_params[6];
 		marker.scale.y = 2*model_params[6];
 		marker.scale.z = height;

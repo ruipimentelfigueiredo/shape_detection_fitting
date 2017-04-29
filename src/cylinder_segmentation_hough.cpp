@@ -383,9 +383,9 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 	double inlier_ratio_=((double)cloud_projected->size()/(double)point_cloud_in_->size());
 	ROS_ERROR_STREAM("inlier_ratio:"<<inlier_ratio_);
 	// Refine height
-	Eigen::Vector4f min_pt,max_pt;
-	pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
-	height=max_pt[2]-min_pt[2];
+	//Eigen::Vector4f min_pt,max_pt;
+	//pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
+	//height=max_pt[2]-min_pt[2];
 
 	// Redefine cylinder position (base);
 	//Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[2],0.0);
