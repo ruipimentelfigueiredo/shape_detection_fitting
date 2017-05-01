@@ -2,7 +2,7 @@
 unset(Caffe_FOUND)
 
 ###Set the variable Caffe_DIR as the root of your caffe directory
-set(Caffe_DIR /home/rui/mot/lib/caffe/build/install)
+set(Caffe_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/caffe/build/install)
 message(${Caffe_DIR})
 
 find_path(Caffe_INCLUDE_DIRS NAMES caffe/caffe.hpp caffe/common.hpp caffe/net.hpp caffe/proto/caffe.pb.h caffe/util/io.hpp caffe/vision_layers.hpp

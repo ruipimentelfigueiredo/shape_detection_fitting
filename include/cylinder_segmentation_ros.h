@@ -16,7 +16,7 @@
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Int32MultiArray.h>
 #include "cylinder_classifier.h"
-
+#include "shape_detection_manager.h"
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/point_types.h>
@@ -33,7 +33,7 @@ class Color
 template <class detector_type>
 class CylinderSegmentationROS {
 
-
+	ShapeDetectionManager shape_detection_manager;
 	ros::Time odom_last_stamp;
 	std::string odom_link;
 
@@ -87,7 +87,25 @@ class CylinderSegmentationROS {
 
 
 		const clock_t classification_begin_time = clock();
+		std::vector<PointCloudT::Ptr> pcl_clusters;
+		pcl_clusters.reserve(input_clusters->markers.markers.size());
+		for(unsigned int i=0; i<input_clusters->markers.markers.size();++i)
+		{
 
+			PointCloudT::Ptr cloud_(new PointCloudT);
+			cloud_->header.frame_id = input_clusters->header.frame_id;
+			for (unsigned int p=0; p<input_clusters->markers.markers[i].points.size();++p)
+			{
+				double x_=input_clusters->markers.markers[i].points[p].x;
+				double y_=input_clusters->markers.markers[i].points[p].y;
+				double z_=input_clusters->markers.markers[i].points[p].z;
+				cloud_->points.push_back (pcl::PointXYZ(x_, y_, z_));
+				//pcl::PointCloudinput->markers[i].points
+			}
+			pcl_clusters.push_back(cloud_);
+		}
+
+		shape_detection_manager.detect(image_cv,pcl_clusters,cam_intrinsic);
 		for(unsigned int i=0; i<input_clusters->markers.markers.size();++i)
 		{
 

@@ -1,3 +1,6 @@
 [submodule "lib/tracking"]
 	path = lib/tracking
 	url = https://github.com/joao-avelino/Tracking
+[submodule "lib/caffe"]
+	path = lib/caffe
+	url = https://github.com/BVLC/caffe
