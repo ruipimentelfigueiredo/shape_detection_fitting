@@ -1,16 +1,19 @@
-
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/point_types.h>
 
+template <class detector_type>
 class ShapeDetectionManager
 {
+	boost::shared_ptr<detector_type> cylinder_fitting;
 	boost::shared_ptr<CylinderClassifier> cylinder_classifier;
+	float classification_threshold;
+
 	public:
-		ShapeDetectionManager()
+		ShapeDetectionManager(boost::shared_ptr<CylinderClassifier> & cylinder_classifier_, boost::shared_ptr<detector_type> & cylinder_fitting_) : cylinder_classifier(cylinder_classifier_), cylinder_fitting(cylinder_fitting_)
 		{};
 	
-		int detect(cv::Mat & image_cv,std::vector<PointCloudT::Ptr> & pcl_clusters, const Eigen::Matrix4f & cam_intrinsic)
+		std::vector<CylinderFitting> detect(cv::Mat & image_cv, std::vector<PointCloudT::Ptr> & pcl_clusters, const Eigen::Matrix4f & cam_intrinsic, const float & classification_threshold)
 		{
 			std::vector<cv::Rect> clusters_bboxes;
 			clusters_bboxes.reserve(pcl_clusters.size());
@@ -97,5 +100,12 @@ class ShapeDetectionManager
 				//imwrite("/home/rui/sphere/sphere.scene."+std::to_string(scene_number)+".cluster."+std::to_string(i)+".jpg", image_cv(rect) );
 
 			}
+			std::vector<CylinderFitting> cylinders;
+			for(unsigned int ind=0; ind<cylinder_indices.size();++ind)
+			{
+				cylinders.push_back(cylinder_fitting->segment(clusters_point_clouds[cylinder_indices[ind]]));
+			}
+
+			return cylinders;
 		}
 };

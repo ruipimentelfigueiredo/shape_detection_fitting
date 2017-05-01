@@ -36,7 +36,7 @@ class CylinderFitting
 
 		}
 
-	 Eigen::VectorXf parameters;
+ 	Eigen::VectorXf parameters;
 	double confidence;
 };
 

@@ -33,7 +33,7 @@ class Color
 template <class detector_type>
 class CylinderSegmentationROS {
 
-	ShapeDetectionManager shape_detection_manager;
+	boost::shared_ptr<ShapeDetectionManager<detector_type> > shape_detection_manager;
 	ros::Time odom_last_stamp;
 	std::string odom_link;
 
@@ -80,8 +80,7 @@ class CylinderSegmentationROS {
 		// Get cluster pcl point clouds and opencv bounding boxes
 		std::vector<PointCloudT::Ptr> clusters_point_clouds;
 		clusters_point_clouds.reserve(input_clusters->markers.markers.size());
-		std::vector<cv::Rect> clusters_bboxes;
-		clusters_bboxes.reserve(input_clusters->markers.markers.size());
+
 		std::vector<int> cylinder_indices;
 		cylinder_indices.reserve(input_clusters->markers.markers.size());
 
@@ -105,111 +104,9 @@ class CylinderSegmentationROS {
 			pcl_clusters.push_back(cloud_);
 		}
 
-		shape_detection_manager.detect(image_cv,pcl_clusters,cam_intrinsic);
-		for(unsigned int i=0; i<input_clusters->markers.markers.size();++i)
-		{
-
-			//if(i>0) break;
-			//////////////////////
-			// Get pcl clusters //
-			//////////////////////
-
-			PointCloudT::Ptr cloud_(new PointCloudT);
-			cloud_->header.frame_id = input_clusters->header.frame_id;
-			//cloud_->height = input_clusters->markers[i].height;
-
-			for (unsigned int p=0; p<input_clusters->markers.markers[i].points.size();++p)
-			{
-
-				double x_=input_clusters->markers.markers[i].points[p].x;
-				double y_=input_clusters->markers.markers[i].points[p].y;
-				double z_=input_clusters->markers.markers[i].points[p].z;
-				cloud_->points.push_back (pcl::PointXYZ(x_, y_, z_));
-				//pcl::PointCloudinput->markers[i].points
-			}
-
-			/*tf::TransformListener tf_listener;
-			tf_listener.waitForTransform( "/table",cloud_->header.frame_id,ros::Time(0), ros::Duration(5.0));
-			pcl_ros::transformPointCloud("/table", *cloud_, *cloud_, tf_listener);*/
-
-			PointCloudT::Ptr cloud_filtered (new PointCloudT);
-
-			// Create the filtering object
-			pcl::VoxelGrid<PointT> sor;
-			sor.setInputCloud(cloud_);
-			sor.setLeafSize(0.005f, 0.005f, 0.005f);
-			sor.filter(*cloud_filtered);
-			//cloud_filtered->header.frame_id="table";
-			clusters_point_clouds.push_back(cloud_filtered);
-
-			///////////////////////////
-			// Get 2d bounding boxes //
-			///////////////////////////
-
-			// Get XY max and min and construct image
-			PointCloudT::Ptr cloud_projected(new PointCloudT);
-	  		pcl::transformPointCloud (*cloud_filtered, *cloud_projected, cam_intrinsic);
-
-			for (unsigned int p=0; p<cloud_projected->points.size();++p)
-			{	
-				cloud_projected->points[p].x/=cloud_projected->points[p].z;
-				cloud_projected->points[p].y/=cloud_projected->points[p].z;
-				cloud_projected->points[p].z=1.0;
-			}
-
-			// Get minmax
-			Eigen::Vector4f min_pt,max_pt;
-			pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
-
-			float padding =0.1;
-			float width=max_pt[0]-min_pt[0];
-			float height=max_pt[1]-min_pt[1];
-	
-			// PAD
-			float width_padding=0.5*padding*width;
-			float height_padding=0.5*padding*height;
-
-			(min_pt[0]-width_padding)  <0 ? min_pt[0]=0 : min_pt[0]-=width_padding;
-			(min_pt[1]-height_padding) <0 ? min_pt[1]=0 : min_pt[1]-=height_padding;
-
-			(max_pt[0]+width_padding)  >(image_cv.cols-1) ? max_pt[0]=(image_cv.cols-1)  : max_pt[0]+=width_padding;
-			(max_pt[1]+height_padding) >(image_cv.rows-1) ? max_pt[1]=(image_cv.rows-1) : max_pt[1]+=height_padding;
-		
-			width=max_pt[0]-min_pt[0];
-			height=max_pt[1]-min_pt[1];
-			// end pad
-
-			cv::Rect rect(min_pt[0], min_pt[1], width, height);
-			clusters_bboxes.push_back(rect);
-
-			// Classify
-			cv::Mat roi = image_cv(rect);
-			float confidence=cylinder_classifier->classify(roi);
-			//ROS_ERROR_STREAM("CONFIDENCE:"<<confidence);
-			if(confidence>classification_threshold)
-			{
-				cylinder_indices.push_back(i);
-
-				// Visualization
-				cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,255,0), 4);
-			}
-			else
-			{
-				// Visualization
-				cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,0,255), 4);
-			}
-				
-
-			// dataset creation
-			/*cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
-			cv::imshow( "Display window", roi );                   // Show our image inside it.
-			cv::waitKey(0);*/ 
-
-			//if((image_number%5)==0)
-			//imwrite("/home/rui/sphere/sphere.scene."+std::to_string(scene_number)+".cluster."+std::to_string(i)+".jpg", image_cv(rect) );
+		std::vector<CylinderFitting> detections=shape_detection_manager->detect(image_cv, pcl_clusters, cam_intrinsic, classification_threshold);
 
 
-		}
 		const clock_t classification_end_time = clock();
 		scene_number++;
 		//std::ofstream outputFile;
@@ -249,10 +146,10 @@ class CylinderSegmentationROS {
 
 		std::string detections_frame_id=clusters_point_clouds[0]->header.frame_id;
 		//outputFile.open("/home/rui/fitting_quality_cylinders.txt", fstream::out | std::ofstream::app);
-		for(unsigned int ind=0; ind<cylinder_indices.size();++ind)
+		for(unsigned int ind=0; ind<detections.size();++ind)
 		{
 			unsigned int i=cylinder_indices[ind];
-			CylinderFitting cylinder_fitting=cylinder_segmentation->segment(clusters_point_clouds[i]);
+			CylinderFitting cylinder_fitting=detections[ind];
 			Eigen::VectorXf model_params=cylinder_fitting.parameters;
 			double confidence=cylinder_fitting.confidence;
 
@@ -415,7 +312,11 @@ public:
 		ROS_INFO_STREAM("device:"<< device);
 		ROS_INFO_STREAM("device_id:"<< device_id);
 		ROS_INFO_STREAM("classification_threshold:"<< classification_threshold);
+		
+
 		cylinder_classifier=boost::shared_ptr<CylinderClassifier>(new CylinderClassifier(absolute_path_folder,model_file,weight_file,mean_file,device,(unsigned int)device_id));
+                shape_detection_manager=boost::shared_ptr<ShapeDetectionManager<detector_type> >(new ShapeDetectionManager<detector_type>(cylinder_classifier,cylinder_segmentation));
+
 		// Advertise cylinders
 		cylinders_pub = n.advertise<active_semantic_mapping::Cylinders>( "cylinders_detections", 1);
 		image_pub=n.advertise<sensor_msgs::Image >("cylinders_image", 1);
@@ -425,6 +326,7 @@ public:
 		// Subscribe to point cloud and planar segmentation
 		image_sub=boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > (new message_filters::Subscriber<sensor_msgs::Image>(n, "image_in", 10));
 		clusters_sub=boost::shared_ptr<message_filters::Subscriber<active_semantic_mapping::Clusters> > (new message_filters::Subscriber<active_semantic_mapping::Clusters>(n, "clusters_out_aux", 10));
+
 
 		sync=boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > (new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), *image_sub, *clusters_sub));
 		sync->registerCallback(boost::bind(&CylinderSegmentationROS<detector_type>::callback, this, _1, _2));
