@@ -261,11 +261,10 @@ class CylinderSegmentationROS {
 
 public:
 
-	CylinderSegmentationROS(ros::NodeHandle & n_, ros::NodeHandle & n_priv_, boost::shared_ptr<detector_type> & cylinder_segmentation_) : 
+	CylinderSegmentationROS(ros::NodeHandle & n_, ros::NodeHandle & n_priv_) : 
 		n(n_), 
 		n_priv(n_priv_),
-	    	listener(new tf::TransformListener(ros::Duration(3.0))),
-		cylinder_segmentation(cylinder_segmentation_)
+	    	listener(new tf::TransformListener(ros::Duration(3.0)))
 	{
 
 		// INITIALIZE VISUALIZATION COLORS
@@ -314,6 +313,109 @@ public:
 		ROS_INFO_STREAM("classification_threshold:"<< classification_threshold);
 		
 
+		////////////////////////
+		// Load fitting params //
+		////////////////////////
+
+
+
+		bool use_ransac;
+
+		// Common params
+	 	double min_radius;
+	 	double max_radius;
+
+	    	n_priv.param("use_ransac",use_ransac,true);
+		ROS_INFO_STREAM("use_ransac: "<< use_ransac);
+	    	
+		n_priv.param("min_radius", min_radius, 0.1);
+	    	n_priv.param("max_radius", max_radius, 0.1);
+
+		ROS_INFO_STREAM("min_radius: "<< min_radius);
+		ROS_INFO_STREAM("max_radius: "<< max_radius);
+
+
+
+		if (use_ransac)
+		{
+			// Ransac params
+			double normal_distance_weight;
+			int max_iterations;
+			double distance_threshold;
+
+		    	n_priv.param("normal_distance_weight",normal_distance_weight,0.1);
+		    	n_priv.param("max_iterations",max_iterations,100);
+		    	n_priv.param("distance_threshold",distance_threshold,0.1);
+
+			ROS_INFO_STREAM("normal_distance_weight: "<< normal_distance_weight);
+			ROS_INFO_STREAM("max_iterations: "<< max_iterations);
+			ROS_INFO_STREAM("distance_threshold: "<< distance_threshold);
+
+			cylinder_segmentation=boost::shared_ptr<detector_type> (new detector_type((float)normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(float)min_radius, (float)max_radius));
+
+
+		}
+		else
+		{
+			// Hough params
+			int angle_bins;
+			int radius_bins;
+		 	int position_bins;
+			int gaussian_sphere_points_num;
+
+		    	n_priv.param("angle_bins",angle_bins,50);
+		    	n_priv.param("radius_bins",radius_bins,50);
+		    	n_priv.param("position_bins",position_bins,50);
+		    	n_priv.param("gaussian_sphere_points_num", gaussian_sphere_points_num, 1000);
+
+			ROS_INFO_STREAM("angle_bins: "<< angle_bins);
+			ROS_INFO_STREAM("radius_bins: "<< radius_bins);
+			ROS_INFO_STREAM("position_bins: "<< position_bins);
+			ROS_INFO_STREAM("gaussian_sphere_points_num: "<< gaussian_sphere_points_num);
+
+			XmlRpc::XmlRpcValue orientation_hough_gmm;
+			n_priv.getParam("orientation_hough_gmm", orientation_hough_gmm);
+
+			ROS_INFO_STREAM("Loading gaussian mixtures: " << orientation_hough_gmm.size());
+
+		
+			for(int32_t i=0; i < orientation_hough_gmm.size(); ++i)
+			{
+				if(orientation_hough_gmm[i].getType() == XmlRpc::XmlRpcValue::TypeStruct)
+				{
+					XmlRpc::XmlRpcValue mean_param=orientation_hough_gmm[i]["mean"];
+					Eigen::Matrix<double, 3 ,1> mean_eigen(mean_param[0],mean_param[1],mean_param[2]);
+				  	XmlRpc::XmlRpcValue std_dev_param=orientation_hough_gmm[i]["standard_deviation"];
+					Eigen::Matrix<double, 3 ,1> std_dev_eigen(std_dev_param[0],std_dev_param[1],std_dev_param[2]);
+
+					std::cout << "mean: " << mean_eigen << std::endl;
+					std::cout << "std_dev: " << std_dev_eigen << std::endl;
+				  	/*Eigen::Matrix<double, 3 ,1> mean(orientation_hough_gmm[i]["mean"]["x"],considered_canonical_grips[i]["direction"]["y"],considered_canonical_grips[i]["direction"]["z"]);
+
+					std::string name = considered_object_part_types[i]["name"];
+
+					std::cout << "id: " << id << std::endl;
+					std::cout << "name: " << name << std::endl;
+
+					std::cout << std::endl;
+
+					// Insert new object part type
+					boost::shared_ptr<CanonicalObjectPart> object_part_type(new CanonicalObjectPart(id, name));
+					CanonicalObjectPart::canonical_object_parts.insert(std::pair<unsigned int, boost::shared_ptr<CanonicalObjectPart> > (id, object_part_type));*/
+				}
+			}
+
+			cylinder_segmentation=boost::shared_ptr<detector_type>(new detector_type((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num));
+
+
+
+		}
+
+
+		
+exit(-1);
+
+		//cylinder_segmentation=boost::shared_ptr<detector_type> cylinder_segmentation();
 		cylinder_classifier=boost::shared_ptr<CylinderClassifier>(new CylinderClassifier(absolute_path_folder,model_file,weight_file,mean_file,device,(unsigned int)device_id));
                 shape_detection_manager=boost::shared_ptr<ShapeDetectionManager<detector_type> >(new ShapeDetectionManager<detector_type>(cylinder_classifier,cylinder_segmentation));
 
