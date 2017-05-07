@@ -405,6 +405,7 @@ public:
 				}
 			}
 
+
 			cylinder_segmentation=boost::shared_ptr<detector_type>(new detector_type((unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(unsigned int)gaussian_sphere_points_num));
 
 
