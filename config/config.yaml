@@ -5,11 +5,14 @@ min_radius: 0.03
 max_radius: 0.09
 
 # hough
-gaussian_sphere_points_num: 600
+
 angle_bins: 30
 radius_bins: 10
 position_bins: 20
-
+mode: 2
+accumulator_peak_threshold: 0.5
+gaussian_sphere_points_num: 600
+orientation_accumulators_num: 10
 #orientation hough space
 orientation_hough_gmm:
   -

@@ -1,61 +1,18 @@
 #include "cylinder_segmentation_hough.h"
 
-CylinderSegmentationHough::CylinderSegmentationHough(unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float min_radius_, float max_radius_,unsigned int gaussian_sphere_points_num_, int mode_, bool do_refine_) : 
+CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float min_radius_, float max_radius_, float accumulator_peak_threshold_, unsigned int mode_, bool do_refine_) : 
 	CylinderSegmentation(min_radius_,max_radius_,do_refine_),
-	gaussian_sphere_points_num(gaussian_sphere_points_num_),
+	gaussian_sphere(gaussian_sphere_),
 	angle_bins(angle_bins_),
 	angle_step(2*M_PI/angle_bins),
 	position_bins(position_bins_),
 	radius_bins(radius_bins_),
 	r_step((max_radius-min_radius)/radius_bins),
+	accumulator_peak_threshold(accumulator_peak_threshold_),
 	mode(mode_)
 {
-
-	// Create randomized structure
-	// By randomly sampling a unitary sphere from a 3D, zero mean Gaussian distribution
-        for(unsigned int i=0;i<gaussian_sphere_points_num;++i)
-        {
-		Eigen::Vector3f random_point;
-		cv::Mat aux(1, 1, CV_32F);
-
-		// Generate random patch on the sphere surface
-		cv::randn(aux, 0.0, 1.0);
-		random_point(0,0)=aux.at<float>(0,0);
-
-		cv::randn(aux, 0.0, 1.0);
-		random_point(1,0)=aux.at<float>(0,0);
-
-		cv::randn(aux, 0.0, 1.0);
-		random_point(2,0)=fabs(aux.at<float>(0,0));  // HALF SPHERE ONLY
-
-		random_point.normalize();
-
-		gaussian_sphere_points.push_back(random_point);
-	}
-
-        /*for(unsigned int i=0;i<gaussian_sphere_points_num*0.25;++i)
-        {
-		Eigen::Vector3f random_point;
-		cv::Mat aux(1, 1, CV_32F);
-
-		// Generate random patch on the sphere surface
-		cv::randn(aux, 0.0, 1.0);
-		random_point(0,0)=aux.at<float>(0,0);
-
-		cv::randn(aux, 0.0, 1.0);
-		random_point(1,0)=aux.at<float>(0,0);
-
-		cv::randn(aux, 10.0, 1.0);
-		random_point(2,0)=fabs(aux.at<float>(0,0)); // HALF SPHERE ONLY
-
-		random_point.normalize();
-
-		gaussian_sphere_points.push_back(random_point);
-	}*/
-
-
 	// Alocate memory for direction accumulator
-	cyl_direction_accum.resize(gaussian_sphere_points_num);
+	cyl_direction_accum.resize(gaussian_sphere.gaussian_sphere_points_num);
 
 	// Alocate memory for circle accumulator
 	cyl_circ_accum.resize(position_bins);
@@ -105,58 +62,47 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 
 	std::fill(cyl_direction_accum.begin(),cyl_direction_accum.end(), 0);
 
-	float threshold=0.05;
+	const std::vector<Eigen::Vector3f> & gaussian_sphere_voting=gaussian_sphere.getGaussianSphere();
 	//ROS_DEBUG_STREAM("  3.2. Vote");
-	for(unsigned int s = 0; s < cloud_normals->size(); ++s)
+	for(unsigned int i=0; i<gaussian_sphere_voting.size(); ++i)
 	{
-		//float threshold=0.05;
-		//if(principal_curvatures->points[s].pc1<threshold)
-		//	continue;
-		//ROS_ERROR_STREAM("all:"<<principal_curvatures->points[s]);
-		for(unsigned int i=0; i<gaussian_sphere_points.size(); ++i)
+		Eigen::Vector3f voting_direction=gaussian_sphere_voting[i];
+		for(unsigned int s = 0; s < cloud_normals->size(); ++s)
 		{
-			if(mode==0)
+			if(mode==NORMAL)
 			{
 				//1 - fabs(dot.product)
 				
-				float normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().dot(gaussian_sphere_points[i])));
+				float normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().dot(voting_direction)));
 				cyl_direction_accum[i]+=normal_weight;
 			}
-			else if(mode==1)
+			else if(mode==CURVATURE)
 			{
-				float curvature_weight=(1.0-fabs(Eigen::Vector3f(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(gaussian_sphere_points[i])));
+				float curvature_weight=(1.0-fabs(Eigen::Vector3f(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
 
-				Eigen::Vector3f curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cross(gaussian_sphere_points[i]);
-				//float curvature_weight=principal_curvatures->points[s].pc1;
-				//float curvature_weight=fabs(curvature_dir.dot(gaussian_sphere_points[i]));
+				//Eigen::Vector3f curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cross(voting_direction);
+
 				cyl_direction_accum[i]+=curvature_weight*principal_curvatures->points[s].pc1*10.0;
 			}
-			else if(mode==2)
+			else if(mode==HYBRID)
 			{
-				float normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().dot(gaussian_sphere_points[i])));
+				float normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().dot(voting_direction)));
 
-				float curvature_weight=(1.0-fabs(Eigen::Vector3f(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(gaussian_sphere_points[i])));
-				Eigen::Vector3f curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cross(gaussian_sphere_points[i]);
-				//float curvature_weight=principal_curvatures->points[s].pc1;
-				//float curvature_weight=fabs(curvature_dir.dot(gaussian_sphere_points[i]));
+				float curvature_weight=(1.0-fabs(Eigen::Vector3f(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
+				//Eigen::Vector3f curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cross(voting_direction);
 
-				//if(principal_curvatures->points[s].pc1<threshold)
-					cyl_direction_accum[i]+=normal_weight*curvature_weight*principal_curvatures->points[s].pc1*10.0;
-				//else
-				//	cyl_direction_accum[i]+=normal_weight;
+				cyl_direction_accum[i]+=normal_weight*curvature_weight*principal_curvatures->points[s].pc1*10.0;
 			}
 		}
 
 	}
 
-	//ROS_DEBUG_STREAM("  3.3. Get max peak");
 
-	double accumulatorPeakThreshold=0.5;
 	std::vector<Eigen::Vector3f> best_orientations;
 	// Get best orientation
 	float most_votes=0.0;
 	unsigned int best_direction_index=0;
-	for (unsigned int i=0; i<gaussian_sphere_points.size(); ++i)
+	for (unsigned int i=0; i<gaussian_sphere_voting.size(); ++i)
 	{
 		if(cyl_direction_accum[i]>most_votes)
 		{
@@ -165,15 +111,15 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 		}
 	}
 
-	best_orientations.push_back(gaussian_sphere_points[best_direction_index]);
+	best_orientations.push_back(gaussian_sphere_voting[best_direction_index]);
 
 	// Choose orientation whose votes are a percentage above a given threshold of the best orientation
 	cyl_direction_accum[best_direction_index]=0; 	// This is more efficient than having an if condition to verify if we are considering the best pose again
-	for (unsigned int i=0; i<gaussian_sphere_points.size(); ++i)
+	for (unsigned int i=0; i<gaussian_sphere_voting.size(); ++i)
 	{
-		if(cyl_direction_accum[i]>=accumulatorPeakThreshold*most_votes)
+		if(cyl_direction_accum[i]>=accumulator_peak_threshold*most_votes)
 		{
-                        best_orientations.push_back(gaussian_sphere_points[i]);
+                        best_orientations.push_back(gaussian_sphere_voting[i]);
 		}
 	}
 
@@ -186,7 +132,7 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 	////ROS_DEBUG_STREAM("    best votes="<< most_votes<<" best_direction_index="<<best_direction_index);
 
 	//ROS_DEBUG_STREAM("  3.5. Convert to direction vector");
-	return gaussian_sphere_points[best_direction_index];
+	return gaussian_sphere_voting[best_direction_index];
 }
 
 Eigen::Matrix<float,5,1> CylinderSegmentationHough::findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_)
