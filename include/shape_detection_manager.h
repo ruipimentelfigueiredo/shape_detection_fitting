@@ -104,12 +104,14 @@ class ShapeDetectionManager
 				//imwrite("/home/rui/sphere/sphere.scene."+std::to_string(scene_number)+".cluster."+std::to_string(i)+".jpg", image_cv(rect) );
 
 			}
+
+			ROS_ERROR_STREAM("CHEGUEI AQUI");
 			std::vector<CylinderFitting> cylinders;
 			for(unsigned int ind=0; ind<cylinder_indices.size();++ind)
 			{
 				cylinders.push_back(cylinder_fitting->segment(clusters_point_clouds[cylinder_indices[ind]]));
 			}
-
+			ROS_ERROR_STREAM("CHEGUEI AQUI2");
 			return cylinders;
 		}
 };

@@ -71,13 +71,14 @@ class CylinderSegmentationROS {
 
 	void callback (const sensor_msgs::Image::ConstPtr& input_image, const active_semantic_mapping::Clusters::ConstPtr & input_clusters)
 	{
+
 		static int scene_number=0;
 		cv::Mat image_cv;
 		image_cv =cv_bridge::toCvCopy(input_image, "bgr8")->image;
 
 		// Get cluster pcl point clouds and opencv bounding boxes
-		std::vector<PointCloudT::Ptr> clusters_point_clouds;
-		clusters_point_clouds.reserve(input_clusters->markers.markers.size());
+
+
 
 		std::vector<int> cylinder_indices;
 		cylinder_indices.reserve(input_clusters->markers.markers.size());
@@ -102,11 +103,12 @@ class CylinderSegmentationROS {
 			pcl_clusters.push_back(cloud_);
 		}
 
+		const clock_t begin_time = clock();
 		std::vector<CylinderFitting> detections=shape_detection_manager->detect(image_cv, pcl_clusters, classification_threshold);
+		ROS_INFO_STREAM("Cylinders fitting time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
-
-		const clock_t classification_end_time = clock();
-		scene_number++;
+		//const clock_t classification_end_time = clock();
+		//scene_number++;
 		//std::ofstream outputFile;
 		//outputFile.open("/home/rui/classification_time.txt", fstream::out | std::ofstream::app);
 
@@ -114,9 +116,10 @@ class CylinderSegmentationROS {
 		//outputFile.close(); // clear flags
 		//outputFile.clear(); // clear flags
 
-		ROS_INFO_STREAM("Cylinders classification time: "<<float( clock () - classification_begin_time ) /  CLOCKS_PER_SEC<< " seconds");
+		//ROS_INFO_STREAM("Cylinders classification time: "<<float( clock () - classification_begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
 		sensor_msgs::ImagePtr image_out = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image_cv).toImageMsg();
+
 		image_pub.publish(image_out);
 
 		visualization_msgs::MarkerArray markers_;
@@ -129,9 +132,12 @@ class CylinderSegmentationROS {
 
 
 		// DETECT
+
 		active_semantic_mapping::Cylinders cylinders_msg;
 		cylinders_msg.header=input_clusters->header;
-		cylinders_msg.header.frame_id=clusters_point_clouds[0]->header.frame_id;
+
+		cylinders_msg.header.frame_id=input_clusters->header.frame_id;
+
 		cylinders_msg.cylinders.layout.dim.resize(2);
 		cylinders_msg.cylinders.layout.dim[0].label  = "cylinders";
 		cylinders_msg.cylinders.layout.dim[0].size   = 0;
@@ -140,10 +146,11 @@ class CylinderSegmentationROS {
 		cylinders_msg.cylinders.layout.dim[1].size   = 8;
 		cylinders_msg.cylinders.layout.dim[1].stride = 8;
 
-		const clock_t begin_time = clock();
 
-		std::string detections_frame_id=clusters_point_clouds[0]->header.frame_id;
+
+		std::string detections_frame_id=input_clusters->header.frame_id;
 		//outputFile.open("/home/rui/fitting_quality_cylinders.txt", fstream::out | std::ofstream::app);
+
 		for(unsigned int ind=0; ind<detections.size();++ind)
 		{
 			unsigned int i=cylinder_indices[ind];
@@ -169,6 +176,7 @@ class CylinderSegmentationROS {
 			cylinders_msg.cylinders.layout.dim[0].size+=1;
 			cylinders_msg.cylinders.layout.dim[0].stride+= 8;
 		}
+
 		//outputFile.close(); // clear flags
 		//outputFile.clear(); // clear flags
 		const clock_t fitting_end_time = clock();
@@ -178,7 +186,7 @@ class CylinderSegmentationROS {
 		//outputFile <<  std::fixed << std::setprecision(8)<< (double)(fitting_end_time-begin_time ) /  CLOCKS_PER_SEC << " "<< cylinder_indices.size() << std::endl;
 		//outputFile.close(); // clear flags
 		//outputFile.clear(); // clear flags
-		ROS_INFO_STREAM("Cylinders fitting time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
+
 
 		vis_pub.publish( markers_ );
 		cylinders_pub.publish(cylinders_msg);
@@ -265,6 +273,7 @@ public:
 		shape_detection_manager(shape_detection_manager_),
 	    	listener(new tf::TransformListener(ros::Duration(3.0)))
 	{
+
 
 		// INITIALIZE VISUALIZATION COLORS
 		id_colors_map.insert(std::pair<int,Color>(0,Color(0,   0  , 1, 1.0) ) );

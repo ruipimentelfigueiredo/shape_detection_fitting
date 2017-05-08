@@ -94,6 +94,12 @@ int main (int argc, char** argv)
 	        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationRansac> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationRansac>(cylinder_classifier,cylinder_segmentation,cam_intrinsic));
 
 		CylinderSegmentationROS<CylinderSegmentationRansac> cylinder_segmentation_ros(n, n_priv,shape_detection_manager);
+
+		while (ros::ok())
+		{
+			ros::spinOnce();
+			loop_rate.sleep();
+		}
 	}
 	else
 	{
@@ -145,9 +151,9 @@ int main (int argc, char** argv)
 				Eigen::Matrix<double, 3 ,1> std_dev_eigen(std_dev_param[0],std_dev_param[1],std_dev_param[2]);
 				std_devs.push_back(std_dev_eigen);
 
-				std::cout << "weight: " << weight << std::endl;
-				std::cout << "mean: " << mean_eigen << std::endl;
-				std::cout << "std_dev: " << std_dev_eigen << std::endl;
+				std::cout << "  weight:  " << weight << std::endl;
+				std::cout << "  mean:    " << mean_eigen.transpose() << std::endl;
+				std::cout << "  std_dev: " << std_dev_eigen.transpose() << std::endl;
 			}
 		}
 		GaussianMixtureModel gmm(weights, means, std_devs);
@@ -159,13 +165,16 @@ int main (int argc, char** argv)
 
 		CylinderSegmentationROS<CylinderSegmentationHough> cylinder_segmentation_ros(n, n_priv,shape_detection_manager);
 
+		while (ros::ok())
+		{
+			ros::spinOnce();
+			loop_rate.sleep();
+		}
+
 	}
 
-	while (ros::ok())
-	{
-		ros::spinOnce();
-		loop_rate.sleep();
-	}
+
+
 
 
   

@@ -24,8 +24,10 @@ class GaussianSphere
 		{
 			// Create randomized structure
 			// By randomly sampling a unitary sphere from a 3D, zero mean Gaussian distribution
+			std::cout << "Creating gaussian spheres" << std::endl;
 			for(unsigned int o=0;o<orientation_accumulators_num;++o)
 			{
+				std::cout << "  Creating gaussian sphere number " << o << std::endl;
 				std::vector<Eigen::Vector3f> gaussian_sphere_points_;
 				for(unsigned int g=0;g<gmm.weights.size();++g)
 				{
@@ -49,9 +51,13 @@ class GaussianSphere
 
 						gaussian_sphere_points_.push_back(random_point);
 					}
+					//std::cout <<"   "<< gmm.weights[g] << "  " << gaussian_sphere_points_.size()<< std::endl;
 				}
+				//std::cout << gaussian_sphere_points_.size() << std::endl;
 				gaussian_sphere_points.push_back(gaussian_sphere_points_);
+				std::cout << "  Done" << std::endl;
 			}
+			std::cout << "Done" << std::endl;
 		};
 
 	
