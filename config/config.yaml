@@ -48,6 +48,6 @@ weight_file: binary_classifier/train_iter_100.caffemodel
 mean_file: binary_classifier/mean.binaryproto
 device: GPU
 device_id: 1
-classification_threshold: 0.7
+classification_threshold: 0.9
 fitting_distance_threshold: 0.02
 fitting_acceptance_threshold: 0.5

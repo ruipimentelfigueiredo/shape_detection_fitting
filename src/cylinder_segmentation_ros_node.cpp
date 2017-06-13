@@ -34,7 +34,7 @@ int main (int argc, char** argv)
 	std::string mean_file;
 	std::string device;
 	int device_id;
-	float classification_threshold;
+	double classification_threshold;
 
 	ROS_INFO("Getting classifier parameters");
 	n_priv.param<std::string>("absolute_path_folder", absolute_path_folder, "absolute_path_folder");
@@ -44,7 +44,7 @@ int main (int argc, char** argv)
 	n_priv.param<std::string>("device", device, "device");
 	n_priv.param<int>("device_id", device_id, 0);
 
-	n_priv.param<float>("classification_threshold", classification_threshold, 0.9);
+	n_priv.param<double>("classification_threshold", classification_threshold, 0.9);
 
 	ROS_INFO_STREAM("absolute_path_folder:"<< absolute_path_folder);
 	ROS_INFO_STREAM("model_file:"<< model_file);
@@ -55,15 +55,16 @@ int main (int argc, char** argv)
 	ROS_INFO_STREAM("classification_threshold:"<< classification_threshold);
 	boost::shared_ptr<CylinderClassifier> cylinder_classifier(new CylinderClassifier(absolute_path_folder,model_file,weight_file,mean_file,device,(unsigned int)device_id));
 
-	////////////////////////
+	/////////////////////////
 	// Load fitting params //
-	////////////////////////
+	/////////////////////////
 
 	bool use_ransac;
 
 	// Common params
  	double min_radius;
  	double max_radius;
+
 
     	n_priv.param("use_ransac",use_ransac,true);
 	ROS_INFO_STREAM("use_ransac: "<< use_ransac);
@@ -91,7 +92,7 @@ int main (int argc, char** argv)
 
 		boost::shared_ptr<CylinderSegmentationRansac> cylinder_segmentation(new CylinderSegmentationRansac((float)normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(float)min_radius, (float)max_radius));
 
-	        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationRansac> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationRansac>(cylinder_classifier,cylinder_segmentation,cam_intrinsic));
+	        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationRansac> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationRansac>(cylinder_classifier,cylinder_segmentation,cam_intrinsic,classification_threshold));
 
 		CylinderSegmentationROS<CylinderSegmentationRansac> cylinder_segmentation_ros(n, n_priv,shape_detection_manager);
 
@@ -161,7 +162,7 @@ int main (int argc, char** argv)
 
 		boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation(new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,(unsigned int)mode));
 
-	        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationHough> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationHough>(cylinder_classifier,cylinder_segmentation,cam_intrinsic));
+	        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationHough> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationHough>(cylinder_classifier,cylinder_segmentation,cam_intrinsic,classification_threshold));
 
 		CylinderSegmentationROS<CylinderSegmentationHough> cylinder_segmentation_ros(n, n_priv,shape_detection_manager);
 
@@ -173,11 +174,6 @@ int main (int argc, char** argv)
 
 	}
 
-
-
-
-
-  
 	return (0);
 }
 

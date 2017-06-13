@@ -15,6 +15,7 @@ class GaussianMixtureModel
 
 class GaussianSphere
 {
+	static int iteration;
 	unsigned int orientation_accumulators_num;
 	public:
 		GaussianSphere(const GaussianMixtureModel & gmm_,const unsigned int & gaussian_sphere_points_num_=900, const unsigned int & orientation_accumulators_num_=10) :
@@ -22,6 +23,7 @@ class GaussianSphere
  			gaussian_sphere_points_num(gaussian_sphere_points_num_),
 			orientation_accumulators_num(orientation_accumulators_num_)
 		{
+			iteration=0;
 			// Create randomized structure
 			// By randomly sampling a unitary sphere from a 3D, zero mean Gaussian distribution
 			std::cout << "Creating gaussian spheres" << std::endl;
@@ -63,7 +65,9 @@ class GaussianSphere
 	
 	const std::vector<Eigen::Vector3f> & getGaussianSphere()
 	{
-		return gaussian_sphere_points[0];
+		++iteration;
+		std::cout << iteration%orientation_accumulators_num<< std::endl;
+		return gaussian_sphere_points[iteration%orientation_accumulators_num];
 	}
 
 	GaussianMixtureModel gmm;

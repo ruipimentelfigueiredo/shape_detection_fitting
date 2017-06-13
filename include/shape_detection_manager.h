@@ -7,17 +7,22 @@ class ShapeDetectionManager
 {
 	boost::shared_ptr<detector_type> cylinder_fitting;
 	boost::shared_ptr<CylinderClassifier> cylinder_classifier;
-	float classification_threshold;
+	double classification_threshold;
  	const Eigen::Matrix4f cam_intrinsic;
 
 	public:
-		ShapeDetectionManager(boost::shared_ptr<CylinderClassifier> & cylinder_classifier_, boost::shared_ptr<detector_type> & cylinder_fitting_, const Eigen::Matrix4f & cam_intrinsic_) : 
-			cylinder_classifier(cylinder_classifier_), 
-			cylinder_fitting(cylinder_fitting_),
- 			cam_intrinsic(cam_intrinsic_)
+		ShapeDetectionManager(
+			boost::shared_ptr<CylinderClassifier> & cylinder_classifier_, 
+			boost::shared_ptr<detector_type> & cylinder_fitting_, 
+			const Eigen::Matrix4f & cam_intrinsic_, 
+			const double & classification_threshold_) :
+				cylinder_classifier(cylinder_classifier_), 
+				cylinder_fitting(cylinder_fitting_),
+	 			cam_intrinsic(cam_intrinsic_),
+				classification_threshold(classification_threshold_)
 		{};
 	
-		std::vector<CylinderFitting> detect(cv::Mat & image_cv, std::vector<PointCloudT::Ptr> & pcl_clusters, const float & classification_threshold)
+		std::vector<CylinderFitting> detect(cv::Mat & image_cv, std::vector<PointCloudT::Ptr> & pcl_clusters)
 		{
 			std::vector<cv::Rect> clusters_bboxes;
 			clusters_bboxes.reserve(pcl_clusters.size());
@@ -80,7 +85,7 @@ class ShapeDetectionManager
 				// Classify
 				cv::Mat roi = image_cv(rect);
 				float confidence=cylinder_classifier->classify(roi);
-				//ROS_ERROR_STREAM("CONFIDENCE:"<<confidence);
+				ROS_ERROR_STREAM("CLASSIFICATION CONFIDENCE:"<<confidence << " " <<classification_threshold);
 				if(confidence>classification_threshold)
 				{
 					cylinder_indices.push_back(i);
@@ -105,13 +110,12 @@ class ShapeDetectionManager
 
 			}
 
-			ROS_ERROR_STREAM("CHEGUEI AQUI");
 			std::vector<CylinderFitting> cylinders;
 			for(unsigned int ind=0; ind<cylinder_indices.size();++ind)
 			{
 				cylinders.push_back(cylinder_fitting->segment(clusters_point_clouds[cylinder_indices[ind]]));
 			}
-			ROS_ERROR_STREAM("CHEGUEI AQUI2");
+
 			return cylinders;
 		}
 };

@@ -51,8 +51,7 @@ class CylinderSegmentationROS {
 	boost::shared_ptr<tf::TransformListener> listener;
 	ros::Subscriber point_cloud_sub;
 
-	float classification_threshold;
-
+	double fitting_acceptance_threshold;
 	ros::Publisher cylinders_pub;
 	ros::Publisher image_pub;
 
@@ -67,8 +66,6 @@ class CylinderSegmentationROS {
 	boost::shared_ptr<message_filters::Subscriber<active_semantic_mapping::Clusters> > clusters_sub;
     	boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> >sync;
 
-
-
 	void callback (const sensor_msgs::Image::ConstPtr& input_image, const active_semantic_mapping::Clusters::ConstPtr & input_clusters)
 	{
 
@@ -77,8 +74,6 @@ class CylinderSegmentationROS {
 		image_cv =cv_bridge::toCvCopy(input_image, "bgr8")->image;
 
 		// Get cluster pcl point clouds and opencv bounding boxes
-
-
 
 		std::vector<int> cylinder_indices;
 		cylinder_indices.reserve(input_clusters->markers.markers.size());
@@ -104,7 +99,7 @@ class CylinderSegmentationROS {
 		}
 
 		const clock_t begin_time = clock();
-		std::vector<CylinderFitting> detections=shape_detection_manager->detect(image_cv, pcl_clusters, classification_threshold);
+		std::vector<CylinderFitting> detections=shape_detection_manager->detect(image_cv, pcl_clusters);
 		ROS_INFO_STREAM("Cylinders fitting time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
 		//const clock_t classification_end_time = clock();
@@ -160,7 +155,8 @@ class CylinderSegmentationROS {
 
 			model_params.cast <double> ();
 			Color color_;
-			if(confidence<classification_threshold)
+			ROS_ERROR_STREAM("CONFIDENCE: "<< confidence);
+			if(confidence<fitting_acceptance_threshold)
 				color_=id_colors_map.find(0)->second;
 			else
 				color_=id_colors_map.find(1)->second;
@@ -274,6 +270,7 @@ public:
 	    	listener(new tf::TransformListener(ros::Duration(3.0)))
 	{
 
+		n_priv.param<double>("fitting_acceptance_threshold", fitting_acceptance_threshold, 0.5);
 
 		// INITIALIZE VISUALIZATION COLORS
 		id_colors_map.insert(std::pair<int,Color>(0,Color(0,   0  , 1, 1.0) ) );

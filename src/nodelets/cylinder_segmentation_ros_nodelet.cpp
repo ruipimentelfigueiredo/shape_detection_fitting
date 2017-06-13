@@ -26,7 +26,7 @@ namespace active_semantic_mapping
 		std::string mean_file;
 		std::string device;
 		int device_id;
-		float classification_threshold;
+		double classification_threshold;
 
 		ROS_INFO("Getting classifier parameters");
 		n_priv.param<std::string>("absolute_path_folder", absolute_path_folder, "absolute_path_folder");
@@ -35,7 +35,7 @@ namespace active_semantic_mapping
 		n_priv.param<std::string>("mean_file", mean_file, "mean_file");
 		n_priv.param<std::string>("device", device, "device");
 		n_priv.param<int>("device_id", device_id, 0);
-		n_priv.param<float>("classification_threshold", classification_threshold, 0.9);
+		n_priv.param<double>("classification_threshold", classification_threshold, 0.9);
 
 		ROS_INFO_STREAM("absolute_path_folder:"<< absolute_path_folder);
 		ROS_INFO_STREAM("model_file:"<< model_file);
@@ -82,7 +82,7 @@ namespace active_semantic_mapping
 
 			boost::shared_ptr<CylinderSegmentationRansac> cylinder_segmentation(new CylinderSegmentationRansac((float)normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(float)min_radius, (float)max_radius));
 
-		        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationRansac> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationRansac>(cylinder_classifier,cylinder_segmentation,cam_intrinsic));
+		        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationRansac> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationRansac>(cylinder_classifier,cylinder_segmentation,cam_intrinsic,classification_threshold));
 
 			inst_ransac_.reset(new CylinderSegmentationROS<CylinderSegmentationRansac>(getNodeHandle(),getPrivateNodeHandle(),shape_detection_manager));
 		}
@@ -151,7 +151,7 @@ namespace active_semantic_mapping
 
 			boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation(new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,(unsigned int)mode));
 
-		        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationHough> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationHough>(cylinder_classifier,cylinder_segmentation,cam_intrinsic));
+		        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationHough> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationHough>(cylinder_classifier,cylinder_segmentation,cam_intrinsic,classification_threshold));
 
 			inst_hough_.reset(new  CylinderSegmentationROS<CylinderSegmentationHough>(getNodeHandle(),getPrivateNodeHandle(),shape_detection_manager));
 

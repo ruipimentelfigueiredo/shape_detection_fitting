@@ -385,7 +385,7 @@ return final_transform;
 	icp.align(Final);
 
 
-	ROS_ERROR("CHEGUEI");
+
 	if(icp.hasConverged()&&icp.getFitnessScore()<0.1)
 	{
 		final_transform=icp.getFinalTransformation();

@@ -1,5 +1,8 @@
 #include "cylinder_segmentation_hough.h"
 
+
+int GaussianSphere::iteration;
+
 CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, float min_radius_, float max_radius_, float accumulator_peak_threshold_, unsigned int mode_, bool do_refine_) : 
 	CylinderSegmentation(min_radius_,max_radius_,do_refine_),
 	gaussian_sphere(gaussian_sphere_),
@@ -224,16 +227,6 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 
 	//std::cout << "output points.size (): " << principal_curvatures->points.size () << std::endl;
 
-
-
-
-
-
-
-
-
-
-
     	Eigen::Vector3f cylinder_direction=findCylinderDirection(cloud_normals,point_cloud_in_);
 	
 	//ROS_DEBUG_STREAM(" 4. Step 2");
@@ -281,19 +274,14 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 		}
 	}
 
-
-
 	pcl::ExtractIndices<PointT> extract;
 	extract.setInputCloud (point_cloud_in_);
 	extract.setIndices (inliers_cylinder);
 	extract.setNegative (false);
 	extract.filter (*transformed_cloud);
 
-
-
 	// Executing the transformation that aligns the cylinder rotation axis with z_up)
 	pcl::transformPointCloud (*transformed_cloud, *transformed_cloud, R2);
-
 
 	Eigen::Matrix<float,5,1> position_and_radius=findCylinderPositionRadius(transformed_cloud);
 	float radius=position_and_radius[3];
@@ -313,9 +301,6 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 		radius;
 		//height;
 
-
-
-
 	// Create the filtering object
 	PointCloudT::Ptr cloud_projected(new PointCloudT);
 	pcl::SampleConsensusModelCylinder<PointT, NormalT>::Ptr dit (new pcl::SampleConsensusModelCylinder<PointT,NormalT> (point_cloud_in_)); 
@@ -324,7 +309,6 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 	std::vector<int> inliers; 
 	dit -> selectWithinDistance (coeffs, 0.01, inliers); 
 	pcl::copyPointCloud<PointT>(*point_cloud_in_, inliers, *cloud_projected); 
-
 
 	double inlier_ratio_=((double)cloud_projected->size()/(double)point_cloud_in_->size());
 	ROS_ERROR_STREAM("inlier_ratio:"<<inlier_ratio_);
@@ -364,7 +348,6 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 	}//*/
 
-
 	Eigen::VectorXf final_coeffs(8,1);
 	final_coeffs << coeffs,
 			height;
@@ -372,7 +355,6 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 	CylinderFitting cylinder_fitting(final_coeffs,inlier_ratio_);
 
 	return cylinder_fitting;
-
 }
 
 
