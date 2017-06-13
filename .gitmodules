@@ -1,12 +1,9 @@
 [submodule "lib/tracking"]
 	path = lib/tracking
 	url = https://github.com/joao-avelino/Tracking
-[submodule "lib/caffe"]
-	path = lib/caffe
-	url = https://github.com/BVLC/caffe
-[submodule "lib/faster-rcnn"]
-	path = lib/faster-rcnn
-	url = https://github.com/ruipimentelfigueiredo/faster-rcnn
 [submodule "lib/shape-fitting"]
 	path = lib/shape-fitting
 	url = https://github.com/ruipimentelfigueiredo/shape-fitting
+[submodule "lib/shape-detection"]
+	path = lib/shape-detection
+	url = https://github.com/ruipimentelfigueiredo/shape-detection

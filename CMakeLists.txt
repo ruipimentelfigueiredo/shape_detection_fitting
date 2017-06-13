@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_package(TinyXML REQUIRED)
 find_package(CUDA REQUIRED)
-find_package(OpenCV 3.1 REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS system filesystem regex REQUIRED)
 add_definitions(${Caffe_DEFINITIONS})    # ex. -DCPU_ONLY
 message("Caffe_INCLUDE_DIRS is ${Caffe_INCLUDE_DIRS}")	
@@ -78,20 +78,17 @@ NO_DEFAULT_PATH) # and don't look anywhere else
 
 set(TRACKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tracking/cpp)
 include_directories(${TRACKER_DIR}/HybridEstimator)
-#include(${TRACKER_DIR}/HybridEstimator/CMakeLists.txt)
-## foveated stereo lib
 add_subdirectory(${TRACKER_DIR}/HybridEstimator)
+
+set(SHAPE_FITTING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-fitting)
+include_directories(${SHAPE_FITTING_DIR}/include)
+add_subdirectory(${SHAPE_FITTING_DIR})
 
 include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 # CYLINDER LIBS
-add_library (cylinder_segmentation_hough src/cylinder_segmentation.cpp src/cylinder_segmentation_hough.cpp)
-target_link_libraries (cylinder_segmentation_hough ${PCL_LIBRARIES} ${catkin_LIBRARIES})
-
-add_library (cylinder_segmentation_ransac src/cylinder_segmentation.cpp src/cylinder_segmentation_ransac.cpp)
-target_link_libraries (cylinder_segmentation_ransac ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 set(GLOG_LIB glog)
 add_library(cylinder_classifier src/cylinder_classifier.cpp)
