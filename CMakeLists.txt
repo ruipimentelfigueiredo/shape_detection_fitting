@@ -5,9 +5,7 @@ project(active_semantic_mapping)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 
-find_package(Caffe REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   find_object_2d
   roscpp
@@ -18,13 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   nav_msgs
 )
-find_package(TinyXML REQUIRED)
-find_package(CUDA REQUIRED)
+
 find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS system filesystem regex REQUIRED)
-add_definitions(${Caffe_DEFINITIONS})    # ex. -DCPU_ONLY
-message("Caffe_INCLUDE_DIRS is ${Caffe_INCLUDE_DIRS}")	
-option(-std "std" c++11)
 
 ## Generate messages in the 'msg' folder
  add_message_files(
@@ -58,8 +52,6 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${Caffe_INCLUDE_DIRS}
-  ${CUDA_INCLUDE_DIRS}
 )
 
 
@@ -84,16 +76,14 @@ set(SHAPE_FITTING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-fitting)
 include_directories(${SHAPE_FITTING_DIR}/include)
 add_subdirectory(${SHAPE_FITTING_DIR})
 
+set(SHAPE_DETECTION_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-detection)
+include_directories(${SHAPE_DETECTION_DIR}/include)
+add_subdirectory(${SHAPE_DETECTION_DIR})
+
+
 include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
-
-# CYLINDER LIBS
-
-set(GLOG_LIB glog)
-add_library(cylinder_classifier src/cylinder_classifier.cpp)
-target_link_libraries(cylinder_classifier ${Boost_LIBRARIES} ${Caffe_LIBRARIES} ${GLOG_LIB}  ${OpenCV_LIBS})
-
 
 # ROS WRAPPERS
 add_library (cylinder_tracking_ros src/cylinder_tracking_ros.cpp)
