@@ -4,9 +4,20 @@
 
 #include <rosbag/bag.h>
 #include <active_semantic_mapping/Cylinders.h>
+#include "pcl_ros/point_cloud.h"
 
 int main (int argc, char** argv)
 {
+	/* TODO - Process options */
+	if (argc < 2)
+	{
+		std::cout << "invalid number of arguments: rosbag_dir iterations"<< std::endl;
+		exit(-1);
+	}
+
+    	std::string rosbag_dir = std::string(argv[1]);
+	unsigned int iterations=atoi(argv[2]);
+
 	ros::init(argc, argv, "cylinder_publisher");
 
 	/**
@@ -18,24 +29,20 @@ int main (int argc, char** argv)
 	ros::NodeHandle n;
 	ros::Rate loop_rate(30);
 
+
 	// For visualization purposes
-
-
-
-	unsigned int angle_bins=30;
-	unsigned int radius_bins=10;
- 	unsigned int position_bins=10;
+	int height_samples=30;
+	int angle_samples=30;
+	float radius=0.5;
 
 	std::ostringstream ss;
-	ss << "/home/rui/rosbags/";
+	ss << rosbag_dir;
     	boost::filesystem::create_directories(ss.str());
 	ss << std::fixed;
 	ss << "angle_bins_";
-	ss << angle_bins;
-	ss << "_radius_bins_";
-	ss << radius_bins;
-	ss << "_position_bins_";
-	ss << position_bins;
+	ss << angle_samples;
+	ss << "_radius_";
+	ss << radius;
 	ss << "clutter.bag";
 
 	std::string rosbag_file;
@@ -45,10 +52,7 @@ int main (int argc, char** argv)
 
 	bag.open(rosbag_file, rosbag::bagmode::Write);
 
-	int height_samples=30;
-	int angle_samples=30;
 
-	float radius=0.5;
 	std::vector<float> heights;
 
 	heights.push_back(1.00);
@@ -74,7 +78,7 @@ int main (int argc, char** argv)
 	std::vector<Eigen::Matrix4f> transfs;
 
 	// First, generate 200 point clouds with different radius, heights at random poses
-	unsigned int iterations=200;
+
 
 	for(unsigned int c=0; c<clutter_levels.size();++c)
 	{
@@ -230,8 +234,7 @@ int main (int argc, char** argv)
 					Eigen::Matrix4f transf=Eigen::Matrix4f::Identity();
 					pcl::transformPointCloud (noisy_cloud, cloud_transf,transf);
 
-
-					ROS_ERROR_STREAM(" iteration:" << i << " noise_level: "<< n << " "  << noise_levels[n]); 
+					ROS_INFO_STREAM(" iteration:" << i << " noise_level: "<< n << " "  << noise_levels[n]); 
 		    			bag.write("point_cloud",ros::Time::now(), cloud_transf);
 				}
 			}

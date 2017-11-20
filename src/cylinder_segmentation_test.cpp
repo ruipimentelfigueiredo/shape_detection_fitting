@@ -4,9 +4,21 @@
 
 #include <rosbag/bag.h>
 #include <active_semantic_mapping/Cylinders.h>
+#include "pcl_ros/point_cloud.h"
 
 int main (int argc, char** argv)
 {
+	/* TODO - Process options */
+	if (argc < 2)
+	{
+		std::cout << "invalid number of arguments: rosbag_dir iterations"<< std::endl;
+		exit(-1);
+	}
+
+    	std::string rosbag_dir = std::string(argv[1]);
+	unsigned int iterations=atoi(argv[2]);
+
+
 	ros::init(argc, argv, "cylinder_publisher");
 
 	/**
@@ -27,7 +39,7 @@ int main (int argc, char** argv)
  	unsigned int position_bins=10;
 
 	std::ostringstream ss;
-	ss << "/home/rui/rosbags/";
+	ss << rosbag_dir;
     	boost::filesystem::create_directories(ss.str());
 	ss << std::fixed;
 	ss << "angle_bins_";
@@ -76,7 +88,6 @@ int main (int argc, char** argv)
 	std::vector<Eigen::Matrix4f> transfs;
 
 	// First, generate 200 point clouds with different radius, heights at random poses
-	unsigned int iterations=200;
 
 	for(unsigned int i=0; i<iterations; ++i)
 	{
@@ -160,10 +171,7 @@ int main (int argc, char** argv)
 			transf.block(0,3,3,1)=Eigen::Vector3f(0,0,0);
 			transfs.push_back(transf);
 
-
-
 			active_semantic_mapping::Cylinders ground_truth;
-
 
 			ground_truth.cylinders.layout.dim.resize(2);
 			ground_truth.cylinders.layout.dim[0].label  = "cylinders";
@@ -222,7 +230,7 @@ int main (int argc, char** argv)
 				pcl::transformPointCloud (noisy_cloud, cloud_transf,transf);
 
 
-				ROS_ERROR_STREAM(" iteration:" << i << " noise_level: "<< n << " "  << noise_levels[n]); 
+				ROS_INFO_STREAM(" iteration:" << i << " noise_level: "<< n << " "  << noise_levels[n]); 
 	    			bag.write("point_cloud",ros::Time::now(), cloud_transf);
 			}
 		}

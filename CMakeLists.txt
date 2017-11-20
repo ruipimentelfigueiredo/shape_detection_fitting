@@ -47,16 +47,6 @@ catkin_package(
 SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-# include_directories(include)
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
-
-
-
-
 ## Declare a C++ library
 # add_library(active_semantic_mapping
 #   src/${PROJECT_NAME}/active_semantic_mapping.cpp
@@ -81,59 +71,65 @@ include_directories(${SHAPE_DETECTION_DIR}/include)
 add_subdirectory(${SHAPE_DETECTION_DIR})
 
 
-include_directories(include ${PCL_INCLUDE_DIRS})
+include_directories(
+  include
+  ${Caffe_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 # ROS WRAPPERS
-add_library (cylinder_tracking_ros src/cylinder_tracking_ros.cpp)
-target_link_libraries (cylinder_tracking_ros ${catkin_LIBRARIES} HybridEstimator)
+#add_library (cylinder_tracking_ros src/cylinder_tracking_ros.cpp)
+#target_link_libraries (cylinder_tracking_ros ${catkin_LIBRARIES} HybridEstimator)
+#add_dependencies(cylinder_tracking_ros ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 # ROS NODES
-add_executable (cylinder_segmentation_ros_node src/cylinder_segmentation_ros_node.cpp)
-target_link_libraries (cylinder_segmentation_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
+#add_executable (cylinder_segmentation_ros_node src/cylinder_segmentation_ros_node.cpp)
+#target_link_libraries (cylinder_segmentation_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
+#add_dependencies(cylinder_segmentation_ros_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
-add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
-target_link_libraries (cylinder_tracking_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_tracking_ros)
+#add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
+#target_link_libraries (cylinder_tracking_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_tracking_ros)
 
 #ROS NODELETS
 # Nodelet library
-add_library(cylinder_segmentation_ros_nodelet src/nodelets/cylinder_segmentation_ros_nodelet.cpp)
-target_link_libraries (cylinder_segmentation_ros_nodelet ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
+#add_library(cylinder_segmentation_ros_nodelet src/nodelets/cylinder_segmentation_ros_nodelet.cpp)
+#target_link_libraries (cylinder_segmentation_ros_nodelet ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
 
-add_dependencies(cylinder_segmentation_ros_nodelet cylinder_segmentation_ros_gencpp)
+#add_dependencies(cylinder_segmentation_ros_nodelet cylinder_segmentation_ros_gencpp)
 
-install(TARGETS cylinder_segmentation_ros_nodelet
-        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-)
+#install(TARGETS cylinder_segmentation_ros_nodelet
+#        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#)
 
 
 
-add_library(cylinder_tracking_ros_nodelet src/nodelets/cylinder_tracking_ros_nodelet.cpp)
-target_link_libraries (cylinder_tracking_ros_nodelet ${PCL_LIBRARIES} ${catkin_LIBRARIES}  cylinder_tracking_ros)
+#add_library(cylinder_tracking_ros_nodelet src/nodelets/cylinder_tracking_ros_nodelet.cpp)
+#target_link_libraries (cylinder_tracking_ros_nodelet ${PCL_LIBRARIES} ${catkin_LIBRARIES}  cylinder_tracking_ros)
 
-add_dependencies(cylinder_tracking_ros_nodelet cylinder_segmentation_ros_gencpp)
+#add_dependencies(cylinder_tracking_ros_nodelet cylinder_segmentation_ros_gencpp)
 
-install(TARGETS cylinder_tracking_ros_nodelet
-        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-)
+#install(TARGETS cylinder_tracking_ros_nodelet
+#        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#)
 
-add_executable (cylinder_test src/cylinder_segmentation_ya.cpp)
-target_link_libraries (cylinder_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
+#add_executable (cylinder_test src/cylinder_segmentation_ya.cpp)
+#target_link_libraries (cylinder_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
 
 
 # TESTS
-#add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
-#target_link_libraries (cylinder_segmentation_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
+target_link_libraries (cylinder_segmentation_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
-#add_executable (cylinder_segmentation_test2 src/cylinder_segmentation_test2.cpp)
-#target_link_libraries (cylinder_segmentation_test2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+add_executable (cylinder_segmentation_test2 src/cylinder_segmentation_test2.cpp)
+target_link_libraries (cylinder_segmentation_test2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
-#add_executable (cylinder_segmentation_test_clutter src/cylinder_segmentation_test_clutter.cpp)
-#target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+add_executable (cylinder_segmentation_test_clutter src/cylinder_segmentation_test_clutter.cpp)
+target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
-#add_executable (cylinder_segmentation_test_clutter2 src/cylinder_segmentation_test_clutter2.cpp)
-#target_link_libraries (cylinder_segmentation_test_clutter2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+add_executable (cylinder_segmentation_test_clutter2 src/cylinder_segmentation_test_clutter2.cpp)
+target_link_libraries (cylinder_segmentation_test_clutter2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
 
 #add_executable (hough_lines_cuda src/hough_lines_cuda.cpp)
