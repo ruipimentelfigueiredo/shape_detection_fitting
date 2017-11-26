@@ -119,8 +119,8 @@ add_definitions(${PCL_DEFINITIONS})
 
 
 # TESTS
-add_executable (cylinder_segmentation_test src/cylinder_segmentation_test.cpp)
-target_link_libraries (cylinder_segmentation_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+add_executable (cylinder_generation src/cylinder_generation.cpp)
+target_link_libraries (cylinder_generation ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable (cylinder_segmentation_test2 src/cylinder_segmentation_test2.cpp)
 target_link_libraries (cylinder_segmentation_test2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)

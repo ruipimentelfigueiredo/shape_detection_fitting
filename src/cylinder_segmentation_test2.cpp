@@ -23,7 +23,6 @@ int main (int argc, char** argv)
 	*/
 
 	ros::NodeHandle n;
-	ros::Rate loop_rate(30);
 
 	// For visualization purposes
 	ros::Publisher cloud_pub;

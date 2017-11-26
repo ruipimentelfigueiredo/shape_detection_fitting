@@ -1,4 +1,4 @@
-﻿#include "cylinder_segmentation_hough.h"
+#include "cylinder_segmentation_hough.h"
 #include <ctime>
 #include <tf/transform_broadcaster.h>
 
@@ -9,14 +9,75 @@
 int main (int argc, char** argv)
 {
 	/* TODO - Process options */
-	if (argc < 3)
+	if (argc < 6)
 	{
-		std::cout << "invalid number of arguments: rosbag_dir iterations"<< std::endl;
+		std::cout << "invalid number of arguments: rosbag_dir iterations heights radii noise clutter"<< std::endl;
 		exit(-1);
 	}
 
-    	std::string rosbag_dir = std::string(argv[1]);
+    	std::string rosbag_file = std::string(argv[1]);
+
 	unsigned int iterations=atoi(argv[2]);
+
+	static std::string heights_ = std::string(argv[3]);
+	std::cout << "heights: " << heights_<< std::endl;
+
+	static std::string radii_ = std::string(argv[4]); 
+	std::cout << "radii: " << radii_<< std::endl;
+
+	static std::string noise_levels_ = std::string(argv[5]);
+	std::cout << "noise: " << noise_levels_<< std::endl;
+
+	static std::string clutter_levels_ = std::string(argv[6]);
+	std::cout << "clutter: " << clutter_levels_<< std::endl;
+
+	static int height_samples = std::string(argv[7]);
+	std::cout << "height_samples: " << height_samples<< std::endl;
+
+	static int angle_samples = std::string(argv[8]);
+	std::cout << "angle_samples: " << angle_samples<< std::endl;
+
+	std::vector<float> heights;
+	std::vector<float> radii;
+	std::vector<float> noise_levels; // percentage of object radius (std_dev)
+	std::vector<float> clutter_levels; // percentage of object size (std_dev)
+
+	float j;
+	std::stringstream ss_(heights_);
+	while (ss_ >> j)
+	{
+		heights.push_back(j);
+
+		if (ss_.peek() == ',')
+	    		ss_.ignore();
+	}
+
+	ss_=std::stringstream(radii_);
+	while (ss_ >> j)
+	{
+		radii.push_back(j);
+
+		if (ss_.peek() == ',')
+	    		ss_.ignore();
+	}
+
+	ss_=std::stringstream(noise_levels_);
+	while (ss_ >> j)
+	{
+		noise_levels.push_back(j);
+
+		if (ss_.peek() == ',')
+	    		ss_.ignore();
+	}
+
+	ss_=std::stringstream(clutter_levels_);
+	while (ss_ >> j)
+	{
+		clutter_levels.push_back(j);
+
+		if (ss_.peek() == ',')
+	    		ss_.ignore();
+	}
 
 	ros::init(argc, argv, "cylinder_publisher");
 
@@ -27,56 +88,17 @@ int main (int argc, char** argv)
 	*/
 
 	ros::NodeHandle n;
-	ros::Rate loop_rate(30);
-
-
-	// For visualization purposes
-	int height_samples=30;
-	int angle_samples=30;
-
-	std::ostringstream ss;
-	ss << rosbag_dir;
-    	boost::filesystem::create_directories(ss.str());
-	ss << std::fixed;
-	ss << "angle_bins_";
-	ss << angle_samples;
-	ss << "_clutter.bag";
-
-	std::string rosbag_file;
-	rosbag_file = ss.str();
 
 	rosbag::Bag bag;
 
 	bag.open(rosbag_file, rosbag::bagmode::Write);
 
-	std::vector<float> heights;
-
-	heights.push_back(1.00);
-	heights.push_back(2.00);
-	heights.push_back(3.00);
-	heights.push_back(4.00);
-	heights.push_back(5.00);
-	heights.push_back(6.00);
-
-	std::vector<float> radii;
-	radii.push_back(0.5);
-
-	std::vector<float> noise_levels; // percentage of object size (std_dev)
-	noise_levels.push_back(0.001);
-
-	std::vector<float> clutter_levels; // percentage of object size (std_dev)
-	clutter_levels.push_back(0.0);
-	clutter_levels.push_back(0.5);
-	clutter_levels.push_back(1.0);
-	clutter_levels.push_back(1.5);
-	clutter_levels.push_back(2.0);
 	
 	std::vector<pcl::PointCloud<pcl::PointXYZ> > point_clouds;
 	std::vector<active_semantic_mapping::Cylinders> ground_truths;
 	std::vector<Eigen::Matrix4f> transfs;
 
 	// First, generate 200 point clouds with different radius, heights at random poses
-
 
 	for(unsigned int c=0; c<clutter_levels.size();++c)
 	{
@@ -100,6 +122,7 @@ int main (int argc, char** argv)
 	
 					for(int a=0; a < angle_samples; ++a)
 					{
+
 						float x,y,z;
 						x=cos(angle_step*a)*fabs(radius);
 						y=sin(angle_step*a)*fabs(radius);
@@ -112,10 +135,10 @@ int main (int argc, char** argv)
 					}
 
 					// TAMPAS
-					unsigned int plane_samples=clutter_levels[c]*sqrt(30*30);
+					unsigned int plane_samples=clutter_levels[c]*sqrt(height_samples*angle_samples);
 				
-					float plane_size=1.0;
-					float plane_min=0.0-0.5*plane_size;
+					float plane_size=2*radius;
+					float plane_min=0.0-radius;
 					float plane_step=(float)plane_size/plane_samples;
 					float z=0.0;
 					for(int x_=0; x_<plane_samples;++x_)
@@ -125,7 +148,7 @@ int main (int argc, char** argv)
 						{
 						
 							float y=plane_min+y_*plane_step;
-							if(sqrt(x*x+y*y)>0.5) continue;
+							if(sqrt(x*x+y*y)>radius) continue;
 
 							pcl::PointXYZ point(x,y,z);
 							//cloud.push_back(point);
@@ -135,6 +158,7 @@ int main (int argc, char** argv)
 						}
 					}
 					point_clouds.push_back(cloud);
+
 					// Generate random orientation
 					Eigen::Vector3f rot_dir;
 					cv::Mat aux(1, 1, CV_32F);
@@ -166,10 +190,7 @@ int main (int argc, char** argv)
 					transf.block(0,3,3,1)=Eigen::Vector3f(0,0,0);
 					transfs.push_back(transf);
 
-
-
 					active_semantic_mapping::Cylinders ground_truth;
-
 
 					ground_truth.cylinders.layout.dim.resize(2);
 					ground_truth.cylinders.layout.dim[0].label  = "cylinders";
@@ -195,9 +216,7 @@ int main (int argc, char** argv)
 			}
 		}
 	}
-
-
-
+	// Then corrupt with diferent levels of noise
 	for(unsigned int n=0; n<noise_levels.size(); ++n)
 	{
 		for(unsigned int c=0; c<clutter_levels.size();++c)
@@ -208,10 +227,9 @@ int main (int argc, char** argv)
 				{
 					for(unsigned int r_=0; r_<radii.size();++r_)
 					{
-						int index=h_+i*heights.size()+c*heights.size()*iterations;
-
+						int index=r_+h_*radii.size()+i*radii.size()*heights.size();
 						pcl::PointCloud<PointT> cloud=point_clouds[index];
-	
+		
 
 						pcl::PointCloud<PointT> noisy_cloud;
 						noisy_cloud=cloud;
@@ -228,7 +246,6 @@ int main (int argc, char** argv)
 							noisy_cloud.points[p].z+=aux.at<float>(0,0);
 						}
 
-
 						//Transform point cloud
 						pcl::PointCloud<PointT> cloud_transf;
 						// transfs[index]
@@ -238,7 +255,7 @@ int main (int argc, char** argv)
 			    			bag.write("point_cloud",ros::Time::now(), cloud_transf);
 
 
-						ROS_INFO_STREAM(" iteration:" << i << " noise_level: "<< noise_levels[n] << " height: " << heights[h_] << " radius: " << radii[r_] << " total iteration: "<< r_+h_*radii.size()+i*radii.size()*heights.size()+c*radii.size()*heights.size()*iterations+n*radii.size()*heights.size()*iterations*clutter_levels.size()); 
+						ROS_INFO_STREAM(" iteration:" << i << " clutter_level: "<< clutter_levels[c] << " noise_level: "<< noise_levels[n] << " height: " << heights[h_] << " radius: " << radii[r_] << " total iteration: "<< r_+h_*radii.size()+i*radii.size()*heights.size()+c*radii.size()*heights.size()*iterations+n*radii.size()*heights.size()*clutter_levels.size()*iterations); 
 					}
 				}
 			}
