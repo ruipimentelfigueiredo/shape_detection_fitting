@@ -31,10 +31,10 @@ int main (int argc, char** argv)
 	static std::string clutter_levels_ = std::string(argv[6]);
 	std::cout << "clutter: " << clutter_levels_<< std::endl;
 
-	static int height_samples = std::string(argv[7]);
+	static int height_samples = atoi(argv[7]);
 	std::cout << "height_samples: " << height_samples<< std::endl;
 
-	static int angle_samples = std::string(argv[8]);
+	static int angle_samples = atoi(argv[8]);
 	std::cout << "angle_samples: " << angle_samples<< std::endl;
 
 	std::vector<float> heights;
@@ -211,7 +211,11 @@ int main (int argc, char** argv)
 					ground_truth.cylinders.data.push_back(radius);
 					ground_truth.cylinders.data.push_back(height);
 
-					bag.write("ground_truth",ros::Time::now(), ground_truth);
+
+					for(unsigned int n=0; n<noise_levels.size(); ++n)
+					{
+						bag.write("ground_truth",ros::Time::now(), ground_truth);
+					}
 				}
 			}
 		}

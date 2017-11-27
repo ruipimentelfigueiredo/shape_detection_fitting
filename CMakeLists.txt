@@ -114,22 +114,18 @@ add_definitions(${PCL_DEFINITIONS})
 #        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #)
 
-#add_executable (cylinder_test src/cylinder_segmentation_ya.cpp)
-#target_link_libraries (cylinder_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
-
-
 # TESTS
-add_executable (cylinder_generation src/cylinder_generation.cpp)
-target_link_libraries (cylinder_generation ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+add_executable(cylinder_generation src/cylinder_generation.cpp)
+target_link_libraries(cylinder_generation ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable (cylinder_segmentation_test2 src/cylinder_segmentation_test2.cpp)
-target_link_libraries (cylinder_segmentation_test2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+add_executable(cylinder_fitting_test src/cylinder_fitting_test.cpp)
+target_link_libraries(cylinder_fitting_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough cylinder_segmentation_ransac)
 
-add_executable (cylinder_segmentation_test_clutter src/cylinder_segmentation_test_clutter.cpp)
-target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+#add_executable (cylinder_segmentation_test_clutter src/cylinder_segmentation_test_clutter.cpp)
+#target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
-add_executable (cylinder_segmentation_test_clutter2 src/cylinder_segmentation_test_clutter2.cpp)
-target_link_libraries (cylinder_segmentation_test_clutter2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+#add_executable (cylinder_segmentation_test_clutter2 src/cylinder_segmentation_test_clutter2.cpp)
+#target_link_libraries (cylinder_segmentation_test_clutter2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
 
 
 #add_executable (hough_lines_cuda src/hough_lines_cuda.cpp)

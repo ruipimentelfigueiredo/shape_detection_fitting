@@ -11,6 +11,9 @@
 #include "pcl_ros/point_cloud.h"
 #include <visualization_msgs/MarkerArray.h>
 #include <helpers.h>
+#include <chrono>
+using namespace std;
+using namespace std::chrono;
 
 int main (int argc, char** argv)
 {
@@ -51,6 +54,19 @@ int main (int argc, char** argv)
 	float max_radius=atof(argv[10]);
 	std::cout << "max_radius: " << max_radius<< std::endl;
 	
+	// RANSAC PARAMETERS
+	float normal_distance_weight=atof(argv[11]);
+	std::cout << "normal_distance_weight: " << normal_distance_weight<< std::endl;
+
+	unsigned int max_iterations=atoi(argv[12]);
+	std::cout << "max_iterations: " << max_iterations << std::endl;
+
+	float distance_threshold=atof(argv[13]);
+	std::cout << "distance_threshold: " << distance_threshold << std::endl;
+
+	bool do_refine=atoi(argv[14]);
+	std::cout << "do_refine: " << do_refine << std::endl;
+
 
 	/*unsigned int angle_bins=30;
 	unsigned int radius_bins=10;
@@ -94,17 +110,29 @@ int main (int argc, char** argv)
 	GaussianSphere gaussian_sphere(gmm,gaussian_sphere_points_num,orientation_accumulators_num);
 
 
-	std::vector<boost::shared_ptr<CylinderSegmentationHough> > cylinder_segmentators;
+	std::vector<boost::shared_ptr<CylinderSegmentation> > cylinder_segmentators;
 
+	// HOUGH NORMAL
 	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL)));
 
+	// HOUGH HYBRID
 	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));
+
+	// RANSAC NORMAL
+	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationRansac> (new CylinderSegmentationRansac(normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(unsigned int)min_radius,(float)max_radius, do_refine)));
+
+	// HOUGH + RANSAC
+	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderFittingHoughRANSAC> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL)));
+	
+	// HOUGH + PROSAC
+	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderFittingHoughProsacRANSAC> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL)));
 
 	std::vector<std::string> topics;
 	topics.push_back(std::string("point_cloud"));
 	topics.push_back(std::string("ground_truth"));
 
 	rosbag::Bag bag;
+
 	bag.open(input_rosbag_file, rosbag::bagmode::Read);
     	rosbag::View view(bag, rosbag::TopicQuery(topics));
 
@@ -112,7 +140,6 @@ int main (int argc, char** argv)
 	std::vector<active_semantic_mapping::Cylinders> ground_truths;
     	foreach(rosbag::MessageInstance const m, view)
 	{	
-
 		active_semantic_mapping::Cylinders::ConstPtr s = m.instantiate<active_semantic_mapping::Cylinders>();
 		if (s == NULL)
 			continue;
@@ -123,7 +150,7 @@ int main (int argc, char** argv)
 
 	unsigned int iterations=6*200;
 
-	ROS_ERROR_STREAM("Number of point clouds:"<<ground_truths.size());
+	ROS_ERROR_STREAM("Number of ground truths:"<<ground_truths.size());
 
 	bag.open(input_rosbag_file, rosbag::bagmode::Read);
     	rosbag::View view2(bag, rosbag::TopicQuery(topics));
@@ -142,8 +169,8 @@ int main (int argc, char** argv)
 	}
 
 	bag.close();
-	ROS_ERROR_STREAM("POINT CLOUD SIZE:"<<point_clouds.size());
-	//exit(1);
+	ROS_ERROR_STREAM("Number of point clouds:"<<point_clouds.size());
+
 	std::string detections_frame_id="world";
 	std::string marker_detections_namespace_="detections";
 	// Segment cylinder and store results
@@ -151,33 +178,35 @@ int main (int argc, char** argv)
 	std::vector<float> position_errors;
 
 
-	for (unsigned int d=0;d < cylinder_segmentators.size();++d)
+
+	for (unsigned int d=0;d < cylinder_segmentators.size() && ros::ok();++d)
 	{
 
 		std::fstream fs_orientation;
 		std::fstream fs_radius;
 		std::fstream fs_position;
+		std::fstream fs_time;
 		fs_orientation.open (output_rosbag_folder+"_orientation_noise_biased2_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app );
 		fs_radius.open (output_rosbag_folder+"_radius_noise_biased2_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 		fs_position.open (output_rosbag_folder+"_position_noise_biased2_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_time.open (output_rosbag_folder+"_time_noise_biased2_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
-		for(unsigned int i=0;i<point_clouds.size();++i)
+		for(unsigned int i=0;i<point_clouds.size() && ros::ok();++i)
 		{	//continue;
-			unsigned int ground_truth_index=i%iterations;
 
-			if(ground_truth_index==0&&i>0)
-			{
-				 fs_orientation<< "\n";
-				 fs_radius<< "\n";
-				 fs_position<< "\n";
-			}
-
-			active_semantic_mapping::Cylinders ground_truth=ground_truths[ground_truth_index];
+			active_semantic_mapping::Cylinders ground_truth=ground_truths[i];
 
 			pcl::PointCloud<PointT>::Ptr point_cloud(new pcl::PointCloud<PointT>());
 			*point_cloud=*point_clouds[i];
 
+			/* FITTING */
+    			high_resolution_clock::time_point t1 = high_resolution_clock::now();
 			CylinderFitting model_params=cylinder_segmentators[d]->segment(point_clouds[i]);
+    			high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    			auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
+			fs_time << duration << " ";
+			std::cout << "total time: " << duration << " ms"<< std::endl;
+			/* END FITTING */
 			//detections.push_back(model_params);
 
 			float orientation_error=acos(model_params.parameters.segment(3,3).dot(Eigen::Vector3f(ground_truth.cylinders.data[3],ground_truth.cylinders.data[4],ground_truth.cylinders.data[5])));
@@ -194,7 +223,10 @@ int main (int argc, char** argv)
 										   ground_truth.cylinders.data[2])).norm();
 			fs_position << position_error << " ";
 
-			//ROS_INFO_STREAM("orientation_error:" << orientation_error*(180.0/M_PI));
+			fs_orientation<< "\n";
+			fs_radius<< "\n";
+			fs_position<< "\n";
+			fs_time<< "\n";
 
 			visualization_msgs::MarkerArray markers_;
 			// First delete all markers
@@ -209,12 +241,12 @@ int main (int argc, char** argv)
 				detection_pub.publish( markers_ );
 				cloud_pub.publish(point_cloud);
 			}
-
 		}
 
 		fs_orientation.close();
 		fs_radius.close();
 		fs_position.close();
+		fs_time.close();
 	}
 
 
