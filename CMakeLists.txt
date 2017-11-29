@@ -26,7 +26,7 @@ find_package(Boost COMPONENTS system filesystem regex REQUIRED)
    FILES
    BoundingBox.msg
    BoundingBoxArray.msg
-   #TestParameters.msg
+   TestParameters.msg
    Clusters.msg
    Cylinders.msg
 )
