@@ -7,7 +7,7 @@ project(active_semantic_mapping)
 
 
 find_package(catkin REQUIRED COMPONENTS
-  find_object_2d
+  #find_object_2d
   roscpp
   message_filters
   visualization_msgs
@@ -26,7 +26,7 @@ find_package(Boost COMPONENTS system filesystem regex REQUIRED)
    FILES
    BoundingBox.msg
    BoundingBoxArray.msg
-   TestParameters.msg
+   #TestParameters.msg
    Clusters.msg
    Cylinders.msg
 )
@@ -62,9 +62,9 @@ NO_MODULE # should be optional, tells CMake to use config mode
 PATHS /usr/local # look here
 NO_DEFAULT_PATH) # and don't look anywhere else
 
-set(TRACKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tracking/cpp)
-include_directories(${TRACKER_DIR}/HybridEstimator)
-add_subdirectory(${TRACKER_DIR}/HybridEstimator)
+#set(TRACKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tracking/cpp)
+#include_directories(${TRACKER_DIR}/HybridEstimator)
+#add_subdirectory(${TRACKER_DIR}/HybridEstimator)
 
 set(SHAPE_FITTING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-fitting)
 include_directories(${SHAPE_FITTING_DIR}/include)
@@ -77,7 +77,7 @@ add_subdirectory(${SHAPE_DETECTION_DIR})
 
 include_directories(
   include
-  ${Caffe_INCLUDE_DIRS}
+  #${Caffe_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -119,11 +119,11 @@ add_definitions(${PCL_DEFINITIONS})
 #)
 
 # TESTS
-add_executable(cylinder_generation src/cylinder_generation.cpp)
-target_link_libraries(cylinder_generation ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+#add_executable(cylinder_generation src/cylinder_generation.cpp)
+#target_link_libraries(cylinder_generation ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable(cylinder_fitting_test src/cylinder_fitting_test.cpp)
-target_link_libraries(cylinder_fitting_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough cylinder_segmentation_ransac)
+#add_executable(cylinder_fitting_test src/cylinder_fitting_test.cpp)
+#target_link_libraries(cylinder_fitting_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough cylinder_segmentation_ransac)
 
 #add_executable (cylinder_segmentation_test_clutter src/cylinder_segmentation_test_clutter.cpp)
 #target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
