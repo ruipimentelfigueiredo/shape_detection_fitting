@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   rosbag
   pcl_ros
   nav_msgs
+  std_msgs
 )
 
 find_package(OpenCV REQUIRED)
@@ -23,6 +24,9 @@ find_package(Boost COMPONENTS system filesystem regex REQUIRED)
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
+   BoundingBox.msg
+   BoundingBoxArray.msg
+   TestParameters.msg
    Clusters.msg
    Cylinders.msg
 )
