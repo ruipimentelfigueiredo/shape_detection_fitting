@@ -7,7 +7,6 @@ Created on Wed Nov 29 03:01:02 2017
 """
 from __future__ import print_function, absolute_import, division
 import rospy
-from std_msgs.msg import String, Header
 import cv2
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
@@ -32,6 +31,8 @@ def callback(data):
     boxes, scores, classes = my_detector.detect(rgb_img_resize, threshold=0.5)
     BBA = list() # Bounding box array
     BBA_msg = msg.BoundingBoxArray()
+    #BBA_msg.header = Header()
+    BBA_msg.header = data.header
     
     for idx in range(len(classes)):
       BB_msg = msg.BoundingBox()
@@ -46,7 +47,7 @@ def callback(data):
       
     BBA_msg.boxes = BBA
     #rospy.loginfo("I heard %d", len(BBA))
-    BBA_msg.header = Header()
+    
     pub.publish(BBA_msg)
     
 def listener():
