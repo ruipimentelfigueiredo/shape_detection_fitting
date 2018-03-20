@@ -23,7 +23,7 @@ def callback(data):
     global my_detector
 
     try:
-      cv_image = bridge.imgmsg_to_cv2(data, "bgr8")
+      cv_image = bridge.imgmsg_to_cv2(data, "rgb8")
     except CvBridgeError as e:
       print(e)
 

@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3 REQUIRED)
 find_package(Boost COMPONENTS system filesystem regex REQUIRED)
 
 ## Generate messages in the 'msg' folder
@@ -89,8 +89,8 @@ add_definitions(${PCL_DEFINITIONS})
 #add_dependencies(cylinder_tracking_ros ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 # ROS NODES
-#add_executable (cylinder_segmentation_ros_node src/cylinder_segmentation_ros_node.cpp)
-#target_link_libraries (cylinder_segmentation_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
+add_executable (object_detection src/object_detection.cpp)
+target_link_libraries (object_detection ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 #add_dependencies(cylinder_segmentation_ros_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 #add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
