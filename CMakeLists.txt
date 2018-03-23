@@ -16,9 +16,15 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   nav_msgs
   std_msgs
+  cv_bridge
+  image_transport
 )
 
-find_package(OpenCV 3 REQUIRED)
+find_package(PCL 1.7 REQUIRED)
+
+set(CMAKE_PREFIX_PATH "/usr/local")
+find_package(OpenCV 3.4 REQUIRED)
+set(OpenCV_INCLUDE_DIRS "/usr/local/include")
 find_package(Boost COMPONENTS system filesystem regex REQUIRED)
 
 ## Generate messages in the 'msg' folder
@@ -56,28 +62,26 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 #   src/${PROJECT_NAME}/active_semantic_mapping.cpp
 # )
 
-find_package(PCL 1.7 REQUIRED)
-find_package(OpenCV REQUIRED
-NO_MODULE # should be optional, tells CMake to use config mode
-PATHS /usr/local # look here
-NO_DEFAULT_PATH) # and don't look anywhere else
 
-#set(TRACKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tracking/cpp)
-#include_directories(${TRACKER_DIR}/HybridEstimator)
-#add_subdirectory(${TRACKER_DIR}/HybridEstimator)
 
-set(SHAPE_FITTING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-fitting)
-include_directories(${SHAPE_FITTING_DIR}/include)
-add_subdirectory(${SHAPE_FITTING_DIR})
+
+
 
 set(SHAPE_DETECTION_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-detection)
 include_directories(${SHAPE_DETECTION_DIR}/include)
 add_subdirectory(${SHAPE_DETECTION_DIR})
 
+set(SHAPE_FITTING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-fitting)
+include_directories(${SHAPE_FITTING_DIR}/include)
+add_subdirectory(${SHAPE_FITTING_DIR})
+
+#set(TRACKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tracking/cpp)
+#include_directories(${TRACKER_DIR}/HybridEstimator)
+#add_subdirectory(${TRACKER_DIR}/HybridEstimator)
 
 include_directories(
   include
-  #${Caffe_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -89,8 +93,8 @@ add_definitions(${PCL_DEFINITIONS})
 #add_dependencies(cylinder_tracking_ros ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 # ROS NODES
-add_executable (object_detection src/object_detection.cpp)
-target_link_libraries (object_detection ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+add_executable (object_detection_node src/object_detection.cpp)
+target_link_libraries (object_detection_node object_detector ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 #add_dependencies(cylinder_segmentation_ros_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 #add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
