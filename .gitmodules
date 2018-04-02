@@ -7,3 +7,6 @@
 [submodule "lib/shape-detection"]
 	path = lib/shape-detection
 	url = https://github.com/ruipimentelfigueiredo/shape-detection
+[submodule "lib/shape-tracking"]
+	path = lib/shape-tracking
+	url = https://github.com/ruipimentelfigueiredo/shape-tracking

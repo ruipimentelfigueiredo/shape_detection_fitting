@@ -75,6 +75,10 @@ set(SHAPE_FITTING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-fitting)
 include_directories(${SHAPE_FITTING_DIR}/include)
 add_subdirectory(${SHAPE_FITTING_DIR})
 
+set(SHAPE_TRACKING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-tracking)
+include_directories(${SHAPE_TRACKING_DIR}/include)
+add_subdirectory(${SHAPE_TRACKING_DIR})
+
 #set(TRACKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tracking/cpp)
 #include_directories(${TRACKER_DIR}/HybridEstimator)
 #add_subdirectory(${TRACKER_DIR}/HybridEstimator)
@@ -97,8 +101,8 @@ add_executable (object_detection_node src/object_detection.cpp)
 target_link_libraries (object_detection_node object_detector ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 #add_dependencies(cylinder_segmentation_ros_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
-#add_executable (cylinder_tracking_ros_node src/cylinder_tracking_ros_node.cpp)
-#target_link_libraries (cylinder_tracking_ros_node ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_tracking_ros)
+add_executable (tracking_ros_node src/particle_filter_node.cpp)
+target_link_libraries (tracking_ros_node particle_filter ${catkin_LIBRARIES})
 
 #ROS NODELETS
 # Nodelet library
