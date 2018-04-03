@@ -2,7 +2,7 @@
 #include <image_transport/image_transport.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <shape_detection.h>
+#include <object_detection.h>
 
 class ObjectDetectionRos {
 	image_transport::ImageTransport it;
@@ -19,26 +19,14 @@ class ObjectDetectionRos {
 		}
 
 
-		ObjectDetectionRos(const ros::NodeHandle & nh_, std::string & model, int & backend, int & target, bool & swapRB, int & inpWidth, int & inpHeight) : it(nh_)
+		ObjectDetectionRos(const ros::NodeHandle & nh_, std::string & model, std::string & config, int & backend, int & target, bool & swapRB, int & inpWidth, int & inpHeight) : it(nh_)
 		{
-		  object_detector=std::shared_ptr<ObjectDetection>(new ObjectDetection(model, backend, target, swapRB, inpWidth, inpHeight));
+		  object_detector=std::shared_ptr<ObjectDetection>(new ObjectDetection(model, config, backend, target, swapRB, inpWidth, inpHeight));
 		  image_transport::ImageTransport it(nh);
 		  sub = it.subscribe("camera/image", 1, &ObjectDetectionRos::imageCallback,this);
 		};
 };
 
-void imageCallback(const sensor_msgs::ImageConstPtr& msg)
-{
-  try
-  {
-    cv::imshow("view", cv_bridge::toCvShare(msg, "bgr8")->image);
-    cv::waitKey(30);
-  }
-  catch (cv_bridge::Exception& e)
-  {
-    ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
-  }
-}
 
 int main(int argc, char **argv)
 {
@@ -47,7 +35,8 @@ int main(int argc, char **argv)
   //cv::namedWindow("view");
   //cv::startWindowThread();
   image_transport::ImageTransport it(nh);
-  image_transport::Subscriber sub = it.subscribe("/usb_cam/image_raw", 1, imageCallback);
+
+  ObjectDetectionRos object_detection_ros;
   ros::spin();
   //cv::destroyWindow("view");
 }
