@@ -22,9 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(PCL 1.7 REQUIRED)
 
-set(CMAKE_PREFIX_PATH "/usr/local")
 find_package(OpenCV 3.4 REQUIRED)
-set(OpenCV_INCLUDE_DIRS "/usr/local/include")
 find_package(Boost COMPONENTS system filesystem regex REQUIRED)
 
 ## Generate messages in the 'msg' folder
@@ -85,7 +83,6 @@ add_subdirectory(${SHAPE_TRACKING_DIR})
 
 include_directories(
   include
-  ${OpenCV_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -98,7 +95,7 @@ add_definitions(${PCL_DEFINITIONS})
 
 # ROS NODES
 add_executable (object_detection_node src/object_detection.cpp)
-target_link_libraries (object_detection_node object_detector ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries (object_detection_node object_detector ${catkin_LIBRARIES} )
 #add_dependencies(cylinder_segmentation_ros_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable (tracking_ros_node src/particle_filter_node.cpp)

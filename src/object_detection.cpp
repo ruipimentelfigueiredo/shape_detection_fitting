@@ -23,7 +23,7 @@ class ObjectDetectionRos {
 		{
 		  object_detector=std::shared_ptr<ObjectDetection>(new ObjectDetection(model, config, backend, target, swapRB, inpWidth, inpHeight));
 		  image_transport::ImageTransport it(nh);
-		  sub = it.subscribe("camera/image", 1, &ObjectDetectionRos::imageCallback,this);
+		  sub = it.subscribe("image", 1, &ObjectDetectionRos::imageCallback,this);
 		};
 };
 
@@ -36,7 +36,14 @@ int main(int argc, char **argv)
   //cv::startWindowThread();
   image_transport::ImageTransport it(nh);
 
-  ObjectDetectionRos object_detection_ros;
+  std::string model;
+  std::string config;
+  int backend;
+  int target;
+  bool swapRB;
+  int inpWidth;
+  int inpHeight;
+  ObjectDetectionRos object_detection_ros(nh, model, config, backend, target, swapRB, inpWidth, inpHeight);
   ros::spin();
   //cv::destroyWindow("view");
 }
