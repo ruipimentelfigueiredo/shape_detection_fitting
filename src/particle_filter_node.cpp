@@ -36,10 +36,10 @@ class ParticleFilterNode
    ros::Publisher pose_pub;
    ros::Publisher particle_pub;
 
-   NonlinearSystemPdf *sys_pdf;
-   SystemModel<ColumnVector> *sys_model;
-   NonlinearMeasurementPdf *meas_pdf;
-   MeasurementModel<ColumnVector,ColumnVector> *meas_model;
+   BFL::NonlinearSystemPdf *sys_pdf;
+   BFL::SystemModel<ColumnVector> *sys_model;
+   BFL::NonlinearMeasurementPdf *meas_pdf;
+   BFL::MeasurementModel<ColumnVector,ColumnVector> *meas_model;
    MCPdf<ColumnVector> *prior_discr;
    CustomParticleFilter *filter;
    ros::Time prevPoseDataTime;
@@ -49,8 +49,8 @@ class ParticleFilterNode
 public:
    ParticleFilterNode()
    {
-       navi_sub = nh_.subscribe("/ardrone/navdata", 1, &ParticleFilterNode::InputCb, this);
-       ranges_sub = nh_.subscribe("ardrone/ranges", 1, &ParticleFilterNode::MeasurementCb, this);
+       //navi_sub = nh_.subscribe("/ardrone/navdata", 1, &ParticleFilterNode::InputCb, this);
+       ranges_sub = nh_.subscribe("measurements", 1, &ParticleFilterNode::MeasurementCb, this);
        pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("/pose_pf",1);
        particle_pub = nh_.advertise<geometry_msgs::PoseArray>("/particle_cloud",1);
        dt = 0.0;
@@ -58,6 +58,8 @@ public:
        sys_model = NULL;
        meas_model = NULL;
        filter = NULL;
+
+       CreateParticleFilter();
    }
 
    ~ParticleFilterNode()
@@ -94,14 +96,12 @@ public:
        Gaussian system_Uncertainty(sys_noise_Mu, sys_noise_Cov);
 
        // create the nonlinear system model
-       sys_pdf = new NonlinearSystemPdf(system_Uncertainty);
-       sys_model = new SystemModel<ColumnVector> (sys_pdf);
-
+       //sys_pdf = new NonlinearSystemPdf(system_Uncertainty);
+       sys_model = new BFL::SystemModel<ColumnVector> (sys_pdf);
 
        /*********************************
         * NonLinear Measurement model   *
         ********************************/
-
 
        // Construct the measurement noise (a scalar in this case)
        ColumnVector meas_noise_Mu(MEAS_SIZE);
@@ -121,9 +121,8 @@ public:
 
        Gaussian measurement_Uncertainty(meas_noise_Mu, meas_noise_Cov);
 
-
-       meas_pdf = new NonlinearMeasurementPdf(measurement_Uncertainty);
-       meas_model = new MeasurementModel<ColumnVector,ColumnVector>(meas_pdf);
+       //meas_pdf = new BFL::NonlinearMeasurementPdf(measurement_Uncertainty);
+       //meas_model = new BFL::MeasurementModel<ColumnVector,ColumnVector>(meas_pdf);
 
        /****************************
         * Linear prior DENSITY     *
@@ -163,10 +162,10 @@ public:
        measurement(1) = msg.pose.position.x/100;
        measurement(2) = msg.pose.position.y/100;
        measurement(3) = msg.pose.position.z/100;
-       //ROS_INFO("Measurement: %f",measurement(1));
-       //if (LastPoseDataMsg.state==3 || LastPoseDataMsg.state==7 || LastPoseDataMsg.state==4)
+       std::cout << measurement << std::endl;
        {
            filter->Update(meas_model, measurement);
+           std::cout << measurement << std::endl;
            PublishParticles();
            PublishPose();
        }
@@ -228,35 +227,6 @@ public:
        pose_pub.publish(pose_msg);
    }
 
-   /*void requestMap()
-   {
-     // get map via RPC
-     nav_msgs::GetMap::Request  req;
-     nav_msgs::GetMap::Response resp;
-     ROS_INFO("Requesting the map...");
-     while(!ros::service::call("static_map", req, resp))
-     {
-       ROS_WARN("Request for map failed; trying again...");
-       ros::Duration d(0.5);
-       d.sleep();
-     }
-     handleMapMessage( resp.map );
-   }
-
-   void handleMapMessage(const geometry_msgs::OccupancyGrid& msg)
-   {
-     ROS_INFO("Received a %d X %d map @ %.3f m/pix  Origin X %.3f Y %.3f\n",
-              msg.info.width,
-              msg.info.height,
-              msg.info.resolution,
-              msg.info.origin.position.x,
-              msg.info.origin.position.y);
-
-     freeMapDependentMemory();
-     map_ = convertMap(msg);
-     CreateParticleFilter();
-   }*/
-
    void freeMapDependentMemory()
    {
      /*if( map_ != NULL ) {
@@ -271,38 +241,6 @@ public:
      if (filter)
        delete filter;
    }
-
-   /**
-    * Convert an OccupancyGrid map message into the internal
-    * representation.  This allocates a map_t and returns it.
-    */
-   /*map_t* convertMap( const nav_msgs::OccupancyGrid& map_msg )
-   {
-     map_t* map = map_alloc();
-     ROS_ASSERT(map);
-
-     map->size_x = map_msg.info.width;
-     map->size_y = map_msg.info.height;
-     map->scale = map_msg.info.resolution;
-     map->origin_x = map_msg.info.origin.position.x + (map->size_x / 2) * map->scale;
-     map->origin_y = map_msg.info.origin.position.y + (map->size_y / 2) * map->scale;
-
-     ROS_INFO(" Size X=%d Y=%d Scale=%f Origin X=%f Y=%f", map->size_x, map->size_y, map->scale, map->origin_x, map->origin_y);
-     // Convert to player format
-     map->cells = (map_cell_t*)malloc(sizeof(map_cell_t)*map->size_x*map->size_y);
-     ROS_ASSERT(map->cells);
-
-     for(int i=0;i<map->size_x * map->size_y;i++)
-     {
-       if(map_msg.data[i] == 0)
-         map->cells[i].occ_state = -1;
-       else if(map_msg.data[i] == 100)
-         map->cells[i].occ_state = +1;
-       else
-         map->cells[i].occ_state = 0;
-     }
-     return map;
-   }*/
 
 };
 
