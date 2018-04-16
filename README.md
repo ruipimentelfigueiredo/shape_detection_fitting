@@ -1,4 +1,4 @@
-# active_semantic_mapping
+# shape detection, fitting and tracking
 1. run modify_dataset.py:
 
 
