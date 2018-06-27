@@ -4,9 +4,9 @@
 [submodule "lib/shape-fitting"]
 	path = lib/shape-fitting
 	url = https://github.com/ruipimentelfigueiredo/shape-fitting
-[submodule "lib/shape-detection"]
-	path = lib/shape-detection
-	url = https://github.com/ruipimentelfigueiredo/shape-detection
 [submodule "lib/shape-tracking"]
 	path = lib/shape-tracking
 	url = https://github.com/ruipimentelfigueiredo/shape-tracking
+[submodule "lib/shape-classification"]
+	path = lib/shape-classification
+	url = https://github.com/ruipimentelfigueiredo/shape-classification

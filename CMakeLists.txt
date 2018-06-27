@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(active_semantic_mapping)
+project(shape_detection_fitting)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   cv_bridge
   image_transport
+  message_generation
 )
 
 find_package(PCL 1.7 REQUIRED)
@@ -28,7 +29,7 @@ pkg_check_modules(BFL REQUIRED orocos-bfl)
 include_directories(${BFL_INCLUDE_DIRS})
 link_directories(${BFL_LIBRARY_DIRS})
 
-find_package(OpenCV 3.4 REQUIRED)
+#find_package(OpenCV 3.4 REQUIRED)
 find_package(Boost COMPONENTS system filesystem regex REQUIRED)
 
 ## Generate messages in the 'msg' folder
@@ -66,7 +67,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 #   src/${PROJECT_NAME}/active_semantic_mapping.cpp
 # )
 
-set(SHAPE_DETECTION_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-detection)
+set(SHAPE_DETECTION_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-classification)
 include_directories(${SHAPE_DETECTION_DIR}/include)
 add_subdirectory(${SHAPE_DETECTION_DIR})
 
@@ -95,12 +96,13 @@ add_definitions(${PCL_DEFINITIONS})
 #add_dependencies(cylinder_tracking_ros ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 # ROS NODES
-#add_executable (object_detection_node src/object_detection.cpp)
-#target_link_libraries (object_detection_node object_detector ${catkin_LIBRARIES} )
-#add_dependencies(cylinder_segmentation_ros_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+add_executable (object_detection_node src/cylinder_segmentation_ros_node.cpp)
+target_link_libraries (object_detection_node object_detector ${catkin_LIBRARIES} )
+#add_dependencies(object_detection_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+add_dependencies(object_detection_node ${PROJECT_NAME}_generate_messages_cpp)
 
-add_executable (tracking_ros_node src/particle_filter_node.cpp)
-target_link_libraries (tracking_ros_node ${catkin_LIBRARIES} ${BFL_LIBRARIES} particle_filter)
+#add_executable (tracking_ros_node src/particle_filter_node.cpp)
+#target_link_libraries (tracking_ros_node ${catkin_LIBRARIES} ${BFL_LIBRARIES} particle_filter)
 
 #ROS NODELETS
 # Nodelet library

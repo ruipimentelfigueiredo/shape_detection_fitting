@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>active_semantic_mapping</name>
+  <name>shape_detection_fitting</name>
   <version>0.0.0</version>
-  <description>The active_semantic_mapping package</description>
+  <description>The shape_detection_fitting package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->

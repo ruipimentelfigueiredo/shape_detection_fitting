@@ -1,10 +1,10 @@
 #include "cylinder_segmentation_hough.h"
 #include "cylinder_segmentation_ransac.h"
 #include "visualization_msgs/MarkerArray.h"
-#include "multiple_tracker_manager.h"
+//#include "multiple_tracker_manager.h"
 #include "sensor_msgs/CameraInfo.h"
-#include "active_semantic_mapping/Clusters.h"
-#include "active_semantic_mapping/Cylinders.h"
+#include "shape_detection_fitting/Clusters.h"
+#include "shape_detection_fitting/Cylinders.h"
 
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
