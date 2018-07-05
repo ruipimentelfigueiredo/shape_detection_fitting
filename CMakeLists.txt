@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(PCL 1.7 REQUIRED)
+find_package(Caffe REQUIRED)
 # bfl (Bayesian Filtering Library) is a third party package that uses pkg-config
 find_package(PkgConfig)
 pkg_check_modules(BFL REQUIRED orocos-bfl)
@@ -75,18 +76,16 @@ set(SHAPE_FITTING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-fitting)
 include_directories(${SHAPE_FITTING_DIR}/include)
 add_subdirectory(${SHAPE_FITTING_DIR})
 
-set(SHAPE_TRACKING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-tracking)
-include_directories(${SHAPE_TRACKING_DIR}/include)
-add_subdirectory(${SHAPE_TRACKING_DIR})
+#set(SHAPE_TRACKING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-tracking)
+#include_directories(${SHAPE_TRACKING_DIR}/include)
+#add_subdirectory(${SHAPE_TRACKING_DIR})
 
-#set(TRACKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tracking/cpp)
-#include_directories(${TRACKER_DIR}/HybridEstimator)
-#add_subdirectory(${TRACKER_DIR}/HybridEstimator)
 
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS})
+  ${PCL_INCLUDE_DIRS}
+  ${Caffe_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
@@ -97,7 +96,7 @@ add_definitions(${PCL_DEFINITIONS})
 
 # ROS NODES
 add_executable (object_detection_node src/cylinder_segmentation_ros_node.cpp)
-target_link_libraries (object_detection_node object_detector ${catkin_LIBRARIES} )
+target_link_libraries (object_detection_node ${catkin_LIBRARIES} ${Caffe_LIBS} -lglog cylinder_classifier cylinder_segmentation_hough cylinder_segmentation_ransac)
 #add_dependencies(object_detection_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 add_dependencies(object_detection_node ${PROJECT_NAME}_generate_messages_cpp)
 
