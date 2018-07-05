@@ -1,6 +1,6 @@
 #include "nodelets/cylinder_segmentation_ros_nodelet.h"
 
-namespace active_semantic_mapping
+namespace shape_detection_fitting
 {
     	void CylinderSegmentationRosNodelet::onInit()
 	{
@@ -161,4 +161,4 @@ namespace active_semantic_mapping
 
 // Register nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(active_semantic_mapping::CylinderSegmentationRosNodelet,nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(shape_detection_fitting::CylinderSegmentationRosNodelet,nodelet::Nodelet)

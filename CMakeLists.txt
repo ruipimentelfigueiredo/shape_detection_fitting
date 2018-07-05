@@ -51,7 +51,7 @@ generate_messages(
 )
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES active_semantic_mapping
+#  LIBRARIES shape_detection_fitting
 #  CATKIN_DEPENDS find_object_2d roscpp
 #  DEPENDS system_lib
 )
@@ -64,8 +64,8 @@ SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 
 ## Declare a C++ library
-# add_library(active_semantic_mapping
-#   src/${PROJECT_NAME}/active_semantic_mapping.cpp
+# add_library(shape_detection_fitting
+#   src/${PROJECT_NAME}/shape_detection_fitting.cpp
 # )
 
 set(SHAPE_DETECTION_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-classification)
@@ -95,10 +95,10 @@ add_definitions(${PCL_DEFINITIONS})
 #add_dependencies(cylinder_tracking_ros ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 # ROS NODES
-add_executable (object_detection_node src/cylinder_segmentation_ros_node.cpp)
-target_link_libraries (object_detection_node ${catkin_LIBRARIES} ${Caffe_LIBS} -lglog cylinder_classifier cylinder_segmentation_hough cylinder_segmentation_ransac)
+add_executable (shape_detection_node src/cylinder_segmentation_ros_node.cpp)
+target_link_libraries (shape_detection_node ${catkin_LIBRARIES} ${Caffe_LIBS} -lglog cylinder_classifier cylinder_segmentation_hough cylinder_segmentation_ransac)
 #add_dependencies(object_detection_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-add_dependencies(object_detection_node ${PROJECT_NAME}_generate_messages_cpp)
+add_dependencies(shape_detection_node ${PROJECT_NAME}_generate_messages_cpp)
 
 #add_executable (tracking_ros_node src/particle_filter_node.cpp)
 #target_link_libraries (tracking_ros_node ${catkin_LIBRARIES} ${BFL_LIBRARIES} particle_filter)
@@ -148,17 +148,17 @@ add_dependencies(object_detection_node ${PROJECT_NAME}_generate_messages_cpp)
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(active_semantic_mapping ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(shape_detection_fitting ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(active_semantic_mapping_node src/active_semantic_mapping_node.cpp)
+# add_executable(shape_detection_fitting_node src/shape_detection_fitting_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(active_semantic_mapping_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(shape_detection_fitting_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(active_semantic_mapping_node
+# target_link_libraries(shape_detection_fitting_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -177,7 +177,7 @@ add_dependencies(object_detection_node ${PROJECT_NAME}_generate_messages_cpp)
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS active_semantic_mapping active_semantic_mapping_node
+# install(TARGETS shape_detection_fitting shape_detection_fitting_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -202,7 +202,7 @@ add_dependencies(object_detection_node ${PROJECT_NAME}_generate_messages_cpp)
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_active_semantic_mapping.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_shape_detection_fitting.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

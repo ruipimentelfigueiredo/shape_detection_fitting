@@ -7,7 +7,7 @@
 #    exit
 #fi
 
-DIR=$PWD; # MUST BE RUN FROM active_semantic_mapping ROOT !!!!!!!!!!!!!!!!!!!!!!
+DIR=$PWD; # MUST BE RUN FROM shape_detection_fitting ROOT !!!!!!!!!!!!!!!!!!!!!!
 
 BASE_DATASET_FOLDER='/run/user/1004/gvfs/smb-share:server=blackhole,share=users/ruifigueiredo'
 

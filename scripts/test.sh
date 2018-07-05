@@ -26,7 +26,7 @@ SIGMAS="0.001,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50"
 CLUTTER="0"
 
 
-rosrun active_semantic_mapping cylinder_generation $ROSBAG_DIR$ROSBAG_NAME $ITERATIONS $HEIGHTS $RADII $SIGMAS $CLUTTER
+rosrun shape_detection_fitting cylinder_generation $ROSBAG_DIR$ROSBAG_NAME $ITERATIONS $HEIGHTS $RADII $SIGMAS $CLUTTER
 
 
 

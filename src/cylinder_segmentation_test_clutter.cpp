@@ -3,7 +3,7 @@
 #include <tf/transform_broadcaster.h>
 
 #include <rosbag/bag.h>
-#include <active_semantic_mapping/Cylinders.h>
+#include <shape_detection_fitting/Cylinders.h>
 #include "pcl_ros/point_cloud.h"
 
 int main (int argc, char** argv)
@@ -72,7 +72,7 @@ int main (int argc, char** argv)
 	clutter_levels.push_back(2.0);
 	
 	std::vector<pcl::PointCloud<pcl::PointXYZ> > point_clouds;
-	std::vector<active_semantic_mapping::Cylinders> ground_truths;
+	std::vector<shape_detection_fitting::Cylinders> ground_truths;
 	std::vector<Eigen::Matrix4f> transfs;
 
 	// First, generate 200 point clouds with different radius, heights at random poses
@@ -168,7 +168,7 @@ int main (int argc, char** argv)
 
 
 
-					active_semantic_mapping::Cylinders ground_truth;
+					shape_detection_fitting::Cylinders ground_truth;
 
 
 					ground_truth.cylinders.layout.dim.resize(2);

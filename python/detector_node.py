@@ -10,7 +10,7 @@ import rospy
 import cv2
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-from active_semantic_mapping import msg
+from shape_detection_fitting import msg
 
 import numpy as np
 import os

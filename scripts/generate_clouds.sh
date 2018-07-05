@@ -31,7 +31,7 @@ HEIGHT_SAMPLES=30
 # Define clutter levels
 ANGLE_SAMPLES=30
 
-rosrun active_semantic_mapping cylinder_generation $ROSBAG_DIR$ROSBAG_NAME $ITERATIONS $HEIGHTS $RADII $SIGMAS $CLUTTER $HEIGHT_SAMPLES $ANGLE_SAMPLES
+rosrun shape_detection_fitting cylinder_generation $ROSBAG_DIR$ROSBAG_NAME $ITERATIONS $HEIGHTS $RADII $SIGMAS $CLUTTER $HEIGHT_SAMPLES $ANGLE_SAMPLES
 
 
 

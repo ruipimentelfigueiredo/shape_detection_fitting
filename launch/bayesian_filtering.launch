@@ -1,6 +1,6 @@
 <include file="$(find gazebo_simulation)/launch/start.launch">
    <arg name="world" value="$(find gazebo_simulation)/worlds/box.world"/>
 </include>
-<include file="$(find active_semantic_mapping)/launch/spawn_quadrotor.launch" >
+<include file="$(find shape_detection_fitting)/launch/spawn_quadrotor.launch" >
   <arg name="model" value="$(find gazebo_simulation)/urdf/ardrone_with_sonars.urdf.xacro"/>
 </include>

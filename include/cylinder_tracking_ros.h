@@ -1,7 +1,7 @@
 #include "visualization_msgs/MarkerArray.h"
 #include "multiple_tracker_manager.h"
 #include "sensor_msgs/CameraInfo.h"
-#include "active_semantic_mapping/Cylinders.h"
+#include "shape_detection_fitting/Cylinders.h"
 
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
@@ -62,7 +62,7 @@ class CylinderTrackingROS {
 	boost::shared_ptr<message_filters::Subscriber<std_msgs::Int32MultiArray> > cylinders_sub;
     	boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> >sync;*/
 
-  	void detectionsCallback (const active_semantic_mapping::Cylinders::ConstPtr & input_clusters);
+  	void detectionsCallback (const shape_detection_fitting::Cylinders::ConstPtr & input_clusters);
   	void odomCallback (const nav_msgs::Odometry::ConstPtr & odom);
 	bool addMeasurement(const tf::StampedTransform& meas, const Eigen::Matrix<double, 6, 6> & covar);
 	void decomposeTransform(const tf::Transform & trans_tf, Eigen::Matrix<double,6,1> & state_);

@@ -43,9 +43,9 @@ leaf_size: 0.03
 camera_info_topic: /camera/rgb/camera_info
 
 # CLASSIFIER PARAMS
-model_file: binary_classifier/train_val.prototxt
-weight_file: binary_classifier/train_iter_100.caffemodel
-mean_file: binary_classifier/mean.binaryproto
+model_file: lib/shape-classification/base_networks/train_val.prototxt
+weight_file: lib/shape-classification/base_networks/train_iter_100.caffemodel
+mean_file: lib/shape-classification/base_networks/mean.binaryproto
 device: GPU
 device_id: 1
 classification_threshold: 0.9

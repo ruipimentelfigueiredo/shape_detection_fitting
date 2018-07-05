@@ -12,7 +12,7 @@
 
 	<!--<param name="use_sim_time" value="true" />
   	<arg name="file_name" default="2017-02-01-18-45-50.bag"/>
-	<node pkg="rosbag" type="play" name="player" output="log" args="$(find active_semantic_mapping)/data/$(arg file_name)"/>-->
+	<node pkg="rosbag" type="play" name="player" output="log" args="$(find shape_detection_fitting)/data/$(arg file_name)"/>-->
 	<!-- RDBD camera -->
 
 	<!--<include file="$(find zed_wrapper)/launch/zed.launch">
@@ -117,18 +117,18 @@
 	<node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
 	<node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
 		<remap from="~input" to="/camera/depth/points" />
-		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
+		<rosparam file="$(find shape_detection_fitting)/config/config.yaml" command="load" />
 	</node>
 
 	<!-- ORK Tabletop segmentation -->
-       <node pkg="object_recognition_core" type="detection" name="object_detector" args="-c $(find active_semantic_mapping)/config/detection.table.ros.ork" respawn="true"/>
+       <node pkg="object_recognition_core" type="detection" name="object_detector" args="-c $(find shape_detection_fitting)/config/detection.table.ros.ork" respawn="true"/>
 
 	<!-- Cylinder segmentation -->
-	<include file="$(find active_semantic_mapping)/launch/cylinder_segmentation.launch">
+	<include file="$(find shape_detection_fitting)/launch/cylinder_segmentation.launch">
   		<arg name="image_in" value="$(arg image_in)"/>
   		<arg name="clusters_in" value="$(arg clusters_in)"/>
 	</include>  
 
 	<!-- Visualization -->
-	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find active_semantic_mapping)/rviz/$(arg rviz_file)"/>
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find shape_detection_fitting)/rviz/$(arg rviz_file)"/>
 </launch>

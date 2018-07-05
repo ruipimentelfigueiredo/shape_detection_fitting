@@ -5,7 +5,7 @@
 #include "cylinder_segmentation_ransac.h"
 #include "cylinder_segmentation_ros.h"
 
-namespace active_semantic_mapping
+namespace shape_detection_fitting
 {
 class CylinderSegmentationRosNodelet: public nodelet::Nodelet
 {

@@ -4,38 +4,39 @@
   	<arg name="clusters_in" default="/tabletop/clusters"/>
 
 	<!-- nodelet manager -->
-	<!--<node pkg="nodelet" type="nodelet" name="active_semantic_mapping" args="manager" respawn="true" output="screen"/>
+	<!--<node pkg="nodelet" type="nodelet" name="shape_detection_fitting" args="manager" respawn="true" output="screen"/>
 
-	<node pkg="nodelet" type="nodelet" name="cylinder_segmentation_ros" args="load active_semantic_mapping/CylinderSegmentationRosNodelet active_semantic_mapping" respawn="false" output="screen" >
+	<node pkg="nodelet" type="nodelet" name="cylinder_segmentation_ros" args="load shape_detection_fitting/CylinderSegmentationRosNodelet shape_detection_fitting" respawn="false" output="screen" >
 	        <remap from="image_in" to="$(arg image_in)"/>
 	        <remap from="clusters_in" to="$(arg clusters_in)"/>
-    		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
+    		<rosparam file="$(find shape_detection_fitting)/config/config.yaml" command="load" />
 	</node>-->
 
-	<!--<node pkg="nodelet" type="nodelet" name="cylinder_tracking_ros" args="load active_semantic_mapping/CylinderTrackingRosNodelet active_semantic_mapping" respawn="true" output="screen" >
+	<!--<node pkg="nodelet" type="nodelet" name="cylinder_tracking_ros" args="load shape_detection_fitting/CylinderTrackingRosNodelet shape_detection_fitting" respawn="true" output="screen" >
 	        <remap from="image_in" to="$(arg image_in)"/>
 	        <remap from="clusters_in" to="$(arg clusters_in)"/>
-    		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
+    		<rosparam file="$(find shape_detection_fitting)/config/config.yaml" command="load" />
 	</node>-->
 
 
-	<node pkg="active_semantic_mapping" type="cylinder_segmentation_ros_node" name="cylinder_segmentation" respawn="true" output="screen">
+	<node pkg="shape_detection_fitting" type="shape_detection_node" name="shape_segmentation" respawn="true" output="screen">
 	        <remap from="image_in" to="$(arg image_in)"/>
 	        <remap from="clusters_in" to="$(arg clusters_in)"/>
-		<param name="absolute_path_folder" type="str" value="$(find active_semantic_mapping)/files/" />
-    		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
+		<param name="absolute_path_folder" type="str" value="$(find shape_detection_fitting)/files/" />
+    		<rosparam file="$(find shape_detection_fitting)/config/config.yaml" command="load" />
 	</node>
-	<node pkg="active_semantic_mapping" type="cylinder_tracking_ros_node" name="cylinder_tracker" respawn="true" output="log">
+
+	<!--<node pkg="shape_detection_fitting" type="shape_tracking_node" name="shape_tracker" respawn="true" output="log">
 	        <remap from="image_in" to="$(arg image_in)"/>
 	        <remap from="clusters_in" to="$(arg clusters_in)"/>
-    		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
-	</node>
+    		<rosparam file="$(find shape_detection_fitting)/config/config.yaml" command="load" />
+	</node>-->
 	
-	<!--<node pkg="active_semantic_mapping" type="cylinder_test" name="cylinder_test" respawn="false" output="screen">
+	<!--<node pkg="shape_detection_fitting" type="cylinder_test" name="cylinder_test" respawn="false" output="screen">
 	        <remap from="image_in" to="$(arg image_in)"/>
 	        <remap from="clusters_in" to="$(arg clusters_in)"/>
-		<param name="absolute_path_folder" type="str" value="$(find active_semantic_mapping)/files/" />
-    		<rosparam file="$(find active_semantic_mapping)/config/config.yaml" command="load" />
+		<param name="absolute_path_folder" type="str" value="$(find shape_detection_fitting)/files/" />
+    		<rosparam file="$(find shape_detection_fitting)/config/config.yaml" command="load" />
 	</node>-->
 
 

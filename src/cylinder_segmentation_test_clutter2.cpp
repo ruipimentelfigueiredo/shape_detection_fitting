@@ -2,7 +2,7 @@
 #include <ctime>
 #include <tf/transform_broadcaster.h>
 #include <rosbag/view.h>
-#include <active_semantic_mapping/Cylinders.h>
+#include <shape_detection_fitting/Cylinders.h>
 #include <rosbag/bag.h>
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
@@ -95,11 +95,11 @@ int main (int argc, char** argv)
 	    	topics.push_back(std::string("ground_truth"));
 	    	rosbag::View view(bag, rosbag::TopicQuery(topics));
 
-		std::vector<active_semantic_mapping::Cylinders> ground_truths;
+		std::vector<shape_detection_fitting::Cylinders> ground_truths;
 	    	foreach(rosbag::MessageInstance const m, view)
 		{	
 
-			active_semantic_mapping::Cylinders::ConstPtr s = m.instantiate<active_semantic_mapping::Cylinders>();
+			shape_detection_fitting::Cylinders::ConstPtr s = m.instantiate<shape_detection_fitting::Cylinders>();
 			if (s == NULL)
 				continue;
 
@@ -163,7 +163,7 @@ int main (int argc, char** argv)
 					 fs_position<< "\n";
 				}
 
-				active_semantic_mapping::Cylinders ground_truth=ground_truths[ground_truth_index];
+				shape_detection_fitting::Cylinders ground_truth=ground_truths[ground_truth_index];
 
 				pcl::PointCloud<PointT>::Ptr point_cloud(new pcl::PointCloud<PointT>());
 				*point_cloud=*point_clouds[i];
