@@ -1,4 +1,11 @@
 # shape detection, fitting and tracking
+
+## Install
+1. First clone this repo and submodules git 
+
+'''
+git clone https://github.com/ruipimentelfigueiredo/shape_detection_fitting && submodule update --init --recursive
+''' 
 1. run modify_dataset.py:
 
 
