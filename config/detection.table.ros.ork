@@ -6,10 +6,10 @@ source1:
   #  
   parameters:
     rgb_frame_id: '/camera_rgb_frame'
-    rgb_image_topic: '/kinect2/sd/image_color_rect'
-    rgb_camera_info: '/kinect2/sd/camera_info'
-    depth_image_topic: '/kinect2/sd/image_depth_rect'
-    depth_camera_info: '/kinect2/sd/camera_info'
+    rgb_image_topic: '/kinect2/hd/image_color_rect'
+    rgb_camera_info: '/kinect2/hd/camera_info'
+    depth_image_topic: '/kinect2/hd/image_depth_rect'
+    depth_camera_info: '/kinect2/hd/camera_info'
     #
     crop_enabled: True
     x_min: -0.5
