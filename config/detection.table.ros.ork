@@ -5,7 +5,7 @@ source1:
   # Example parameters to set (the default settings are using the ros topics starting with /camera/....) 
   #  
   parameters:
-    rgb_frame_id: '/camera_rgb_optical_frame'
+    rgb_frame_id: '/camera_rgb_frame'
     rgb_image_topic: '/kinect2/sd/image_color_rect'
     rgb_camera_info: '/kinect2/sd/camera_info'
     depth_image_topic: '/kinect2/sd/image_depth_rect'

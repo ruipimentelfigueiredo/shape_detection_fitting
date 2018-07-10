@@ -43,7 +43,7 @@ leaf_size: 0.03
 camera_info_topic: /kinect2/sd/camera_info
 
 # CLASSIFIER PARAMS
-model_file: /lib/shape-classification/base_networks/squeezenet/train_val.prototxt
+model_file: /lib/shape-classification/base_networks/squeezenet/deploy.prototxt
 weight_file: /lib/shape-classification/base_networks/squeezenet/squeezenet_v1.1.caffemodel
 mean_file: /lib/shape-classification/dataset/mean.binaryproto
 device: GPU
