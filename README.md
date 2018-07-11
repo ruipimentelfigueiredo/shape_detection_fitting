@@ -15,8 +15,5 @@ cd .. && catkin_make
 ```
 
 ## Setup
-2. Download CNN files:
-
-```
-cd $SHAPE_DETECTION_FITTING/lib/shape-classification && bash scripts/download_models.sh
-```
+Follow the instructions in:
+https://github.com/ruipimentelfigueiredo/shape-classification
