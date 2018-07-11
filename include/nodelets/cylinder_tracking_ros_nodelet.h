@@ -3,7 +3,7 @@
 #include <nodelet/nodelet.h>
 #include "cylinder_tracking_ros.h"
 
-namespace active_semantic_mapping
+namespace shape_detection_fitting
 {
 class CylinderTrackingRosNodelet: public nodelet::Nodelet
 {

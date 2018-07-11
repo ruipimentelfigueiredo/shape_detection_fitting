@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>active_semantic_mapping</name>
+  <name>shape_detection_fitting</name>
   <version>0.0.0</version>
-  <description>The active_semantic_mapping package</description>
+  <description>The shape_detection_fitting package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/active_semantic_mapping</url> -->
+  <!-- <url type="website">http://wiki.ros.org/shape_detection_fitting</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
@@ -50,8 +50,7 @@
   <build_depend>nodelet</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>message_generation</build_depend>
-
-
+  <build_depend>bfl</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>message_filters</run_depend>
@@ -62,6 +61,8 @@
   <run_depend>nav_msgs</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>message_runtime</run_depend>
+  <run_depend>bfl</run_depend>
+
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <nodelet plugin="${prefix}/active_semantic_mapping_nodelets.xml"/>

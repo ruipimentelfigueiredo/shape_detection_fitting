@@ -1,10 +1,29 @@
+/*
+ *  Copyright (C) 2018 Rui Pimentel de Figueiredo
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *  
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*!    
+    \author Rui Figueiredo : ruipimentelfigueiredo
+*/
 #include "cylinder_segmentation_hough.h"
 #include "cylinder_segmentation_ransac.h"
 #include "visualization_msgs/MarkerArray.h"
-#include "multiple_tracker_manager.h"
+//#include "multiple_tracker_manager.h"
 #include "sensor_msgs/CameraInfo.h"
-#include "active_semantic_mapping/Clusters.h"
-#include "active_semantic_mapping/Cylinders.h"
+#include "shape_detection_fitting/Clusters.h"
+#include "shape_detection_fitting/Cylinders.h"
 
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
@@ -43,7 +62,7 @@ class CylinderSegmentationROS {
 
 
 	std::map<int, Color> id_colors_map;
-	MultipleTrackerManager tracker_manager;
+	//MultipleTrackerManager tracker_manager;
 	
 	
 	ros::NodeHandle n;
@@ -61,12 +80,12 @@ class CylinderSegmentationROS {
 	ros::Publisher vis_pub;
 
 
-	typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, active_semantic_mapping::Clusters> MySyncPolicy;
+	typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, shape_detection_fitting::Clusters> MySyncPolicy;
 	boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > image_sub;
-	boost::shared_ptr<message_filters::Subscriber<active_semantic_mapping::Clusters> > clusters_sub;
+	boost::shared_ptr<message_filters::Subscriber<shape_detection_fitting::Clusters> > clusters_sub;
     	boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> >sync;
 
-	void callback (const sensor_msgs::Image::ConstPtr& input_image, const active_semantic_mapping::Clusters::ConstPtr & input_clusters)
+	void callback (const sensor_msgs::Image::ConstPtr& input_image, const shape_detection_fitting::Clusters::ConstPtr & input_clusters)
 	{
 
 		static int scene_number=0;
@@ -128,7 +147,7 @@ class CylinderSegmentationROS {
 
 		// DETECT
 
-		active_semantic_mapping::Cylinders cylinders_msg;
+		shape_detection_fitting::Cylinders cylinders_msg;
 		cylinders_msg.header=input_clusters->header;
 
 		cylinders_msg.header.frame_id=input_clusters->header.frame_id;
@@ -175,7 +194,7 @@ class CylinderSegmentationROS {
 
 		//outputFile.close(); // clear flags
 		//outputFile.clear(); // clear flags
-		const clock_t fitting_end_time = clock();
+		//const clock_t fitting_end_time = clock();
 
 		//outputFile.open("/home/rui/fitting_time.txt", fstream::out | std::ofstream::app);
 
@@ -192,7 +211,7 @@ class CylinderSegmentationROS {
 	{	
 		if(input_clusters->markers.size()==0) return;
 
-		active_semantic_mapping::Clusters clusters;
+		shape_detection_fitting::Clusters clusters;
 		clusters.header=input_clusters->markers[0].header;
 		clusters.markers=*input_clusters;
 		cluster_pub.publish(clusters);
@@ -281,14 +300,14 @@ public:
 		
 
 		// Advertise cylinders
-		cylinders_pub = n.advertise<active_semantic_mapping::Cylinders>( "cylinders_detections", 1);
+		cylinders_pub = n.advertise<shape_detection_fitting::Cylinders>( "cylinders_detections", 1);
 		image_pub=n.advertise<sensor_msgs::Image >("cylinders_image", 1);
 
 		vis_pub=n.advertise<visualization_msgs::MarkerArray>("cylinder_detections_vis", 1);
 
 		// Subscribe to point cloud and planar segmentation
 		image_sub=boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > (new message_filters::Subscriber<sensor_msgs::Image>(n, "image_in", 10));
-		clusters_sub=boost::shared_ptr<message_filters::Subscriber<active_semantic_mapping::Clusters> > (new message_filters::Subscriber<active_semantic_mapping::Clusters>(n, "clusters_out_aux", 10));
+		clusters_sub=boost::shared_ptr<message_filters::Subscriber<shape_detection_fitting::Clusters> > (new message_filters::Subscriber<shape_detection_fitting::Clusters>(n, "clusters_out_aux", 10));
 
 
 		sync=boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > (new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), *image_sub, *clusters_sub));
@@ -296,7 +315,7 @@ public:
 
 		// Aux subscriber
 		cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
-		cluster_pub=n.advertise<active_semantic_mapping::Clusters>( "clusters_out_aux", 2);
+		cluster_pub=n.advertise<shape_detection_fitting::Clusters>( "clusters_out_aux", 2);
 
 
 		// Odom subscriber

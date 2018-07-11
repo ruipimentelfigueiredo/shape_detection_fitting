@@ -7,12 +7,12 @@
 
   	<arg name="cloud_out" default="cylinders_pcl"/>
   	<arg name="rviz_file" default="cylinders.rviz"/>
-      	<node pkg="active_semantic_mapping" type="cylinder_segmentation_test" name="cloud_publisher" args="$(find active_semantic_mapping)/data/$(arg file_name)" output="screen">
+      	<node pkg="shape_detection_fitting" type="cylinder_segmentation_test" name="cloud_publisher" args="$(find shape_detection_fitting)/data/$(arg file_name)" output="screen">
 	        <remap from="cloud_out" to="$(arg cloud_out)"/>
 	</node>
-	<!--<include file="$(find active_semantic_mapping)/launch/cylinder_segmentation.launch">
+	<!--<include file="$(find shape_detection_fitting)/launch/cylinder_segmentation.launch">
   		<arg name="cloud_in" value="$(arg cloud_out)"/>
 	</include> --> 
 
-	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find active_semantic_mapping)/rviz/$(arg rviz_file)"/>
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find shape_detection_fitting)/rviz/$(arg rviz_file)"/>
 </launch>

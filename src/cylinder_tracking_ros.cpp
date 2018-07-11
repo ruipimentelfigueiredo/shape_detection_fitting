@@ -29,7 +29,7 @@ CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) :
 
 
 	// Detector subscriber
-	cylinders_sub=n.subscribe<active_semantic_mapping::Cylinders> ("cylinders_detections", 10, &CylinderTrackingROS::detectionsCallback, this);
+	cylinders_sub=n.subscribe<shape_detection_fitting::Cylinders> ("cylinders_detections", 10, &CylinderTrackingROS::detectionsCallback, this);
 
 	// Odom subscriber
 	odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &CylinderTrackingROS::odomCallback, this);	
@@ -64,7 +64,7 @@ CylinderTrackingROS::CylinderTrackingROS(ros::NodeHandle & n_) :
 	filter_time=time;
 }*/
 
-void CylinderTrackingROS::detectionsCallback(const active_semantic_mapping::Cylinders::ConstPtr & input_clusters)
+void CylinderTrackingROS::detectionsCallback(const shape_detection_fitting::Cylinders::ConstPtr & input_clusters)
 {
 	unsigned int detections_num=input_clusters->cylinders.layout.dim[0].size;
 	std::vector<Eigen::VectorXd> detections_;

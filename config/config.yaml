@@ -40,14 +40,14 @@ filter_limit_max: 3.0
 filter_limit_negative: False
 leaf_size: 0.03
 
-camera_info_topic: /camera/rgb/camera_info
+camera_info_topic: /kinect2/hd/camera_info
 
 # CLASSIFIER PARAMS
-model_file: binary_classifier/train_val.prototxt
-weight_file: binary_classifier/train_iter_100.caffemodel
-mean_file: binary_classifier/mean.binaryproto
+model_file: /lib/shape-classification/base_networks/squeezenet/deploy.prototxt
+weight_file: /lib/shape-classification/base_networks/squeezenet/squeezenet_v1.1.caffemodel
+mean_file: /lib/shape-classification/dataset/mean.binaryproto
 device: GPU
 device_id: 1
-classification_threshold: 0.9
+classification_threshold: 0.2
 fitting_distance_threshold: 0.02
 fitting_acceptance_threshold: 0.5
