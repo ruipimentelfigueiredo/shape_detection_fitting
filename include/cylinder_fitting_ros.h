@@ -1,24 +1,20 @@
 /*
- *  Copyright (C) 2018 Rui Pimentel de Figueiredo
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *      
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+Copyright 2018 Rui Miguel Horta Pimentel de Figueiredo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-#include "cylinder_segmentation_hough.h"
-#include "cylinder_segmentation_ransac.h"
+#ifndef CYLINDERFITTINGROS_H
+#define CYLINDERFITTINGROS_H
+#include "cylinder_fitting_hough.h"
+#include "cylinder_fitting_ransac.h"
 #include "visualization_msgs/MarkerArray.h"
 //#include "multiple_tracker_manager.h"
 #include "sensor_msgs/CameraInfo.h"
@@ -50,7 +46,7 @@ class Color
 };
 
 template <class detector_type>
-class CylinderSegmentationROS {
+class CylinderFittingROS {
 
 	boost::shared_ptr<ShapeDetectionManager<detector_type> > shape_detection_manager;
 	ros::Time odom_last_stamp;
@@ -118,7 +114,7 @@ class CylinderSegmentationROS {
 		}
 
 		const clock_t begin_time = clock();
-		std::vector<CylinderFitting> detections=shape_detection_manager->detect(image_cv, pcl_clusters);
+		std::vector<FittingData> detections=shape_detection_manager->detect(image_cv, pcl_clusters);
 		ROS_INFO_STREAM("Cylinders fitting time: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<< " seconds");
 
 		//const clock_t classification_end_time = clock();
@@ -168,7 +164,7 @@ class CylinderSegmentationROS {
 		for(unsigned int ind=0; ind<detections.size();++ind)
 		{
 			unsigned int i=cylinder_indices[ind];
-			CylinderFitting cylinder_fitting=detections[ind];
+			FittingData cylinder_fitting=detections[ind];
 			Eigen::VectorXf model_params=cylinder_fitting.parameters;
 			double confidence=cylinder_fitting.confidence;
 
@@ -282,7 +278,7 @@ class CylinderSegmentationROS {
 
 public:
 
-	CylinderSegmentationROS(ros::NodeHandle & n_, ros::NodeHandle & n_priv_,boost::shared_ptr<ShapeDetectionManager<detector_type> > & shape_detection_manager_) : 
+	CylinderFittingROS(ros::NodeHandle & n_, ros::NodeHandle & n_priv_,boost::shared_ptr<ShapeDetectionManager<detector_type> > & shape_detection_manager_) : 
 		n(n_), 
 		n_priv(n_priv_),
 		shape_detection_manager(shape_detection_manager_),
@@ -305,22 +301,23 @@ public:
 
 		vis_pub=n.advertise<visualization_msgs::MarkerArray>("cylinder_detections_vis", 1);
 
-		// Subscribe to point cloud and planar segmentation
+		// Subscribe to point cloud and planar Fitting
 		image_sub=boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > (new message_filters::Subscriber<sensor_msgs::Image>(n, "image_in", 10));
 		clusters_sub=boost::shared_ptr<message_filters::Subscriber<shape_detection_fitting::Clusters> > (new message_filters::Subscriber<shape_detection_fitting::Clusters>(n, "clusters_out_aux", 10));
 
 
 		sync=boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > (new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), *image_sub, *clusters_sub));
-		sync->registerCallback(boost::bind(&CylinderSegmentationROS<detector_type>::callback, this, _1, _2));
+		sync->registerCallback(boost::bind(&CylinderFittingROS<detector_type>::callback, this, _1, _2));
 
 		// Aux subscriber
-		cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
+		cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderFittingROS::clusters_cb, this);
 		cluster_pub=n.advertise<shape_detection_fitting::Clusters>( "clusters_out_aux", 2);
 
 
 		// Odom subscriber
-		//odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &CylinderSegmentationROS::odomCallback, this);	
+		//odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &CylinderFittingROS::odomCallback, this);	
 	}
 
 };
 
+#endif // CYLINDERFITTINGROS_H
