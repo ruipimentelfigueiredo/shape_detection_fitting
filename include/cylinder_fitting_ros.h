@@ -1,5 +1,4 @@
 /*
-<<<<<<< HEAD:include/cylinder_fitting_ros.h
 Copyright 2018 Rui Miguel Horta Pimentel de Figueiredo
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -8,35 +7,14 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-=======
- *  Copyright (C) 2018 Rui Pimentel de Figueiredo
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *      
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
->>>>>>> f3bbdfdfd5727cc40ebf8d993b4f5938dae4cf30:include/cylinder_segmentation_ros.h
 
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-<<<<<<< HEAD:include/cylinder_fitting_ros.h
 #ifndef CYLINDERFITTINGROS_H
 #define CYLINDERFITTINGROS_H
 #include "cylinder_fitting_hough.h"
 #include "cylinder_fitting_ransac.h"
-=======
-#include "cylinder_segmentation_hough.h"
-#include "cylinder_segmentation_ransac.h"
->>>>>>> f3bbdfdfd5727cc40ebf8d993b4f5938dae4cf30:include/cylinder_segmentation_ros.h
 #include "visualization_msgs/MarkerArray.h"
 //#include "multiple_tracker_manager.h"
 #include "sensor_msgs/CameraInfo.h"
@@ -332,11 +310,7 @@ public:
 		sync->registerCallback(boost::bind(&CylinderFittingROS<detector_type>::callback, this, _1, _2));
 
 		// Aux subscriber
-<<<<<<< HEAD:include/cylinder_fitting_ros.h
 		cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderFittingROS::clusters_cb, this);
-=======
-		cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderSegmentationROS::clusters_cb, this);
->>>>>>> f3bbdfdfd5727cc40ebf8d993b4f5938dae4cf30:include/cylinder_segmentation_ros.h
 		cluster_pub=n.advertise<shape_detection_fitting::Clusters>( "clusters_out_aux", 2);
 
 
