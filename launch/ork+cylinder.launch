@@ -120,10 +120,11 @@
 	</node>
 
 	<!-- ORK Tabletop segmentation -->
+
         <node pkg="object_recognition_core" type="detection" name="object_detector" args="-c $(find shape_detection_fitting)/config/detection.table.ros.ork" respawn="false"/>
 
 	<!-- Cylinder segmentation -->
-	<include file="$(find shape_detection_fitting)/launch/cylinder_segmentation.launch" respawn="false" output="screen">
+	<include file="$(find shape_detection_fitting)/launch/cylinder_segmentation.launch" output="screen">
   		<arg name="image_in" value="$(arg image_in)"/>
   		<arg name="clusters_in" value="$(arg clusters_in)"/>
 	</include>

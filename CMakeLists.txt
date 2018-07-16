@@ -96,7 +96,7 @@ add_definitions(${PCL_DEFINITIONS})
 
 # ROS NODES
 add_executable (shape_detection_node src/cylinder_segmentation_ros_node.cpp)
-target_link_libraries (shape_detection_node ${catkin_LIBRARIES} ${Caffe_LIBS} -lglog cylinder_classifier cylinder_segmentation_hough cylinder_segmentation_ransac)
+target_link_libraries (shape_detection_node ${catkin_LIBRARIES} ${Caffe_LIBS} -lglog cylinder_classifier cylinder_fitting_hough cylinder_fitting_ransac sphere_fitting_hough)
 #add_dependencies(object_detection_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 add_dependencies(shape_detection_node ${PROJECT_NAME}_generate_messages_cpp)
 

@@ -1,4 +1,4 @@
-#include "cylinder_segmentation_ros.h"
+#include "cylinder_fitting_ros.h"
 
 int main (int argc, char** argv)
 {
@@ -75,7 +75,7 @@ int main (int argc, char** argv)
 	ROS_INFO_STREAM("min_radius: "<< min_radius);
 	ROS_INFO_STREAM("max_radius: "<< max_radius);
 
-	if (use_ransac)
+	/*if (use_ransac)
 	{
 		// Ransac params
 		double normal_distance_weight;
@@ -90,11 +90,13 @@ int main (int argc, char** argv)
 		ROS_INFO_STREAM("max_iterations: "<< max_iterations);
 		ROS_INFO_STREAM("distance_threshold: "<< distance_threshold);
 
-		boost::shared_ptr<CylinderSegmentationRansac> cylinder_segmentation(new CylinderSegmentationRansac((float)normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(float)min_radius, (float)max_radius));
+		boost::shared_ptr<CylinderFittingRansac> cylinder_fitting(new CylinderFittingRansac((float)normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(float)min_radius, (float)max_radius));
 
-	        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationRansac> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationRansac>(cylinder_classifier,cylinder_segmentation,cam_intrinsic,classification_threshold));
 
-		CylinderSegmentationROS<CylinderSegmentationRansac> cylinder_segmentation_ros(n, n_priv,shape_detection_manager);
+
+	        boost::shared_ptr<ShapeDetectionManager<CylinderFittingRansac> > shape_detection_manager(new ShapeDetectionManager<CylinderFittingRansac>(cylinder_classifier,cylinder_fitting,sphere_fitting,cam_intrinsic,classification_threshold));
+
+		CylinderFittingROS<CylinderFittingRansac> cylinder_fitting_ros(n, n_priv,shape_detection_manager);
 
 		while (ros::ok())
 		{
@@ -102,7 +104,7 @@ int main (int argc, char** argv)
 			loop_rate.sleep();
 		}
 	}
-	else
+	else*/
 	{
 		// Hough params
 		int angle_bins;
@@ -160,11 +162,13 @@ int main (int argc, char** argv)
 		GaussianMixtureModel gmm(weights, means, std_devs);
 		GaussianSphere gaussian_sphere(gmm,gaussian_sphere_points_num,orientation_accumulators_num);
 
-		boost::shared_ptr<CylinderSegmentationHough> cylinder_segmentation(new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,(unsigned int)mode));
+		boost::shared_ptr<SphereFittingHough> sphere_fitting(new SphereFittingHough(gaussian_sphere,(unsigned int)position_bins,(unsigned int)radius_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold));
 
-	        boost::shared_ptr<ShapeDetectionManager<CylinderSegmentationHough> > shape_detection_manager(new ShapeDetectionManager<CylinderSegmentationHough>(cylinder_classifier,cylinder_segmentation,cam_intrinsic,classification_threshold));
+		boost::shared_ptr<CylinderFittingHough> cylinder_fitting(new CylinderFittingHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,(unsigned int)mode));
 
-		CylinderSegmentationROS<CylinderSegmentationHough> cylinder_segmentation_ros(n, n_priv,shape_detection_manager);
+	        boost::shared_ptr<ShapeDetectionManager<CylinderFittingHough, SphereFittingHough> > shape_detection_manager(new ShapeDetectionManager<CylinderFittingHough,SphereFittingHough>(cylinder_classifier,cylinder_fitting,sphere_fitting,cam_intrinsic,classification_threshold));
+
+		CylinderFittingROS<CylinderFittingHough,SphereFittingHough> cylinder_fitting_ros(n, n_priv,shape_detection_manager);
 
 		while (ros::ok())
 		{

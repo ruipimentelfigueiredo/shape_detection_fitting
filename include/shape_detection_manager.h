@@ -1,35 +1,59 @@
+/*
+Copyright 2018 Rui Miguel Horta Pimentel de Figueiredo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+/*!    
+    \author Rui Figueiredo : ruipimentelfigueiredo
+*/
+#ifndef SHAPEDETECTIONMANAGER_H
+#define SHAPEDETECTIONMANAGER_H
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/point_types.h>
-
-template <class detector_type>
+#include "cylinder_fitting_hough.h"
+#include "cylinder_fitting_ransac.h"
+#include "sphere_fitting_hough.h"
+template <class cylinder_detector_type, class sphere_detector_type>
 class ShapeDetectionManager
 {
-	boost::shared_ptr<detector_type> cylinder_fitting;
 	boost::shared_ptr<CylinderClassifier> cylinder_classifier;
-	double classification_threshold;
+	boost::shared_ptr<cylinder_detector_type> cylinder_fitting;
+	boost::shared_ptr<sphere_detector_type> sphere_fitting;
+
  	const Eigen::Matrix4f cam_intrinsic;
+	double classification_threshold;
+
 
 	public:
 		ShapeDetectionManager(
 			boost::shared_ptr<CylinderClassifier> & cylinder_classifier_, 
-			boost::shared_ptr<detector_type> & cylinder_fitting_, 
+			boost::shared_ptr<cylinder_detector_type> & cylinder_fitting_, 
+			boost::shared_ptr<sphere_detector_type> & sphere_fitting_, 
 			const Eigen::Matrix4f & cam_intrinsic_, 
 			const double & classification_threshold_) :
 				cylinder_classifier(cylinder_classifier_), 
 				cylinder_fitting(cylinder_fitting_),
+				sphere_fitting(sphere_fitting_),
 	 			cam_intrinsic(cam_intrinsic_),
 				classification_threshold(classification_threshold_)
 		{};
 	
-		std::vector<CylinderFitting> detect(cv::Mat & image_cv, std::vector<PointCloudT::Ptr> & pcl_clusters)
+		std::vector<FittingData> detect(cv::Mat & image_cv, std::vector<PointCloudT::Ptr> & pcl_clusters)
 		{
 			std::vector<cv::Rect> clusters_bboxes;
 			clusters_bboxes.reserve(pcl_clusters.size());
-			std::vector<int> cylinder_indices;
-			cylinder_indices.reserve(pcl_clusters.size());
+			std::vector<int> shape_indices;
+			shape_indices.reserve(pcl_clusters.size());
+			std::vector<FittingData> shape_fitting_data; shape_fitting_data.resize(pcl_clusters.size());
 			std::vector<PointCloudT::Ptr> clusters_point_clouds;
 			clusters_point_clouds.reserve(pcl_clusters.size());
+
 			for(unsigned int i=0; i<pcl_clusters.size();++i)
 			{
 				PointCloudT::Ptr cloud_filtered (new PointCloudT);
@@ -85,20 +109,24 @@ class ShapeDetectionManager
 				// Classify
 				cv::Mat roi = image_cv(rect);
 				float confidence=cylinder_classifier->classify(roi);
-				ROS_ERROR_STREAM("CLASSIFICATION CONFIDENCE:"<<confidence << " " <<classification_threshold);
+				//ROS_ERROR_STREAM("CLASSIFICATION CONFIDENCE:"<<confidence << " " <<classification_threshold);
 				if(confidence>classification_threshold)
 				{
-					cylinder_indices.push_back(i);
+					shape_indices.push_back(i);
+					shape_fitting_data[i].type=FittingData::CYLINDER;
 
 					// Visualization
 					cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,255,0), 4);
 				}
 				else
 				{
+					shape_indices.push_back(i);
+					shape_fitting_data[i].type=FittingData::SPHERE;
+
 					// Visualization
 					cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,0,255), 4);
 				}
-				
+
 
 				// dataset creation
 				/*cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
@@ -110,12 +138,22 @@ class ShapeDetectionManager
 
 			}
 
-			std::vector<CylinderFitting> cylinders;
-			for(unsigned int ind=0; ind<cylinder_indices.size();++ind)
+			std::vector<FittingData> shapes;
+			for(unsigned int ind=0; ind<shape_fitting_data.size();++ind)
 			{
-				cylinders.push_back(cylinder_fitting->segment(clusters_point_clouds[cylinder_indices[ind]]));
+				if(shape_fitting_data[ind].type==FittingData::CYLINDER)
+				{
+					shapes.push_back(cylinder_fitting->fit(clusters_point_clouds[shape_indices[ind]]));
+				}
+				else
+				{
+					shapes.push_back(sphere_fitting->fit(clusters_point_clouds[shape_indices[ind]]));
+				}
+
 			}
 
-			return cylinders;
+			return shapes;
 		}
 };
+
+#endif // SHAPEDETECTIONMANAGER_H
