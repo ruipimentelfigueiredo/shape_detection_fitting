@@ -18,7 +18,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 //#include "multiple_tracker_manager.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "shape_detection_fitting/Clusters.h"
-#include "shape_detection_fitting/Cylinders.h"
+#include "shape_detection_fitting/Shapes.h"
 
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
@@ -66,7 +66,7 @@ class CylinderFittingROS {
 	ros::Subscriber point_cloud_sub;
 
 	double fitting_acceptance_threshold;
-	ros::Publisher cylinders_pub;
+	ros::Publisher shapes_pub;
 	ros::Publisher image_pub;
 
 	// Aux pub
@@ -138,24 +138,12 @@ class CylinderFittingROS {
 		marker_.action = 3;
 		markers_.markers.push_back(marker_);
 		
-
-
 		// DETECT
 
-		shape_detection_fitting::Cylinders cylinders_msg;
-		cylinders_msg.header=input_clusters->header;
+		shape_detection_fitting::Shapes shapes_msg;
+		shapes_msg.header=input_clusters->header;
 
-		cylinders_msg.header.frame_id=input_clusters->header.frame_id;
-
-		cylinders_msg.cylinders.layout.dim.resize(2);
-		cylinders_msg.cylinders.layout.dim[0].label  = "cylinders";
-		cylinders_msg.cylinders.layout.dim[0].size   = 0;
-		cylinders_msg.cylinders.layout.dim[0].stride = 0;
-		cylinders_msg.cylinders.layout.dim[1].label  = "parameters";
-		cylinders_msg.cylinders.layout.dim[1].size   = 8;
-		cylinders_msg.cylinders.layout.dim[1].stride = 8;
-
-
+		shapes_msg.header.frame_id=input_clusters->header.frame_id;
 
 		std::string detections_frame_id=input_clusters->header.frame_id;
 		//outputFile.open("/home/rui/fitting_quality_cylinders.txt", fstream::out | std::ofstream::app);
@@ -175,17 +163,24 @@ class CylinderFittingROS {
 			else
 				color_=id_colors_map.find(1)->second;
 			//outputFile <<  std::fixed << std::setprecision(4)<< confidence<< std::endl;
-			visualization_msgs::Marker marker=createMarker(model_params,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_detections_namespace_);
+			visualization_msgs::Marker marker=createCylinderMarker(model_params,visualization_msgs::Marker::CYLINDER,detections_frame_id, color_, i, marker_detections_namespace_);
 			markers_.markers.push_back(marker);
 
-
+			shape_detection_fitting::Shape shape;
+			shape.parameters.layout.dim.resize(2);
+			shape.parameters.layout.dim[0].label  = "shape";
+			shape.parameters.layout.dim[0].size   = 0;
+			shape.parameters.layout.dim[0].stride = 0;
+			shape.parameters.layout.dim[1].label  = "parameters";
+			shape.parameters.layout.dim[1].size   = model_params.size();
+			shape.parameters.layout.dim[1].stride = model_params.size();
 			for(unsigned int p=0; p<model_params.size();++p)
 			{
-				cylinders_msg.cylinders.data.push_back((float)model_params[p]);
+				shape.parameters.data.push_back((float)model_params[p]);
 			}
-	
-			cylinders_msg.cylinders.layout.dim[0].size+=1;
-			cylinders_msg.cylinders.layout.dim[0].stride+= model_params.size();
+			shapes_msg.shapes.push_back(shape);
+			//shapes_msg.shapes.layout.dim[0].size+=1;
+			//shapes_msg.shapes.layout.dim[0].stride+= model_params.size();
 		}
 
 		//outputFile.close(); // clear flags
@@ -200,7 +195,7 @@ class CylinderFittingROS {
 
 
 		vis_pub.publish( markers_ );
-		cylinders_pub.publish(cylinders_msg);
+		shapes_pub.publish(shapes_msg);
 	}
 
 	void clusters_cb (const visualization_msgs::MarkerArray::ConstPtr& input_clusters)
@@ -223,7 +218,7 @@ class CylinderFittingROS {
 	}
 
 
-	visualization_msgs::Marker createMarker(const Eigen::VectorXf & model_params, int model_type, const std::string & frame, Color & color_, int id, const std::string & marker_namespace_)
+	visualization_msgs::Marker createCylinderMarker(const Eigen::VectorXf & model_params, int model_type, const std::string & frame, Color & color_, int id, const std::string & marker_namespace_)
 	{
 		// Convert direction vector to quaternion
 		tf::Vector3 axis_vector(model_params[3], model_params[4], model_params[5]);
@@ -296,10 +291,10 @@ public:
 		
 
 		// Advertise cylinders
-		cylinders_pub = n.advertise<shape_detection_fitting::Cylinders>( "cylinders_detections", 1);
-		image_pub=n.advertise<sensor_msgs::Image >("cylinders_image", 1);
+		shapes_pub = n.advertise<shape_detection_fitting::Shapes>( "shapes_detections", 1);
+		image_pub=n.advertise<sensor_msgs::Image >("shapes_image", 1);
 
-		vis_pub=n.advertise<visualization_msgs::MarkerArray>("cylinder_detections_vis", 1);
+		vis_pub=n.advertise<visualization_msgs::MarkerArray>("shape_detections_vis", 1);
 
 		// Subscribe to point cloud and planar Fitting
 		image_sub=boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > (new message_filters::Subscriber<sensor_msgs::Image>(n, "image_in", 10));

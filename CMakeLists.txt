@@ -40,7 +40,8 @@ find_package(Boost COMPONENTS system filesystem regex REQUIRED)
    BoundingBoxArray.msg
    TestParameters.msg
    Clusters.msg
-   Cylinders.msg
+   Shape.msg
+   Shapes.msg
 )
 
 generate_messages(
@@ -60,7 +61,7 @@ catkin_package(
 ## Build ##
 ###########
 
-SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11")
+SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11 -Wno-deprecated-declarations -Wno-sign-compare")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 
 ## Declare a C++ library
