@@ -1,9 +1,6 @@
 [submodule "lib/tracking"]
 	path = lib/tracking
 	url = https://github.com/joao-avelino/Tracking
-[submodule "lib/shape-tracking"]
-	path = lib/shape-tracking
-	url = https://github.com/ruipimentelfigueiredo/shape-tracking
 [submodule "lib/shape-classification"]
 	path = lib/shape-classification
 	url = https://github.com/ruipimentelfigueiredo/shape-classification
