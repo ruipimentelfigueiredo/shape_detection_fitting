@@ -51,7 +51,14 @@ cd .. && catkin_make
 Follow the instructions in:
 https://github.com/ruipimentelfigueiredo/shape-classification
 
+## Config
+Set the appropriate parameters and ROS topic names in the files inside config/ and launch/ folders.
 
+## Demo
+
+```
+roslaunch shape_detection_fitting ork+cylinder.launch
+```
 
 ## Reference
 In case you use our library in your research, please cite our work
