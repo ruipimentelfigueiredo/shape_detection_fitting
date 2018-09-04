@@ -5,9 +5,10 @@ project(shape_detection_fitting)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 
-
+SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -Wno-comment -std=c++11 -faligned-new")
 find_package(catkin REQUIRED COMPONENTS
   #find_object_2d
+  cmake_modules
   roscpp
   message_filters
   visualization_msgs
@@ -20,15 +21,14 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   message_generation
 )
-
+find_package(TinyXML REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 find_package(Caffe REQUIRED)
 # bfl (Bayesian Filtering Library) is a third party package that uses pkg-config
-find_package(PkgConfig)
-pkg_check_modules(BFL REQUIRED orocos-bfl)
+#find_package(PkgConfig)
 
-include_directories(${BFL_INCLUDE_DIRS})
-link_directories(${BFL_LIBRARY_DIRS})
+#pkg_check_modules(BFL REQUIRED orocos-bfl)
+#link_directories(${BFL_LIBRARY_DIRS})
 
 #find_package(OpenCV 3.4 REQUIRED)
 find_package(Boost COMPONENTS system filesystem regex REQUIRED)
@@ -55,13 +55,16 @@ catkin_package(
 #  LIBRARIES shape_detection_fitting
 #  CATKIN_DEPENDS find_object_2d roscpp
 #  DEPENDS system_lib
+    DEPENDS
+      TinyXML
 )
+
 
 ###########
 ## Build ##
 ###########
 
-SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11 -Wno-deprecated-declarations -Wno-sign-compare")
+SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11 -Wno-comment -Wno-deprecated-declarations -Wno-sign-compare -faligned-new")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 
 ## Declare a C++ library
@@ -70,23 +73,25 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 # )
 
 set(SHAPE_DETECTION_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-classification)
-include_directories(${SHAPE_DETECTION_DIR}/include)
 add_subdirectory(${SHAPE_DETECTION_DIR})
 
 set(SHAPE_FITTING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-fitting)
-include_directories(${SHAPE_FITTING_DIR}/include)
 add_subdirectory(${SHAPE_FITTING_DIR})
 
 #set(SHAPE_TRACKING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-tracking)
-#include_directories(${SHAPE_TRACKING_DIR}/include)
 #add_subdirectory(${SHAPE_TRACKING_DIR})
 
 
 include_directories(
   include
+  ${SHAPE_DETECTION_DIR}/include
+  ${SHAPE_FITTING_DIR}/include
+  ${SHAPE_FITTING_DIR}/test
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
-  ${Caffe_INCLUDE_DIRS})
+  ${Caffe_INCLUDE_DIRS}
+  #${BFL_INCLUDE_DIRS}
+  ${TinyXML_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
@@ -96,20 +101,18 @@ add_definitions(${PCL_DEFINITIONS})
 #add_dependencies(cylinder_tracking_ros ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 # ROS NODES
-add_executable (shape_detection_node src/cylinder_segmentation_ros_node.cpp)
-target_link_libraries (shape_detection_node ${catkin_LIBRARIES} ${Caffe_LIBS} -lglog cylinder_classifier cylinder_fitting_hough cylinder_fitting_ransac sphere_fitting_hough)
-#add_dependencies(object_detection_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-add_dependencies(shape_detection_node ${PROJECT_NAME}_generate_messages_cpp)
+add_executable (shape_detection_fitting_ros_node src/shape_detection_fitting_ros_node.cpp)
+target_link_libraries (shape_detection_fitting_ros_node ${catkin_LIBRARIES} ${Caffe_LIBS} -lglog fitting_library shape_classifier)
+add_dependencies(shape_detection_fitting_ros_node shape_detection_fitting_ros_node_generate_messages_cpp)
 
 #add_executable (tracking_ros_node src/particle_filter_node.cpp)
 #target_link_libraries (tracking_ros_node ${catkin_LIBRARIES} ${BFL_LIBRARIES} particle_filter)
 
 #ROS NODELETS
 # Nodelet library
-#add_library(cylinder_segmentation_ros_nodelet src/nodelets/cylinder_segmentation_ros_nodelet.cpp)
-#target_link_libraries (cylinder_segmentation_ros_nodelet ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_ransac cylinder_segmentation_hough cylinder_classifier)
-
-#add_dependencies(cylinder_segmentation_ros_nodelet cylinder_segmentation_ros_gencpp)
+add_library(shape_detection_fitting_ros_nodelet src/nodelets/shape_detection_fitting_ros_nodelet.cpp)
+target_link_libraries (shape_detection_fitting_ros_nodelet ${catkin_LIBRARIES} ${Caffe_LIBS} -lglog fitting_library shape_classifier)
+add_dependencies(shape_detection_fitting_ros_nodelet shape_detection_fitting_ros_nodelet_gencpp)
 
 #install(TARGETS cylinder_segmentation_ros_nodelet
 #        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -127,11 +130,9 @@ add_dependencies(shape_detection_node ${PROJECT_NAME}_generate_messages_cpp)
 #)
 
 # TESTS
-#add_executable(cylinder_generation src/cylinder_generation.cpp)
-#target_link_libraries(cylinder_generation ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
-#add_executable(cylinder_fitting_test src/cylinder_fitting_test.cpp)
-#target_link_libraries(cylinder_fitting_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough cylinder_segmentation_ransac)
+add_executable(tabletop_test test/shapes_2018.cpp)
+target_link_libraries(tabletop_test ${catkin_LIBRARIES} ${TinyXML_LIBRARIES} ${Caffe_LIBS} -lglog fitting_library shape_classifier)
 
 #add_executable (cylinder_segmentation_test_clutter src/cylinder_segmentation_test_clutter.cpp)
 #target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
@@ -163,50 +164,4 @@ add_dependencies(shape_detection_node ${PROJECT_NAME}_generate_messages_cpp)
 #   ${catkin_LIBRARIES}
 # )
 
-#############
-## Install ##
-#############
 
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark executables and/or libraries for installation
-# install(TARGETS shape_detection_fitting shape_detection_fitting_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
-
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
-
-#############
-## Testing ##
-#############
-
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_shape_detection_fitting.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)

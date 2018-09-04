@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+	<!-- tabletop test -->
+	<node pkg="shape_detection_fitting" type="tabletop_test" name="tabletop_test" output="screen">
+		<param name="dataset_path" type="string" value="$(find shape_detection_fitting)/dataset"/>
+	</node>
+</launch>

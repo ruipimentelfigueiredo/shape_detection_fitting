@@ -11,8 +11,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-#ifndef CYLINDERFITTINGROS_H
-#define CYLINDERFITTINGROS_H
+#ifndef SHAPEFITTINGROS_H
+#define SHAPEFITTINGROS_H
 
 #include "visualization_msgs/MarkerArray.h"
 //#include "multiple_tracker_manager.h"
@@ -45,7 +45,7 @@ class Color
 };
 
 template <class cylinder_detector_type,class sphere_detector_type>
-class CylinderFittingROS {
+class ShapeFittingROS {
 
 
 	ros::Time odom_last_stamp;
@@ -273,7 +273,7 @@ class CylinderFittingROS {
 
 public:
 
-	CylinderFittingROS(ros::NodeHandle & n_, ros::NodeHandle & n_priv_,boost::shared_ptr<ShapeDetectionManager<cylinder_detector_type,sphere_detector_type> > & shape_detection_manager_) : 
+	ShapeFittingROS(ros::NodeHandle & n_, ros::NodeHandle & n_priv_,boost::shared_ptr<ShapeDetectionManager<cylinder_detector_type,sphere_detector_type> > & shape_detection_manager_) : 
 		n(n_), 
 		n_priv(n_priv_),
 		shape_detection_manager(shape_detection_manager_),
@@ -302,17 +302,17 @@ public:
 
 
 		sync=boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > (new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), *image_sub, *clusters_sub));
-		sync->registerCallback(boost::bind(&CylinderFittingROS<cylinder_detector_type,sphere_detector_type>::callback, this, _1, _2));
+		sync->registerCallback(boost::bind(&ShapeFittingROS<cylinder_detector_type,sphere_detector_type>::callback, this, _1, _2));
 
 		// Aux subscriber
-		cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &CylinderFittingROS::clusters_cb, this);
+		cluster_sub=n.subscribe<visualization_msgs::MarkerArray> ("clusters_in", 1, &ShapeFittingROS::clusters_cb, this);
 		cluster_pub=n.advertise<shape_detection_fitting::Clusters>( "clusters_out_aux", 2);
 
 
 		// Odom subscriber
-		//odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &CylinderFittingROS::odomCallback, this);	
+		//odom_sub=n.subscribe<nav_msgs::Odometry> ("odom", 1, &ShapeFittingROS::odomCallback, this);	
 	}
 
 };
 
-#endif // CYLINDERFITTINGROS_H
+#endif // SHAPEFITTINGROS_H
