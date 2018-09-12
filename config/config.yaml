@@ -1,37 +1,47 @@
 use_ransac: false
 
 # common
-min_radius: 0.03
-max_radius: 0.09
+min_radius: 0.02
+max_radius: 0.10
+do_refine: false
+
+z_filter_min: 0.4
+z_filter_max: 1.0
 
 # hough
-
 angle_bins: 30
 radius_bins: 10
 position_bins: 20
 mode: 2
 accumulator_peak_threshold: 0.5
-gaussian_sphere_points_num: 600
+gaussian_sphere_points_num: 500
 orientation_accumulators_num: 10
-#orientation hough space
+
 orientation_hough_gmm:
   -
     id: 1
     weight: 0.5
-    mean: [ 0.0, 0.0, 1.0]
-    standard_deviation: [ 0.1, 0.1, 1.0]
+    mean: [0.0, 0.0,1.0]
+    standard_deviation: [0.05,0.05,0.05]
   -
     id: 2
     weight: 0.5
-    mean: [ 0.0, 0.0, 0.0]
-    standard_deviation: [ 1.0, 1.0, 0.1]
+    mean: [0.0,0.0,0.0]
+    standard_deviation: [1.0,1.0,0.005]
 
 
 # ransac
 normal_distance_weight: 0.1
 max_iterations: 10000
 distance_threshold: 0.05
-
+cluster_tolerance: 0.02
+min_cluster_size: 40
+max_cluster_size: 5000
+table_z_filter_min: 0.015
+table_z_filter_max: 0.35
+plane_detection_voxel_size: 0.05
+cluster_voxel_size: 0.005
+inlier_threshold: 10
 
 # voxel grid
 filter_field_name: z
@@ -43,13 +53,18 @@ leaf_size: 0.03
 camera_info_topic: /kinect2/hd/camera_info
 
 # CLASSIFIER PARAMS
-
+classifier_absolute_path_folder: /home/rui/ws/src/shape_detection_fitting
 model_file: /lib/shape-classification/base_networks/squeezenet/deploy.prototxt
 weight_file: /lib/shape-classification/base_networks/squeezenet/squeezenet_v1.1.caffemodel
 mean_file: /lib/shape-classification/dataset/mean.binaryproto
 
 device: GPU
 device_id: 1
-classification_threshold: 0.2
+classification_threshold: 0.5
 fitting_distance_threshold: 0.02
 fitting_acceptance_threshold: 0.5
+padding: 0.1
+
+with_classifier: true
+visualize: true
+
