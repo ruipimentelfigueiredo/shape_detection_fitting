@@ -13,12 +13,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 #ifndef SHAPEDETECTIONMANAGER_H
 #define SHAPEDETECTIONMANAGER_H
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
+
 #include <pcl/point_types.h>
+#include "cylinder_classifier.h"
 #include "cylinder_fitting_hough.h"
 #include "cylinder_fitting_ransac.h"
 #include "sphere_fitting_hough.h"
+#include "plane_fitting_ransac.h"
+#include "detection_data.h"
+
 template <class cylinder_detector_type, class sphere_detector_type>
 class ShapeDetectionManager
 {
@@ -26,53 +29,57 @@ class ShapeDetectionManager
 	boost::shared_ptr<cylinder_detector_type> cylinder_fitting;
 	boost::shared_ptr<sphere_detector_type> sphere_fitting;
 
- 	const Eigen::Matrix4f cam_intrinsic;
+ 	const Eigen::Matrix4f cam_projection_matrix;
 	double classification_threshold;
-
+	float padding;
+	bool dataset_create;
+	std::string path;
+	unsigned int scene_number;
 
 	public:
 		ShapeDetectionManager(
 			boost::shared_ptr<CylinderClassifier> & cylinder_classifier_, 
 			boost::shared_ptr<cylinder_detector_type> & cylinder_fitting_, 
 			boost::shared_ptr<sphere_detector_type> & sphere_fitting_, 
-			const Eigen::Matrix4f & cam_intrinsic_, 
-			const double & classification_threshold_) :
+			const Eigen::Matrix4f & cam_projection_matrix_, 
+			const double & classification_threshold_,
+			double padding_=0.1,
+			std::string path_="~") :
 				cylinder_classifier(cylinder_classifier_), 
 				cylinder_fitting(cylinder_fitting_),
 				sphere_fitting(sphere_fitting_),
-	 			cam_intrinsic(cam_intrinsic_),
-				classification_threshold(classification_threshold_)
+	 			cam_projection_matrix(cam_projection_matrix_),
+				classification_threshold(classification_threshold_),
+				padding(padding_),
+				dataset_create(false),
+				path(path_),
+				scene_number(0)
 		{};
 	
-		std::vector<FittingData> detect(cv::Mat & image_cv, std::vector<PointCloudT::Ptr> & pcl_clusters)
+		DetectionData detect(cv::Mat & image_cv, std::vector<PointCloudT::Ptr> & pcl_clusters,FittingData & plane_fitting_data, std::vector<long int> & durations=std::vector<long int>())
 		{
-			std::vector<cv::Rect> clusters_bboxes;
-			clusters_bboxes.reserve(pcl_clusters.size());
-			std::vector<int> shape_indices;
-			shape_indices.reserve(pcl_clusters.size());
 			std::vector<FittingData> shape_fitting_data; shape_fitting_data.resize(pcl_clusters.size());
-			std::vector<PointCloudT::Ptr> clusters_point_clouds;
-			clusters_point_clouds.reserve(pcl_clusters.size());
+			std::chrono::high_resolution_clock::time_point t1;
+			std::chrono::high_resolution_clock::time_point t2;
+			std::vector<cv::Rect> bounding_boxes;
+			if(dataset_create)
+			{
+				++scene_number;
+			}
 
+			/* BACKPROJECT CLUSTERS AND CLASSIFY */
 			for(unsigned int i=0; i<pcl_clusters.size();++i)
 			{
-				PointCloudT::Ptr cloud_filtered (new PointCloudT);
-
-				// Create the filtering object
-				pcl::VoxelGrid<PointT> sor;
-				sor.setInputCloud(pcl_clusters[i]);
-				sor.setLeafSize(0.005f, 0.005f, 0.005f);
-				sor.filter(*cloud_filtered);
-				//cloud_filtered->header.frame_id="table";
-				clusters_point_clouds.push_back(cloud_filtered);
 
 				///////////////////////////
 				// Get 2d bounding boxes //
 				///////////////////////////
 
+				t1 = std::chrono::high_resolution_clock::now();
+
 				// Get XY max and min and construct image
 				PointCloudT::Ptr cloud_projected(new PointCloudT);
-		  		pcl::transformPointCloud (*cloud_filtered, *cloud_projected, cam_intrinsic);
+		  		pcl::transformPointCloud (*pcl_clusters[i], *cloud_projected, cam_projection_matrix);
 
 				for (unsigned int p=0; p<cloud_projected->points.size();++p)
 				{	
@@ -85,11 +92,10 @@ class ShapeDetectionManager
 				Eigen::Vector4f min_pt,max_pt;
 				pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
 
-				float padding =0.1;
 				float width=max_pt[0]-min_pt[0];
 				float height=max_pt[1]-min_pt[1];
 	
-				// PAD
+				// begin pad
 				float width_padding=0.5*padding*width;
 				float height_padding=0.5*padding*height;
 
@@ -97,62 +103,79 @@ class ShapeDetectionManager
 				(min_pt[1]-height_padding) <0 ? min_pt[1]=0 : min_pt[1]-=height_padding;
 
 				(max_pt[0]+width_padding)  >(image_cv.cols-1) ? max_pt[0]=(image_cv.cols-1)  : max_pt[0]+=width_padding;
-				(max_pt[1]+height_padding) >(image_cv.rows-1) ? max_pt[1]=(image_cv.rows-1) : max_pt[1]+=height_padding;
+				(max_pt[1]+height_padding) >(image_cv.rows-1) ? max_pt[1]=(image_cv.rows-1)  : max_pt[1]+=height_padding;
 		
 				width=max_pt[0]-min_pt[0];
 				height=max_pt[1]-min_pt[1];
 				// end pad
 
-				cv::Rect rect(min_pt[0], min_pt[1], width, height);
-				clusters_bboxes.push_back(rect);
-
 				// Classify
+				cv::Rect rect(min_pt[0], min_pt[1], width, height);
 				cv::Mat roi = image_cv(rect);
-				float confidence=cylinder_classifier->classify(roi);
-				//ROS_ERROR_STREAM("CLASSIFICATION CONFIDENCE:"<<confidence << " " <<classification_threshold);
+
+				try
+				{
+					bounding_boxes.push_back(rect);
+				}
+				catch (cv::Exception& e) 
+				{
+					std::cout << e.what() << std::endl;
+					continue;
+				}
+
+				//float confidence=cylinder_classifier->classify(roi);
+				float confidence=1.0;
+
 				if(confidence>classification_threshold)
 				{
-					shape_indices.push_back(i);
 					shape_fitting_data[i].type=FittingData::CYLINDER;
-
-					// Visualization
-					cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,255,0), 4);
 				}
 				else
 				{
-					shape_indices.push_back(i);
 					shape_fitting_data[i].type=FittingData::SPHERE;
-
-					// Visualization
-					cv::rectangle(image_cv, cv::Point(min_pt[0],min_pt[1]), cv::Point(max_pt[0],max_pt[1]), cv::Scalar(0,0,255), 4);
 				}
 
-
-				// dataset creation
-				/*cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
-				cv::imshow( "Display window", roi );                   // Show our image inside it.
-				cv::waitKey(0);*/ 
-
-				//if((image_number%5)==0)
-				//imwrite("/home/rui/sphere/sphere.scene."+std::to_string(scene_number)+".cluster."+std::to_string(i)+".jpg", image_cv(rect) );
+				t2 = std::chrono::high_resolution_clock::now();
+				durations.push_back(std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count());
+				if(dataset_create)
+				{
+					cv::imwrite(path+std::string("/sphere.scene.")+std::to_string(scene_number)+std::string(".cluster.")+std::to_string(i)+std::string(".jpg"), image_cv(rect));
+				}
 
 			}
+			/* END BACKPROJECT CLUSTERS AND CLASSIFY */
 
-			std::vector<FittingData> shapes;
+			/* CLUSTERS FITTING */
+			Eigen::Affine3d plane_transform =plane_fitting_data.computeReferenceFrame();
+			std::vector<FittingData> clusters_fitting_data;
+			t1 = std::chrono::high_resolution_clock::now();
 			for(unsigned int ind=0; ind<shape_fitting_data.size();++ind)
 			{
 				if(shape_fitting_data[ind].type==FittingData::CYLINDER)
 				{
-					shapes.push_back(cylinder_fitting->fit(clusters_point_clouds[shape_indices[ind]]));
+					PointCloudT::Ptr cloud_projected(new PointCloudT);
+			  		pcl::transformPointCloud (*pcl_clusters[ind], *cloud_projected, plane_transform.inverse());
+					clusters_fitting_data.push_back(cylinder_fitting->fit(cloud_projected));
+
+					Eigen::Vector3f position=clusters_fitting_data[ind].parameters.segment(0,3);
+					Eigen::Vector3f direction=clusters_fitting_data[ind].parameters.segment(3,3);
+
+					clusters_fitting_data[ind].parameters.segment(0,3)=(plane_transform.linear().cast<float>()*position).cast<float>();
+					clusters_fitting_data[ind].parameters.segment(3,3)=(plane_transform.rotation().cast<float>()*direction).cast<float>();
 				}
-				else
+				else if(shape_fitting_data[ind].type==FittingData::SPHERE)
 				{
-					shapes.push_back(sphere_fitting->fit(clusters_point_clouds[shape_indices[ind]]));
+					clusters_fitting_data.push_back(sphere_fitting->fit(pcl_clusters[ind]));
 				}
+				else 
+					continue;
 
 			}
+			t2 = std::chrono::high_resolution_clock::now();
+			durations.push_back(std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count());
+			/* END CLUSTERS FITTING */
 
-			return shapes;
+			return DetectionData(plane_fitting_data,clusters_fitting_data,bounding_boxes);
 		}
 };
 
