@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+	<!-- rviz file -->
+	<arg name="rviz_file" default="shapes.rviz"/>
+
+	<!-- shape detection -->
+	<node pkg="shape_detection_fitting" type="shape_detection_fitting_ros_node" name="shape_detection_fitting" output="screen">
+		<param name="config_file" value="$(find shape_detection_fitting)/config/config.yaml"/>
+    		<remap from="/pcl_in" to="/camera/depth/points" />
+    		<remap from="/image_in" to="/camera/rgb/image_rect_color" />
+	</node>
+
+	<!-- visualization -->
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find shape_detection_fitting)/rviz/$(arg rviz_file)"/>
+</launch>
+
