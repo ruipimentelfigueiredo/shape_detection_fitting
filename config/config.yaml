@@ -1,8 +1,8 @@
 use_ransac: false
 
 # common
-min_radius: 0.05
-max_radius: 0.10
+min_radius: 0.03
+max_radius: 0.08
 do_refine: true
 
 x_filter_min: -0.4
@@ -11,35 +11,41 @@ x_filter_max: 0.4
 z_filter_min: 0.4
 z_filter_max: 1.0
 
-# hough
+# hough cylinder fitting
 angle_bins: 30
 radius_bins: 10
 position_bins: 20
-mode: 2
+hough_fitting_mode: 2 # normal - 0, hybrid - 2
 accumulator_peak_threshold: 0.5
-gaussian_sphere_points_num: 500
-orientation_accumulators_num: 10
+gaussian_sphere_points_num: 1000
+orientation_accumulators_num: 30
 
 orientation_hough_gmm:
   -
     id: 1
-    weight: 0.5
+    weight: 0.33
     mean: [0.0, 0.0,1.0]
-    standard_deviation: [0.05,0.05,0.05]
+    standard_deviation: [0.005,0.005,0.005]
   -
     id: 2
-    weight: 0.5
+    weight: 0.33
     mean: [0.0,0.0,0.0]
-    standard_deviation: [1.0,1.0,0.005]
+    standard_deviation: [0.05,0.05,0.005]
+  -
+    id: 3
+    weight: 0.33
+    mean: [0.0,0.0,0.0]
+    standard_deviation: [0.05,0.05,0.05]
+  
 
-# ransac
-normal_distance_weight: 0.1
+# ransac plane fitting
+normal_distance_weight: 0.3
 max_iterations: 10000
 distance_threshold: 0.02
 cluster_tolerance: 0.02
-min_cluster_size: 200
-max_cluster_size: 8000
-table_z_filter_min: 0.01
+min_cluster_size: 100
+max_cluster_size: 2000
+table_z_filter_min: 0.03
 table_z_filter_max: 0.4
 plane_detection_voxel_size: 0.05
 cluster_voxel_size: 0.005
@@ -47,28 +53,30 @@ inlier_threshold: 10
 
 # voxel grid
 filter_field_name: z
-filter_limit_min: 0.015
-filter_limit_max: 3.0
-filter_limit_negative: False
-leaf_size: 0.03
-camera_info_topic: /kinect2/hd/camera_info
+filter_limit_min: 0.5
+filter_limit_max: 1.0
 
-# CLASSIFIER PARAMS
+# classifier
 classifier_absolute_path_folder: /home/rui/ws/src/shape_detection_fitting
 model_file: /lib/shape-classification/base_networks/squeezenet/deploy.prototxt
 weight_file: /lib/shape-classification/base_networks/squeezenet/squeezenet_v1.1.caffemodel
 mean_file: /lib/shape-classification/dataset/mean.binaryproto
 
 device: GPU
-device_id: 1
+device_id: 0
 classification_threshold: 0.5
 fitting_distance_threshold: 0.02
-fitting_acceptance_threshold: 0.5
-padding: 0.0
+padding: 0.1
 
-with_classifier: false
+with_classifier: true
 visualize: false
+visualize_ground_truth: true
 
+# acquire dataset
+dataset_create: false
+dataset_path: /home/rui/dataset
+object_type: cylinder
+## CAMERA PARAMS
 
 # KINECT V1
 #camera_matrix: [-1.0607072507083330e+03,0.,9.5635447181548398e+02,0.,1.0586083263054650e+03,5.3997844298824486e+02,0.,0.,1.]

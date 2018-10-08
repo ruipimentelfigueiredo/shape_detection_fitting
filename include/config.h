@@ -17,7 +17,7 @@ class Config
 
 	// Classifier parameters
 	double classification_threshold;
-	std::string classifier_absolute_path_folder,model_file, weight_file, mean_file, device;
+	std::string classifier_absolute_path_folder,model_file, weight_file, mean_file, device, dataset_path, object_type;
 	int device_id;
 
 	// Hough
@@ -43,16 +43,14 @@ class Config
 	// projection padding
 	double padding;
 
-	int mode;
+	int hough_fitting_mode;
 	double accumulator_peak_threshold;
 	int gaussian_sphere_points_num;
 	int orientation_accumulators_num;
 
 	double fitting_distance_threshold;
-	double fitting_acceptance_threshold;
 
-	bool visualize;
-	bool with_classifier;
+	bool visualize, visualize_ground_truth, with_classifier, dataset_create;
 
 	GaussianMixtureModel gmm;
 	Eigen::Matrix3f cameraColorMatrix;
@@ -103,7 +101,7 @@ class Config
 			// projection padding
 			padding=config["padding"].as<double>();
 
-			mode=config["mode"].as<int>();
+			hough_fitting_mode=config["hough_fitting_mode"].as<int>();
 			accumulator_peak_threshold=config["accumulator_peak_threshold"].as<double>();
 			gaussian_sphere_points_num=config["gaussian_sphere_points_num"].as<int>();
 			orientation_accumulators_num=config["orientation_accumulators_num"].as<int>();
@@ -111,6 +109,7 @@ class Config
 			std::vector<Eigen::Matrix<double, 3 ,1> > means;
     			std::vector<Eigen::Matrix<double, 3 ,1> > std_devs;
 			std::vector<double> weights;
+
 			YAML::Node orientation_hough_gmms = config["orientation_hough_gmm"];
 			for (std::size_t i = 0; i < orientation_hough_gmms.size(); ++i) 
 			{
@@ -131,7 +130,6 @@ class Config
 				for (std::size_t j=0;j<node_std_devs.size();++j)
 				{
 					std_dev_eigen(j)=node_std_devs[j].as<double>();
-
 				}
 
 				std_devs.push_back(std_dev_eigen);
@@ -139,14 +137,13 @@ class Config
 			gmm=GaussianMixtureModel(weights, means, std_devs);
 
 			fitting_distance_threshold=config["fitting_distance_threshold"].as<double>();
-			fitting_acceptance_threshold=config["fitting_acceptance_threshold"].as<double>();
 
 			visualize=config["visualize"].as<bool>();
+			visualize_ground_truth=config["visualize_ground_truth"].as<bool>();
 			with_classifier=config["with_classifier"].as<bool>();
 
 			// camera rgb parameters
 			YAML::Node cameraColorMatrix_ = config["camera_matrix"];
-
 			for (std::size_t j=0;j<cameraColorMatrix_.size();++j)
 			{
 				cameraColorMatrix(j)=cameraColorMatrix_[j].as<float>();
@@ -159,7 +156,6 @@ class Config
 			{
 				rotation(j)=rotation_[j].as<float>();
 			}
-
 			rotation.transposeInPlace();
 
 			YAML::Node translation_ = config["translation"];
@@ -168,7 +164,7 @@ class Config
 				translation(j)=translation_[j].as<float>();
 			}
 
-			Eigen::Matrix4f extrinsics = Eigen::Matrix<float,4,4>::Identity();
+			Eigen::Matrix4f extrinsics=Eigen::Matrix<float,4,4>::Identity();
 			extrinsics.block(0,0,3,3)=rotation;
 			extrinsics.block(0,3,3,1)=translation;
 			Eigen::Matrix<float,3,4> projection_matrix_3d_2d = Eigen::Matrix<float,3,4>::Zero();
@@ -176,7 +172,9 @@ class Config
     			cam_projection = Eigen::Matrix4f::Identity();
 			cam_projection.block(0,0,3,4)=cameraColorMatrix*projection_matrix_3d_2d*extrinsics;
 
-    			//undistort(InputArray src, OutputArray dst, InputArray cameraMatrix, InputArray distCoeffs, InputArray newCameraMatrix=noArray() )
+			dataset_create=config["dataset_create"].as<bool>();
+			dataset_path=config["dataset_path"].as<std::string>();
+			object_type=config["object_type"].as<std::string>();
 		}
 		catch (YAML::Exception& yamlException)
 		{
@@ -218,16 +216,18 @@ class Config
 
 		os << "padding: " << ft.padding << " " << std::endl;  
 
-		os << "mode: " << ft.mode << " " << std::endl;   
+		os << "hough_fitting_mode: " << ft.hough_fitting_mode << " " << std::endl;   
+		os << "dataset_create: " << ft.dataset_create << " " << std::endl;   
 
 		os << "accumulator_peak_threshold: " << ft.accumulator_peak_threshold << " " << std::endl;    
 		os << "gaussian_sphere_points_num: " << ft.gaussian_sphere_points_num << " " << std::endl;    
 		os << "orientation_accumulators_num: " << ft.orientation_accumulators_num << " " << std::endl;  
 
 		os << "fitting_distance_threshold: " << ft.fitting_distance_threshold << " " << std::endl;    
-		os << "fitting_acceptance_threshold: " << ft.fitting_acceptance_threshold << " " << std::endl;    
-		os << "visualize: " << ft.visualize << " " << std::endl;    
+		os << "visualize: " << ft.visualize << " " << std::endl; 
+		os << "visualize_ground_truth: " << ft.visualize_ground_truth << " " << std::endl;   
 		os << "with_classifier: " << ft.with_classifier << " " << std::endl;    
+
 		return os;  
 	} 
 };

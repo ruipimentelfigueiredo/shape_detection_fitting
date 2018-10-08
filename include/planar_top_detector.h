@@ -29,37 +29,47 @@ class PlanarTopDetector
 	boost::shared_ptr<plane_detector_type> plane_fitting;
 	pcl::VoxelGrid<PointT> grid_;
 	double clustering_voxel_size,z_filter_min,z_filter_max;
-	bool with_classifier;
-	bool visualize;
+	bool with_classifier, visualize, dataset_create;
+	std::string dataset_path, object_type; 
 
 	public:
 		PlanarTopDetector(
-			boost::shared_ptr<plane_detector_type> & plane_fitting_, 
-			boost::shared_ptr<CylinderClassifier> & cylinder_classifier_, 
-			boost::shared_ptr<cylinder_detector_type> & cylinder_fitting_, 
-			boost::shared_ptr<sphere_detector_type> & sphere_fitting_, 
-			const Eigen::Matrix4f & cam_projection_, 
-			const double & classification_threshold_,
-			double padding_=0.1,
-			double clustering_voxel_size_=0.01,
-			double z_filter_min_=0.05,
-			double z_filter_max_=5.0,
-			bool with_classifier_=false,
-			bool visualize_=true) : 
+				boost::shared_ptr<plane_detector_type> & plane_fitting_, 
+				boost::shared_ptr<CylinderClassifier> & cylinder_classifier_, 
+				boost::shared_ptr<cylinder_detector_type> & cylinder_fitting_, 
+				boost::shared_ptr<sphere_detector_type> & sphere_fitting_, 
+				const Eigen::Matrix4f & cam_projection_, 
+				const double & classification_threshold_,
+				double padding_=0.1,
+				double clustering_voxel_size_=0.01,
+				double z_filter_min_=0.05,
+				double z_filter_max_=5.0,
+				bool with_classifier_=false,
+				bool visualize_=true,
+				bool dataset_create_=false,
+				std::string dataset_path_="default_path",
+				std::string object_type_="cylinder"
+			) : 
 				shape_detection_manager(new ShapeDetectionManager<cylinder_detector_type, sphere_detector_type>(
 					cylinder_classifier_, 
 					cylinder_fitting_,
 					sphere_fitting_,
 		 			cam_projection_,
 					classification_threshold_,
-					padding_)),
+					padding_,
+					with_classifier_,
+					dataset_create_,
+					dataset_path_,
+					object_type_)),
 				plane_fitting(plane_fitting_),
 				clustering_voxel_size(clustering_voxel_size_),
 				z_filter_min(z_filter_min_),
 				z_filter_max(z_filter_max_),
 				with_classifier(with_classifier_),
-				visualize(visualize_)
-
+				visualize(visualize_),
+				dataset_create(dataset_create_),
+				dataset_path(dataset_path_),
+				object_type(object_type_)
 		{
 			// Filtering parameters
 			grid_.setLeafSize (clustering_voxel_size, clustering_voxel_size, clustering_voxel_size);
@@ -87,20 +97,14 @@ class PlanarTopDetector
 			t1 = std::chrono::high_resolution_clock::now();
 			plane_fitting->extractTabletopClusters(point_cloud, clusters_point_clouds);
 			t2 = std::chrono::high_resolution_clock::now();
-			/* END CLUSTER EXTRACTION */
-
 			long int cluster_extraction_duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
 			durations.push_back(cluster_extraction_duration);
+			/* END CLUSTER EXTRACTION */
 
 			/* CLASSIFICATION + FITTING */
-			t1 = std::chrono::high_resolution_clock::now();
-			DetectionData detections=shape_detection_manager->detect(image, clusters_point_clouds,plane_model_params, durations);
-			t2 = std::chrono::high_resolution_clock::now();
+			DetectionData detections=shape_detection_manager->detect(image, clusters_point_clouds, plane_model_params, durations);
 			/* END CLASSIFICATION + FITTING */
 
-			long int detection_duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
-			durations.push_back(detection_duration);
-			
 			/* VISUALIZE */
 			if(visualize)
 			{
@@ -120,5 +124,5 @@ class PlanarTopDetector
 			return detections;
 		}
 };
-
 #endif // TABLE_TOP_DETECTOR_H
+

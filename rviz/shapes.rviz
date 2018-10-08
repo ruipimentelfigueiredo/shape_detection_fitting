@@ -59,7 +59,7 @@ Visualization Manager:
       Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
-      Invert Rainbow: false
+      Invert Rainbow: true
       Max Color: 255; 255; 255
       Max Intensity: 4096
       Min Color: 0; 0; 0
@@ -81,7 +81,7 @@ Visualization Manager:
       Marker Topic: /shape_detections_vis
       Name: shape_markers
       Namespaces:
-        detections: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Image
@@ -121,25 +121,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.876633167
+      Distance: 0.644697547
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 0.0257878229
+        Y: -0.0800255761
+        Z: 0.388640791
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -1.56979632
+      Pitch: -1.54979634
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.70858145
+      Yaw: 4.73857498
     Saved: ~
 Window Geometry:
   Displays:

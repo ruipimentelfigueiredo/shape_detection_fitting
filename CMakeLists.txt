@@ -5,7 +5,7 @@ project(shape_detection_fitting)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 
-SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11 -Wno-comment -Wno-deprecated-declarations -Wno-sign-compare")  #-faligned-new
+SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11 -Wno-comment -Wno-deprecated-declarations -Wno-sign-compare -Wunused-function")  #-faligned-new
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 set(ROS TRUE)
@@ -80,7 +80,7 @@ if(${ROS})
 
 	# ROS NODES
 	add_executable(shape_detection_fitting_ros_node src/shape_detection_fitting_ros_node.cpp)
-	target_link_libraries(shape_detection_fitting_ros_node ${catkin_LIBRARIES} ${Caffe_LIBS} ${TinyXML_LIBRARY} ${YAML_CPP_LIBRARIES} -lglog fitting_library shape_classifier)
+	target_link_libraries(shape_detection_fitting_ros_node ${catkin_LIBRARIES} ${Caffe_LIBS} ${TinyXML_LIBRARY} ${YAML_CPP_LIBRARIES} ${OpenCV_LIBS} -lglog fitting_library shape_classifier)
 	add_dependencies(shape_detection_fitting_ros_node shape_detection_fitting_ros_node_generate_messages_cpp)
 
 	#ROS NODELETS
