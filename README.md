@@ -33,9 +33,9 @@ roslaunch shape_detection_fitting shape_detection_fitting.launch
 
 ## Generating a new dataset
 
-1. set the flag ```dataset_create``` to true, inside ```config/config.yaml``` file, and select desired ```dataset_path``` and ```object_type```
+First, set the flag ```dataset_create``` to true, inside ```config/config.yaml``` file, and select desired ```dataset_path``` and ```object_type```
 
-2. 
+Then, run:
 
 ```
 roslaunch shape_detection_fitting shape_detection_fitting.launch
