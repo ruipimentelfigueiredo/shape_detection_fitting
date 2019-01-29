@@ -10,6 +10,7 @@ z_filter_min: 0.0
 z_filter_max: 1.8
 
 # hough cylinder fitting
+
 angle_bins: 30
 radius_bins: 20
 position_bins: 20
@@ -36,9 +37,11 @@ orientation_hough_gmm:
     standard_deviation: [0.05,0.05,0.0005]
   
 
+
 # ransac plane fitting
 normal_distance_weight: 0.3
 max_iterations: 10000
+
 distance_threshold: 0.03 # not used
 angular_threshold: 5.0 # in degrees
 cluster_tolerance: 0.1
@@ -88,3 +91,5 @@ rotation: [1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0]
 translation: [-0.015,0.0,0.0]
 
 visualize_ground_truth: false
+
+

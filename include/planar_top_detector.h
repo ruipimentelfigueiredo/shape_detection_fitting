@@ -13,7 +13,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 #ifndef PLANAR_TOP_DETECTOR_H
 #define PLANAR_TOP_DETECTOR_H
+
 #include <pcl/filters/statistical_outlier_removal.h>
+
+
 #include <pcl/point_types.h>
 #include "cylinder_classifier.h"
 #include "cylinder_fitting_hough.h"
@@ -140,6 +143,7 @@ class PlanarTopDetector
 				std::string errorMessage = e.what();
 				throw std::runtime_error(errorMessage);
 			}
+
 			/* END PLANE FITTING */
 
 			long int plane_fitting_duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
@@ -161,6 +165,7 @@ class PlanarTopDetector
 
 			/* VISUALIZE */
 			if(visualize && visualizer!=NULL)
+
 			{
 				visualizer->removeCoordinateSystems();
 				visualizer->addCoordinateSystem(0.3,plane_model_params.computeReferenceFrame(),std::to_string(plane_model_params.id)+"_reference_frame");
@@ -173,6 +178,7 @@ class PlanarTopDetector
 					detections.clusters_fitting_data[d].visualize(visualizer);
 				}
 			}
+
 			/* END VISUALIZE */
 
 			return detections;

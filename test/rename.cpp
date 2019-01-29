@@ -64,10 +64,10 @@ int main (int argc, char** argv)
 	std::cout << "path: " << path << std::endl;
 	std::vector<std::string> filenames;
 
-
 	std::string images_path=path+"images/";
 	std::string point_clouds_path=path+"point_clouds/";
 	std::string annotations_path=path+"annotations/";
+
 	std::cout << images_path << std::endl;
 	unsigned int offset=0;
 	//images

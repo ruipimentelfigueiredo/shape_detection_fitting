@@ -17,6 +17,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <boost/filesystem.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <tf/tf.h>
@@ -116,6 +117,7 @@ visualization_msgs::Marker createCylinderMarker(const Eigen::VectorXf &model_par
 
 	return marker;
 }
+
 
 std::vector<GroundTruthDetection> parseGroundTruth(std::string file, boost::shared_ptr<TiXmlDocument> doc)
 {

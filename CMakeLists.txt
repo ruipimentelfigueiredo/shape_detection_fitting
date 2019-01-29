@@ -30,8 +30,7 @@ include_directories(
   ${Caffe_INCLUDE_DIRS}
   ${YAML_CPP_INCLUDE_DIR}
 )
-#link_directories(${PCL_LIBRARY_DIRS})
-#add_definitions(${PCL_DEFINITIONS})
+
 
 if(${ROS})
 	find_package(catkin REQUIRED COMPONENTS
@@ -52,7 +51,6 @@ if(${ROS})
 	#find_package(OpenCV 3.4 REQUIRED)
 	find_package(Boost COMPONENTS system filesystem regex REQUIRED)
 
-	## Generate messages in the 'msg' folder
 	add_message_files(
 	   FILES
 	   BoundingBox.msg
@@ -92,6 +90,7 @@ if(${ROS})
 	target_link_libraries(planar_top_test ${OpenCV_LIBS} ${TinyXML_LIBRARY} ${YAML_CPP_LIBRARIES} ${catkin_LIBRARIES} fitting_library shape_classifier)
 endif(${ROS})
 
+
 #set(SHAPE_TRACKING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-tracking)
 #add_subdirectory(${SHAPE_TRACKING_DIR})
 
@@ -122,5 +121,6 @@ target_link_libraries(ply_to_pcd ${PCL_LIBRARIES})
 
 add_executable(rename test/rename.cpp)
 target_link_libraries(rename ${PCL_LIBRARIES})
+
 
 
