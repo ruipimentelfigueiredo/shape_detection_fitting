@@ -27,6 +27,7 @@ class Config
 
 	double distance_threshold;
 	double cluster_tolerance;
+	double angular_threshold;
 
 	int min_cluster_size;
 	int max_cluster_size;
@@ -34,8 +35,13 @@ class Config
 
 	double table_z_filter_min;
 	double table_z_filter_max;
+
+	double x_filter_min;
+	double x_filter_max;
+
 	double z_filter_min;
 	double z_filter_max;
+
 	double plane_detection_voxel_size;
 	double cluster_voxel_size;
 	int inlier_threshold;
@@ -44,11 +50,12 @@ class Config
 	double padding;
 
 	int hough_fitting_mode;
+	bool soft_voting;
 	double accumulator_peak_threshold;
 	int gaussian_sphere_points_num;
 	int orientation_accumulators_num;
 
-	double fitting_distance_threshold;
+	double fitting_threshold;
 
 	bool visualize, visualize_ground_truth, with_classifier, dataset_create;
 
@@ -85,6 +92,7 @@ class Config
 
 			distance_threshold=config["distance_threshold"].as<double>();
 			cluster_tolerance=config["cluster_tolerance"].as<double>();
+			angular_threshold=config["angular_threshold"].as<double>();
 
 			min_cluster_size=config["min_cluster_size"].as<int>();
 			max_cluster_size=config["max_cluster_size"].as<int>();
@@ -94,6 +102,10 @@ class Config
 			table_z_filter_max=config["table_z_filter_max"].as<double>();
 			z_filter_min=config["z_filter_min"].as<double>();
 			z_filter_max=config["z_filter_max"].as<double>();
+			
+			x_filter_min=config["x_filter_min"].as<double>();
+			x_filter_max=config["x_filter_max"].as<double>();
+
 			plane_detection_voxel_size=config["plane_detection_voxel_size"].as<double>();
 			cluster_voxel_size=config["cluster_voxel_size"].as<double>();
 			inlier_threshold=config["inlier_threshold"].as<int>();
@@ -102,12 +114,14 @@ class Config
 			padding=config["padding"].as<double>();
 
 			hough_fitting_mode=config["hough_fitting_mode"].as<int>();
+			soft_voting=config["soft_voting"].as<bool>();
+
 			accumulator_peak_threshold=config["accumulator_peak_threshold"].as<double>();
 			gaussian_sphere_points_num=config["gaussian_sphere_points_num"].as<int>();
 			orientation_accumulators_num=config["orientation_accumulators_num"].as<int>();
 
 			std::vector<Eigen::Matrix<double, 3 ,1> > means;
-    			std::vector<Eigen::Matrix<double, 3 ,1> > std_devs;
+			std::vector<Eigen::Matrix<double, 3 ,1> > std_devs;
 			std::vector<double> weights;
 
 			YAML::Node orientation_hough_gmms = config["orientation_hough_gmm"];
@@ -136,9 +150,10 @@ class Config
 			}
 			gmm=GaussianMixtureModel(weights, means, std_devs);
 
-			fitting_distance_threshold=config["fitting_distance_threshold"].as<double>();
+			fitting_threshold=config["fitting_threshold"].as<double>();
 
 			visualize=config["visualize"].as<bool>();
+
 			visualize_ground_truth=config["visualize_ground_truth"].as<bool>();
 			with_classifier=config["with_classifier"].as<bool>();
 
@@ -169,7 +184,7 @@ class Config
 			extrinsics.block(0,3,3,1)=translation;
 			Eigen::Matrix<float,3,4> projection_matrix_3d_2d = Eigen::Matrix<float,3,4>::Zero();
 			projection_matrix_3d_2d(0,0)=projection_matrix_3d_2d(1,1)=projection_matrix_3d_2d(2,2)=1.0;
-    			cam_projection = Eigen::Matrix4f::Identity();
+			cam_projection = Eigen::Matrix4f::Identity();
 			cam_projection.block(0,0,3,4)=cameraColorMatrix*projection_matrix_3d_2d*extrinsics;
 
 			dataset_create=config["dataset_create"].as<bool>();
@@ -206,7 +221,11 @@ class Config
 
 		os << "do_refine: " << ft.do_refine << " " << std::endl;  
 		os << "table_z_filter_min: " << ft.table_z_filter_min << " " << std::endl;   
-		os << "table_z_filter_max: " << ft.table_z_filter_max << " " << std::endl;    
+		os << "table_z_filter_max: " << ft.table_z_filter_max << " " << std::endl;   
+
+		os << "x_filter_min: " << ft.x_filter_min << " " << std::endl;  
+		os << "x_filter_max: " << ft.x_filter_max << " " << std::endl;
+
 		os << "z_filter_min: " << ft.z_filter_min << " " << std::endl;  
 		os << "z_filter_max: " << ft.z_filter_max << " " << std::endl;    
 
@@ -217,13 +236,15 @@ class Config
 		os << "padding: " << ft.padding << " " << std::endl;  
 
 		os << "hough_fitting_mode: " << ft.hough_fitting_mode << " " << std::endl;   
+		os << "soft_voting: " << ft.soft_voting << " " << std::endl;   
+
 		os << "dataset_create: " << ft.dataset_create << " " << std::endl;   
 
 		os << "accumulator_peak_threshold: " << ft.accumulator_peak_threshold << " " << std::endl;    
 		os << "gaussian_sphere_points_num: " << ft.gaussian_sphere_points_num << " " << std::endl;    
 		os << "orientation_accumulators_num: " << ft.orientation_accumulators_num << " " << std::endl;  
 
-		os << "fitting_distance_threshold: " << ft.fitting_distance_threshold << " " << std::endl;    
+		os << "fitting_threshold: " << ft.fitting_threshold << " " << std::endl;    
 		os << "visualize: " << ft.visualize << " " << std::endl; 
 		os << "visualize_ground_truth: " << ft.visualize_ground_truth << " " << std::endl;   
 		os << "with_classifier: " << ft.with_classifier << " " << std::endl;    

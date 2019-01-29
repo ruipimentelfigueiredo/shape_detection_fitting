@@ -35,17 +35,31 @@ int main (int argc, char** argv)
 
 	boost::shared_ptr<CylinderClassifier> cylinder_classifier;
 	//if(config.with_classifier)
-		cylinder_classifier=boost::shared_ptr<CylinderClassifier> (new CylinderClassifier(config.classifier_absolute_path_folder,config.model_file,config.weight_file,config.mean_file,config.device,(unsigned int)config.device_id));
+	cylinder_classifier=boost::shared_ptr<CylinderClassifier> (new CylinderClassifier(config.classifier_absolute_path_folder,config.model_file,config.weight_file,config.mean_file,config.device,(unsigned int)config.device_id));
 
 	GaussianSphere gaussian_sphere(config.gmm,config.gaussian_sphere_points_num,config.orientation_accumulators_num);
 
-	boost::shared_ptr<PlaneFittingRansac> plane_fitting(new PlaneFittingRansac(config.distance_threshold,config.cluster_tolerance,config.min_cluster_size,config.max_cluster_size,config.do_refine,config.table_z_filter_min,config.table_z_filter_max,config.z_filter_min, config.z_filter_max,config.plane_detection_voxel_size, config.cluster_voxel_size,config.inlier_threshold));
+	boost::shared_ptr<PlaneFittingRansac> plane_fitting(new PlaneFittingRansac(
+		config.distance_threshold,
+		config.cluster_tolerance,
+		config.min_cluster_size,
+		config.max_cluster_size,
+		config.do_refine,
+		config.table_z_filter_min,
+		config.table_z_filter_max,
+		config.z_filter_min, 
+		config.z_filter_max,
+		config.plane_detection_voxel_size,
+		config.cluster_voxel_size,
+		config.inlier_threshold,
+		config.angular_threshold));
 
 	boost::shared_ptr<SphereFittingHough> sphere_fitting(new SphereFittingHough(gaussian_sphere,config.position_bins,config.radius_bins,config.min_radius, config.max_radius,config.accumulator_peak_threshold));
 
-	boost::shared_ptr<CylinderFittingHough> cylinder_fitting(new CylinderFittingHough(gaussian_sphere,config.angle_bins,config.radius_bins,config.position_bins,config.min_radius, config.max_radius,config.accumulator_peak_threshold,config.hough_fitting_mode, false, true));
+	boost::shared_ptr<CylinderFittingHough> cylinder_fitting(new CylinderFittingHough(gaussian_sphere,config.angle_bins,config.radius_bins,config.position_bins,config.min_radius, config.max_radius,config.accumulator_peak_threshold,config.hough_fitting_mode, false, config.soft_voting));
 
-	boost::shared_ptr<PlanarTopDetector<CylinderFittingHough,SphereFittingHough,PlaneFittingRansac> > planar_top_detector(new PlanarTopDetector<CylinderFittingHough, SphereFittingHough, PlaneFittingRansac>(	plane_fitting, 
+	boost::shared_ptr<PlanarTopDetector<CylinderFittingHough,SphereFittingHough,PlaneFittingRansac> > planar_top_detector(new PlanarTopDetector<CylinderFittingHough, SphereFittingHough, PlaneFittingRansac>(	
+			plane_fitting, 
 			cylinder_classifier, 
 			cylinder_fitting, 
 			sphere_fitting, 
@@ -53,6 +67,8 @@ int main (int argc, char** argv)
 			config.classification_threshold,
 			config.padding, 
 			config.cluster_voxel_size, 
+			config.x_filter_min, 
+			config.x_filter_max, 
 			config.z_filter_min, 
 			config.z_filter_max, 
 			config.with_classifier,
@@ -61,14 +77,20 @@ int main (int argc, char** argv)
 			config.dataset_path,
 			config.object_type
 			));
+	
+	FittingData::fitting_threshold=config.fitting_threshold;
 
-	ShapeFittingROS<CylinderFittingHough,SphereFittingHough,PlaneFittingRansac> shape_fitting_ros(n, n_priv, planar_top_detector);
+	ShapeFittingROS<CylinderFittingHough,SphereFittingHough,PlaneFittingRansac> shape_fitting_ros(
+		n,
+		n_priv,
+		planar_top_detector,
+		config.dataset_create,
+		config.x_filter_min,
+		config.x_filter_max,
+		config.z_filter_min,
+		config.z_filter_max);
 
-	while (ros::ok())
-	{
-		ros::spinOnce();
-		loop_rate.sleep();
-	}
+	ros::spin();
 
 	return 0;
 }

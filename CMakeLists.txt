@@ -5,7 +5,7 @@ project(shape_detection_fitting)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 
-SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11 -Wno-comment -Wno-deprecated-declarations -Wno-sign-compare -Wunused-function")  #-faligned-new
+SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11 -Wno-comment -Wno-maybe-uninitialized -Wno-deprecated-declarations -Wno-sign-compare -Wunused-function")  #-faligned-new
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 set(ROS TRUE)
@@ -53,7 +53,7 @@ if(${ROS})
 	find_package(Boost COMPONENTS system filesystem regex REQUIRED)
 
 	## Generate messages in the 'msg' folder
-	 add_message_files(
+	add_message_files(
 	   FILES
 	   BoundingBox.msg
 	   BoundingBoxArray.msg
@@ -87,6 +87,9 @@ if(${ROS})
 	#add_library(shape_detection_fitting_ros_nodelet src/nodelets/shape_detection_fitting_ros_nodelet.cpp)
 	#target_link_libraries(shape_detection_fitting_ros_nodelet ${catkin_LIBRARIES} ${Caffe_LIBS} -lglog fitting_library shape_classifier)
 	#add_dependencies(shape_detection_fitting_ros_nodelet shape_detection_fitting_ros_nodelet_gencpp)
+
+	add_executable(planar_top_test test/planar_top_test.cpp)
+	target_link_libraries(planar_top_test ${OpenCV_LIBS} ${TinyXML_LIBRARY} ${YAML_CPP_LIBRARIES} ${catkin_LIBRARIES} fitting_library shape_classifier)
 endif(${ROS})
 
 #set(SHAPE_TRACKING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/shape-tracking)
@@ -119,10 +122,5 @@ target_link_libraries(ply_to_pcd ${PCL_LIBRARIES})
 
 add_executable(rename test/rename.cpp)
 target_link_libraries(rename ${PCL_LIBRARIES})
-
-add_executable(planar_top_test test/planar_top_test.cpp)
-target_link_libraries(planar_top_test ${OpenCV_LIBS} ${TinyXML_LIBRARY} ${YAML_CPP_LIBRARIES} fitting_library shape_classifier)
-
-
 
 

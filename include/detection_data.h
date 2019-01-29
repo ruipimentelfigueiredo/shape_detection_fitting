@@ -12,40 +12,47 @@ class Color
 
 class DetectionData
 {
-	std::map<int, cv::Scalar> id_colors_map_bb;
+	typedef std::map<int, cv::Scalar> CvColormap;
+	static CvColormap id_colors_map_bb;
 	public:
 	FittingData plane_fitting_data;
 	std::vector<FittingData> clusters_fitting_data;
 	std::vector<cv::Rect> bounding_boxes;
 	std::vector<ClassificationData> clusters_classification_data;
+	bool with_classifier;
+	DetectionData()
+	{};
 
-	DetectionData(FittingData & plane_fitting_data_, 
-		      std::vector<FittingData> & clusters_fitting_data_,
-	              std::vector<cv::Rect> & bounding_boxes_,
-		      std::vector<ClassificationData> & clusters_classification_data_) : 
+	DetectionData(
+		FittingData & plane_fitting_data_, 
+		std::vector<FittingData> & clusters_fitting_data_,
+	    std::vector<cv::Rect> & bounding_boxes_,
+		std::vector<ClassificationData> & clusters_classification_data_,
+		bool & with_classifier_) : 
 		plane_fitting_data(plane_fitting_data_), 
 		clusters_fitting_data(clusters_fitting_data_), 
 		bounding_boxes(bounding_boxes_),
-		clusters_classification_data(clusters_classification_data_)
-	{
-		id_colors_map_bb.insert(std::pair<int,cv::Scalar>(0,cv::Scalar(0,  255, 0) ) );
-		id_colors_map_bb.insert(std::pair<int,cv::Scalar>(1,cv::Scalar(0,  0, 255) ) );
-	};
+		clusters_classification_data(clusters_classification_data_),
+		with_classifier(with_classifier_)
+	{};
 
 	void draw_bounding_boxes(cv::Mat & image, std::vector<cv::Scalar> colors_=std::vector<cv::Scalar>(), std::vector<std::string> classes_=std::vector<std::string>())
 	{
 		for(size_t i=0; i<bounding_boxes.size();++i)
 		{
 			if(colors_.size()>0)
-				cv::rectangle(image, bounding_boxes[i], colors_[i], 4);	
+			{
+				cv::rectangle(image, bounding_boxes[i], colors_[i], 2);	
+			}
 			else
-				cv::rectangle(image, bounding_boxes[i], cv::Scalar(255,0,0), 4);
+			{
+				cv::rectangle(image, bounding_boxes[i], cv::Scalar(255,0,0), 2);
+			}
 
 			if(classes_.size()>0)
-				cv::putText(image, classes_[i], cv::Point2f(bounding_boxes[i].x,bounding_boxes[i].y), cv::FONT_HERSHEY_PLAIN, 4,  colors_[i]);	
+				cv::putText(image, classes_[i], cv::Point2f(bounding_boxes[i].x,bounding_boxes[i].y), cv::FONT_HERSHEY_PLAIN, 4,  colors_[i]);
 		}
 	}
-
 
 	void visualize(cv::Mat & image)
 	{
@@ -53,6 +60,7 @@ class DetectionData
 		std::vector<std::string> classes;
 		for(unsigned int ind=0; ind<clusters_fitting_data.size(); ++ind)
 		{	
+			//std::cout << clusters_fitting_data.size() << std::endl;
 			// Cylinder shape
 			if(clusters_fitting_data[ind].type==FittingData::CYLINDER)
 			{
