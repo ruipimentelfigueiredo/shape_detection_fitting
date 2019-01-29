@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-  	<arg name="base_folder" default="/run/user/1000/gvfs/smb-share:server=blackhole,share=users/ruifigueiredo"/>
-
-      	<node pkg="shape_detection_fitting" type="modify_dataset.py" name="modify_dataset" args="$(arg base_folder)" output="screen">
-
-	</node>
-</launch>

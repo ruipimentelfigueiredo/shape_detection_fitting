@@ -13,12 +13,14 @@ cd $CATKIN_WORKSPACE_DIR/src && git clone https://github.com/ruipimentelfigueire
 2. Change directory to catkin_ws and compile
 
 ```
-cd .. && catkin_make
+cd $CATKIN_WORKSPACE_DIR && catkin_make
 ```
 
 ## Setup
 Follow the instructions in:
 https://github.com/ruipimentelfigueiredo/shape-classification
+
+https://github.com/ruipimentelfigueiredo/shape-fitting
 
 ## Config
 Set the appropriate parameters and ROS topic names in the files inside config/ and launch/ folders.
@@ -26,7 +28,23 @@ Set the appropriate parameters and ROS topic names in the files inside config/ a
 ## Demo
 
 ```
-roslaunch shape_detection_fitting ork+cylinder.launch
+roslaunch shape_detection_fitting shape_detection_fitting.launch
+```
+
+## Generating a new dataset
+
+First, set the flag ```dataset_create``` to true, inside ```config/config.yaml``` file, and select desired ```dataset_path``` and ```object_type```
+
+Then, run:
+
+```
+roslaunch shape_detection_fitting shape_detection_fitting.launch
+```
+
+## Evaluating the dataset
+
+```
+roslaunch shape_detection_fitting test.launch
 ```
 
 ## Reference

@@ -1,70 +1,95 @@
-use_ransac: false
-
 # common
 min_radius: 0.02
-max_radius: 0.10
-do_refine: false
+max_radius: 0.07
+do_refine: true
 
-z_filter_min: 0.4
-z_filter_max: 1.0
+x_filter_min: -0.9
+x_filter_max: 0.9
 
-# hough
+z_filter_min: 0.0
+z_filter_max: 1.8
+
+# hough cylinder fitting
+
 angle_bins: 30
-radius_bins: 10
+radius_bins: 20
 position_bins: 20
-mode: 2
+hough_fitting_mode: 1 # normal - 0, hybrid - 1
+soft_voting: true
 accumulator_peak_threshold: 0.5
-gaussian_sphere_points_num: 500
-orientation_accumulators_num: 10
-
+gaussian_sphere_points_num: 450
+orientation_accumulators_num: 30
 orientation_hough_gmm:
   -
     id: 1
-    weight: 0.5
+    weight: 0.33
     mean: [0.0, 0.0,1.0]
-    standard_deviation: [0.05,0.05,0.05]
+    standard_deviation: [0.005,0.005,0.005]
   -
     id: 2
-    weight: 0.5
+    weight: 0.33
     mean: [0.0,0.0,0.0]
-    standard_deviation: [1.0,1.0,0.005]
+    standard_deviation: [0.05,0.05,0.05]
+  -
+    id: 3
+    weight: 0.33
+    mean: [0.0,0.0,0.0]
+    standard_deviation: [0.05,0.05,0.0005]
+  
 
 
-# ransac
-normal_distance_weight: 0.1
+# ransac plane fitting
+normal_distance_weight: 0.3
 max_iterations: 10000
-distance_threshold: 0.05
-cluster_tolerance: 0.02
-min_cluster_size: 40
-max_cluster_size: 5000
-table_z_filter_min: 0.015
-table_z_filter_max: 0.35
-plane_detection_voxel_size: 0.05
-cluster_voxel_size: 0.005
-inlier_threshold: 10
+
+distance_threshold: 0.03 # not used
+angular_threshold: 5.0 # in degrees
+cluster_tolerance: 0.1
+min_cluster_size: 500
+max_cluster_size: 30000
+table_z_filter_min: 0.02
+table_z_filter_max: 0.5
+inlier_threshold: 1000 #absolute - 1000 for dense
+
+plane_detection_voxel_size: 0.070
+cluster_voxel_size: 0.007
 
 # voxel grid
 filter_field_name: z
-filter_limit_min: 0.01
-filter_limit_max: 3.0
-filter_limit_negative: False
-leaf_size: 0.03
+filter_limit_min: 0.05
+filter_limit_max: 3.00
 
-camera_info_topic: /kinect2/hd/camera_info
-
-# CLASSIFIER PARAMS
+# classifier
 classifier_absolute_path_folder: /home/rui/ws/src/shape_detection_fitting
 model_file: /lib/shape-classification/base_networks/squeezenet/deploy.prototxt
-weight_file: /lib/shape-classification/base_networks/squeezenet/squeezenet_v1.1.caffemodel
-mean_file: /lib/shape-classification/dataset/mean.binaryproto
+weight_file: /lib/shape-classification/train_iter_201.caffemodel
+mean_file: /lib/shape-classification/output/mean.binaryproto
 
 device: GPU
-device_id: 1
+device_id: 0
 classification_threshold: 0.5
-fitting_distance_threshold: 0.02
-fitting_acceptance_threshold: 0.5
+fitting_threshold: 0.5
 padding: 0.1
 
 with_classifier: true
-visualize: true
+visualize: false
+
+# Dataset acquisition parameters
+dataset_create: false
+dataset_path: /home/rui/ws/src/shape_detection_fitting/lib/shape-classification/dataset/
+object_type: mix
+
+## CAMERA PARAMS
+# KINECT V2 (QHD)
+#camera_matrix: [540.68603515625, 0.0, 479.75, 0.0, 540.68603515625, 269.75, 0.0, 0.0, 1.0]
+#rotation: [9.9999932279092762e-01,1.1418659978192800e-03,-2.2485490683788145e-04,-1.1422648685177200e-03,9.9999776014165309e-01,-1.7818368744440499e-03,2.2281978425420061e-04, 1.7820925116285419e-03, 9.9999838724751144e-01]
+#translation: [-7.1227840324258434e-02,-7.5307585220976776e-04,7.0571985343338605e-05]
+
+# ASUS XTION
+camera_matrix: [570.3422241210938, 0.0, 319.5, 0.0, 570.3422241210938, 239.5, 0.0, 0.0, 1.0]
+rotation: [1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0]
+translation: [-0.015,0.0,0.0]
+
+visualize_ground_truth: false
+
 

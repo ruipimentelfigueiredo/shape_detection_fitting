@@ -1,23 +1,20 @@
 source1:
   type: RosKinect
   module: 'object_recognition_ros.io'
-  #
-  # Example parameters to set (the default settings are using the ros topics starting with /camera/....) 
-  #  
   parameters:
-    rgb_frame_id: '/camera_rgb_frame'
-    rgb_image_topic: '/kinect2/hd/image_color_rect'
-    rgb_camera_info: '/kinect2/hd/camera_info'
-    depth_image_topic: '/kinect2/hd/image_depth_rect'
-    depth_camera_info: '/kinect2/hd/camera_info'
-    #
+    rgb_frame_id: camera_rgb_optical_frame
+    rgb_image_topic: /camera/rgb/image_rect_color
+    rgb_camera_info: /camera/rgb/camera_info
+    depth_image_topic: /camera/depth_registered/image_raw
+    depth_camera_info: /camera/depth_registered/camera_info
     crop_enabled: True
-    x_min: -0.5
-    x_max: 0.5
+    x_min: -0.2
+    x_max: 0.2
     y_min: -1.0
     y_max: 1.0
     z_min: 0.3
     z_max: 1.7
+
 
 sink1:
   type: TablePublisher
@@ -31,8 +28,10 @@ pipeline1:
   outputs: [sink1]
   parameters:
     table_detector:
-      min_table_size: 8000
-      plane_threshold: 0.01
+      min_table_size: 20000
+      plane_threshold: 0.03
+      #table_cluster_tolerance: 2.0
     clusterer:
-      table_z_filter_max: 1.0
-      table_z_filter_min: 0.015
+      table_z_filter_max: 0.35
+      table_z_filter_min: 0.1
+

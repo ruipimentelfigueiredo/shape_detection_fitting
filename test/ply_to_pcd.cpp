@@ -106,19 +106,6 @@ main (int argc, char** argv)
 	std::cout << "dataset_path: " << dataset_path << std::endl;
 	std::vector<std::string> point_cloud_files;
 	bool format = 1;
-	// Parse the command line arguments for .pcd and .ply files
-	//std::vector<int> pcd_file_indices = parse_file_extension_argument (argc, argv, ".pcd");
-	//std::vector<int> ply_file_indices = parse_file_extension_argument (argc, argv, ".ply");
-	/*if (pcd_file_indices.size () != 1 || ply_file_indices.size () != 1)
-	{
-	print_error ("Need one input PLY file and one output PCD file.\n");
-	return (-1);
-	}
-
-	// Command line parsing
-
-	parse_argument (argc, argv, "-format", format);
-	print_info ("PCD output format: "); print_value ("%s\n", (format ? "binary" : "ascii"));*/
 
 	readDirectory(dataset_path,point_cloud_files);
 	// Load the first file

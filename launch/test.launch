@@ -1,18 +1,12 @@
 <?xml version="1.0"?>
 <launch>
-  	<arg name="file_name" default="table_scene_mug_stereo_textured.pcd"/>
-  	<!--<arg name="file_name" default="cylinder.pcd"/>-->
+  	<arg name="cloud_in" default="cylinders_pcl"/>
+  	<arg name="rviz_file" default="tests.rviz"/>
+	<arg name="config_file" default="config.yaml"/>
 
-
-
-  	<arg name="cloud_out" default="cylinders_pcl"/>
-  	<arg name="rviz_file" default="cylinders.rviz"/>
-      	<node pkg="shape_detection_fitting" type="cylinder_segmentation_test" name="cloud_publisher" args="$(find shape_detection_fitting)/data/$(arg file_name)" output="screen">
-	        <remap from="cloud_out" to="$(arg cloud_out)"/>
+	<node pkg="shape_detection_fitting" type="planar_top_test" name="planar_top_test" args="$(find shape_detection_fitting)/config/$(arg config_file)" output="screen">
+		<remap from="cloud_in" to="$(arg cloud_in)"/>
 	</node>
-	<!--<include file="$(find shape_detection_fitting)/launch/cylinder_segmentation.launch">
-  		<arg name="cloud_in" value="$(arg cloud_out)"/>
-	</include> --> 
 
 	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find shape_detection_fitting)/rviz/$(arg rviz_file)"/>
 </launch>

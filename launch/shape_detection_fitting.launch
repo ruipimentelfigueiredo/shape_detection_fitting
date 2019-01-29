@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<launch>
+	<!--           -->
+	<!-- arguments -->
+	<!--           -->
+	<arg name="rviz_file" default="cylinders.rviz"/>
+	<arg name="pcl_in" default="/camera/depth_registered/points"/>
+	<arg name="image_in" default="/camera/rgb/image_rect_color"/>
+	<!--
+	<remap from="/pcl_in" to="/kinect2/qhd/points" />
+	<remap from="/image_in" to="/kinect2/qhd/image_color_rect" />
+	-->
+	<!--<include file="$(find openni2_launch)/launch/openni2.launch"/>-->
+
+	<include file="$(find openni_launch)/launch/openni.launch"/>
+
+	<!-- shape detection -->
+	<node pkg="shape_detection_fitting" type="shape_detection_fitting_ros_node" name="shape_detection_fitting" output="screen" respawn="false"> 
+		<param name="config_file" value="$(find shape_detection_fitting)/config/config.yaml"/>
+    	<remap from="/pcl_in" to="$(arg pcl_in)" />
+    	<remap from="/image_in" to="$(arg image_in)" />
+	</node>
+
+	<!-- visualization -->
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find shape_detection_fitting)/rviz/$(arg rviz_file)"/>
+</launch>
