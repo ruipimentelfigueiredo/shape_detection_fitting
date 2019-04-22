@@ -1,4 +1,4 @@
-# shape detection, fitting and tracking ROS pipeline
+# shape detection and fitting ROS pipeline
 
 <p align="center"> 
     <img src=.image/pipeline.png>
@@ -18,9 +18,10 @@ cd $CATKIN_WORKSPACE_DIR && catkin_make
 
 ## Setup
 Follow the instructions in:
-https://github.com/ruipimentelfigueiredo/shape-classification
 
-https://github.com/ruipimentelfigueiredo/shape-fitting
+Classifier: https://github.com/ruipimentelfigueiredo/shape-classification
+
+Fitting: https://github.com/ruipimentelfigueiredo/shape-fitting
 
 ## Config
 Set the appropriate parameters and ROS topic names in the files inside config/ and launch/ folders.
