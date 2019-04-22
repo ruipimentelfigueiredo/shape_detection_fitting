@@ -52,13 +52,16 @@ roslaunch shape_detection_fitting test.launch
 In case you use our library in your research, please cite our work
 
 ```
-@inproceedings{figueiredo2017shape,
-  title={Shape-based attention for identification and localization of cylindrical objects},
-  author={Figueiredo, Rui and Dehban, Atabak and Bernardino, Alexandre and Santos-Victor, Jos{\'e} and Ara{\'u}jo, Helder},
-  booktitle={IEEE International Conference on Development and Learning and on Epigenetic Robotics (ICDL-EpiRob)},
-  volume={18},
-  pages={21},
-  year={2017}
+@article{figueiredo2019facyl,
+title = "A robust and efficient framework for fast cylinder detection",
+journal = "Robotics and Autonomous Systems",
+volume = "117",
+pages = "17 - 28",
+year = "2019",
+issn = "0921-8890",
+doi = "https://doi.org/10.1016/j.robot.2019.04.002",
+url = "http://www.sciencedirect.com/science/article/pii/S0921889017308710",
+author = "Rui Figueiredo and Atabak Dehban and Plinio Moreno and Alexandre Bernardino and José Santos-Victor and Helder Araújo",
 }
 ```
 
